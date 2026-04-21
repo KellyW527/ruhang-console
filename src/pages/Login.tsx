@@ -79,6 +79,19 @@ const Login = () => {
             </Button>
           </form>
 
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/30" /></div>
+            <div className="relative flex justify-center text-xs"><span className="bg-background px-2 text-muted-foreground">或</span></div>
+          </div>
+
+          <Button
+            variant="outline"
+            className="w-full border-primary/30 text-primary hover:bg-primary/10 h-11"
+            onClick={() => window.location.href = '/dashboard'}
+          >
+            🎯 演示模式（无需登录）
+          </Button>
+
           <p className="text-center text-sm text-muted-foreground">
             还没有账户？{" "}
             <Link to="/register" className="text-primary hover:text-primary/80 font-medium transition-colors">
