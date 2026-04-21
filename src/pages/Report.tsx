@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { GlassCard } from "@/components/marketing/GlassCard";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, TrendingUp, Clock, MessageSquare, CheckCircle, Target, Users } from "lucide-react";
+import { ArrowLeft, Download, TrendingUp, Clock, MessageSquare, CheckCircle, Target } from "lucide-react";
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from "recharts";
 
 // TODO: 接入现有逻辑 — 从 Supabase 获取报告数据

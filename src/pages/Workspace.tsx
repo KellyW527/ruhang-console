@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Send, Paperclip, Download, MessageSquare, Mail, CheckCircle, Circle,
-  Phone, ChevronRight, Star, BookOpen, ArrowLeft, User, Users, Briefcase
+  Phone, ChevronRight, Star, BookOpen, ArrowLeft
 } from "lucide-react";
 import { Link } from "react-router-dom";
 

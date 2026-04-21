@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { GlassCard } from "@/components/marketing/GlassCard";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, MapPin, Calendar, DollarSign, Users, ArrowRight } from "lucide-react";
+import { Briefcase, CheckCircle, MapPin, Calendar, DollarSign, Users, ArrowRight } from "lucide-react";
 
 const OfferLetter = () => {
   const { id } = useParams();
