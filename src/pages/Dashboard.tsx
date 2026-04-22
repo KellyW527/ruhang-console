@@ -69,7 +69,7 @@ function MedalShelf({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-strong max-w-3xl border-white/10">
+      <DialogContent className="glass-strong max-w-3xl max-h-[85vh] overflow-y-auto border-white/10">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">我的勋章</DialogTitle>
         </DialogHeader>
@@ -762,7 +762,7 @@ function SimCard({ row, to, plan }: { row: SimRow; to: string; plan: string }) {
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className="group relative flex flex-col overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl"
     >
-      <div className="absolute inset-0 opacity-0 transition group-hover:opacity-100">
+      <div className="pointer-events-none absolute inset-0 opacity-0 transition group-hover:opacity-100">
         <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-primary/45 to-transparent" />
       </div>
       <div className="relative px-6 pb-5 pt-6">

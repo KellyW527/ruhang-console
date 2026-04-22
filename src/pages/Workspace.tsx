@@ -91,6 +91,7 @@ const Workspace = () => {
   const { user, profile } = useAuth();
   const nav = useNavigate();
   const [usId, setUsId] = useState<string | null>(null);
+  const [wsLoading, setWsLoading] = useState(true);
   const [currentTaskIndex, setCurrentTaskIndex] = useState<number | null>(null);
   const [simulationStatus, setSimulationStatus] = useState<string | null>(null);
   const [simTitle, setSimTitle] = useState("");
@@ -199,6 +200,7 @@ const Workspace = () => {
   useEffect(() => {
     const load = async () => {
       if (!user || !id) return;
+      setWsLoading(true);
       setProgressLoaded(false);
       const { data: us } = await supabase
         .from("user_simulations")
@@ -206,7 +208,12 @@ const Workspace = () => {
         .eq("user_id", user.id)
         .eq("simulation_id", id)
         .maybeSingle();
-      if (!us) return;
+      if (!us) {
+        setWsLoading(false);
+        toast.error("找不到该模拟项目，可能尚未开始");
+        nav("/dashboard", { replace: true });
+        return;
+      }
       if ((us.simulation as { title?: string; is_pro?: boolean } | null)?.is_pro && profile?.plan !== "pro") {
         toast.info("这个模拟需要升级 Pro 后才能进入");
         nav("/pricing", { replace: true });
@@ -255,6 +262,7 @@ const Workspace = () => {
 
       const { data: em } = await supabase.from("emails").select("*").eq("user_simulation_id", us.id).order("received_at", { ascending: false });
       if (em) setEmails(em as Email[]);
+      setWsLoading(false);
     };
     load();
   }, [user, id, nav, profile?.plan]);
@@ -1261,6 +1269,17 @@ const Workspace = () => {
       { markUnread: false },
     );
   };
+
+  if (wsLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">加载工作台…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-[100dvh] overflow-hidden bg-background">
