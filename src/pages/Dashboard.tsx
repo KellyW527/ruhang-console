@@ -1,203 +1,859 @@
-import { Link } from "react-router-dom";
-import { GlassCard } from "@/components/marketing/GlassCard";
-import { BadgeCard } from "@/components/marketing/BadgeCard";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
-  TrendingUp, Briefcase, BarChart3, Settings, FileText, Award,
-  ArrowRight, Play, CheckCircle, Lock, Crown, LogOut
+  ArrowRight,
+  Award,
+  BookOpen,
+  CheckCircle2,
+  Clock3,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Settings as SettingsIcon,
+  ShieldCheck,
+  Sparkles,
+  Trophy,
 } from "lucide-react";
 
-// TODO: 接入现有逻辑 — 从 Supabase 获取用户数据
-const mockUser = {
-  preferred_name: "Kelly",
-  plan: "pro" as const,
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
+import { cn } from "@/lib/utils";
+import { getPreferredDisplayName } from "@/lib/settings";
+import { buildAchievementStates, type AchievementProgressRow } from "@/data/achievements";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+
+type SimRow = {
+  id: string;
+  status: string;
+  progress: number;
+  offer_accepted: boolean;
+  current_task_index: number;
+  completed_at?: string | null;
+  simulation: {
+    id: string;
+    code: string;
+    title: string;
+    company: string;
+    role: string;
+    track: string;
+    description: string;
+    cover_emoji: string;
+    duration_label: string;
+    is_pro: boolean;
+  };
+  total_tasks: number;
+  completed_tasks: number;
 };
 
-const simulations = [
-  {
-    id: "ib-analyst",
-    title: "投行分析师",
-    icon: TrendingUp,
-    status: "in_progress" as const,
-    progress: 45,
-    currentTask: "回复 Leader 关于财务模型的问题",
-  },
-  {
-    id: "consulting",
-    title: "咨询顾问",
-    icon: Briefcase,
-    status: "completed" as const,
-    progress: 100,
-    currentTask: null,
-  },
-  {
-    id: "research",
-    title: "行业研究员",
-    icon: BarChart3,
-    status: "locked" as const,
-    progress: 0,
-    currentTask: null,
-  },
+const NAV: { label: string; icon: any; to: string; medal?: boolean }[] = [
+  { label: "我的模拟", icon: LayoutDashboard, to: "/dashboard" },
+  { label: "能力报告", icon: BookOpen, to: "/report" },
+  { label: "我的勋章", icon: Award, to: "#", medal: true },
+  { label: "设置", icon: SettingsIcon, to: "/settings" },
 ];
 
-const badges = [
-  { name: "快速启动", description: "完成首次模拟", earned: true },
-  { name: "沟通达人", description: "获得沟通 A+", earned: true },
-  { name: "全线通关", description: "完成全部模拟线", earned: false },
-  { name: "分析专家", description: "财务分析满分", earned: false },
-];
+function MedalShelf({
+  open,
+  onOpenChange,
+  rows,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  rows: AchievementProgressRow[];
+}) {
+  const achievements = useMemo(() => buildAchievementStates(rows), [rows]);
+  const unlocked = achievements.filter((item) => item.unlocked);
 
-const statusConfig = {
-  in_progress: { label: "进行中", color: "bg-primary/20 text-primary border-primary/30", icon: Play },
-  completed: { label: "已完成", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30", icon: CheckCircle },
-  locked: { label: "未解锁", color: "bg-muted text-muted-foreground border-border", icon: Lock },
-};
-
-const Dashboard = () => {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Top Bar */}
-      <header className="border-b border-border/30 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
-        <div className="container mx-auto flex items-center justify-between h-16 px-6">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg gradient-gold flex items-center justify-center">
-              <span className="text-sm font-bold text-primary-foreground">R</span>
-            </div>
-            <span className="font-display font-semibold text-foreground">RuHang</span>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="glass-strong max-w-3xl border-white/10">
+        <DialogHeader>
+          <DialogTitle className="font-display text-2xl">我的勋章</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-5">
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
+            <div className="text-sm text-muted-foreground">当前已解锁</div>
+            <div className="mt-2 font-display text-3xl text-primary">{unlocked.length} / {achievements.length}</div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              勋章只按系统里可真实计算的行为解锁，不做虚假点亮。
+            </p>
           </div>
-          <div className="flex items-center gap-4">
-            {mockUser.plan === "pro" && (
-              <Badge className="bg-primary/20 text-primary border-primary/30 border gap-1">
-                <Crown className="h-3 w-3" /> Pro
-              </Badge>
-            )}
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/settings"><Settings className="h-4 w-4" /></Link>
-            </Button>
-            <Button variant="ghost" size="icon" className="text-muted-foreground">
-              <LogOut className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-6 py-10 space-y-10 max-w-6xl">
-        {/* Welcome */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-display font-bold text-foreground">
-            你好，<span className="text-primary">{mockUser.preferred_name}</span> 👋
-          </h1>
-          <p className="text-muted-foreground">继续你的训练，或查看你的能力报告。</p>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: "继续训练", icon: Play, to: "/simulation/ib-analyst", primary: true },
-            { label: "能力报告", icon: FileText, to: "/report" },
-            { label: "我的勋章", icon: Award, to: "#badges" },
-            { label: "设置", icon: Settings, to: "/settings" },
-          ].map((action) => (
-            <Link key={action.label} to={action.to}>
-              <GlassCard variant={action.primary ? "gold" : "default"}
-                className="p-4 flex items-center gap-3 hover:scale-[1.02] transition-transform cursor-pointer">
-                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${
-                  action.primary ? "bg-primary/20" : "bg-muted"
-                }`}>
-                  <action.icon className={`h-5 w-5 ${action.primary ? "text-primary" : "text-muted-foreground"}`} />
-                </div>
-                <span className="text-sm font-medium text-foreground">{action.label}</span>
-              </GlassCard>
-            </Link>
-          ))}
-        </div>
-
-        {/* Simulation Cards */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-display font-semibold text-foreground">模拟线</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {simulations.map((sim) => {
-              const config = statusConfig[sim.status];
-              const StatusIcon = config.icon;
-              return (
-                <GlassCard key={sim.id} variant={sim.status === "in_progress" ? "gold" : "default"}
-                  className="p-6 space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <sim.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <Badge className={`${config.color} border text-xs gap-1`}>
-                      <StatusIcon className="h-3 w-3" />
-                      {config.label}
-                    </Badge>
-                  </div>
-
+          <div className="grid gap-4 md:grid-cols-2">
+            {achievements.map((item) => (
+              <div
+                key={item.id}
+                className={cn(
+                  "rounded-2xl border p-4",
+                  item.unlocked ? "border-primary/25 bg-primary/8" : "border-white/10 bg-white/[0.02]",
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-display font-semibold text-foreground text-lg">{sim.title}</h3>
-                    {sim.currentTask && (
-                      <p className="text-xs text-muted-foreground mt-1">{sim.currentTask}</p>
+                    <div className="font-display text-lg">{item.name}</div>
+                    <div className="mt-1 text-xs text-muted-foreground">{item.description}</div>
+                  </div>
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-[10px]",
+                      item.rarity === "史诗"
+                        ? "bg-amber-500/15 text-amber-200"
+                        : item.rarity === "稀有"
+                          ? "bg-sky-500/15 text-sky-200"
+                          : "bg-white/10 text-muted-foreground",
                     )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">进度</span>
-                      <span className="text-primary">{sim.progress}%</span>
-                    </div>
-                    <Progress value={sim.progress} className="h-1.5 bg-muted" />
-                  </div>
-
-                  {sim.status === "in_progress" && (
-                    <Button asChild className="w-full gradient-gold text-primary-foreground border-0 hover:opacity-90" size="sm">
-                      <Link to={`/simulation/${sim.id}`}>
-                        继续 <ArrowRight className="h-3 w-3 ml-1" />
-                      </Link>
-                    </Button>
-                  )}
-                  {sim.status === "completed" && (
-                    <Button asChild variant="outline" className="w-full border-border/50" size="sm">
-                      <Link to="/report">查看报告</Link>
-                    </Button>
-                  )}
-                  {sim.status === "locked" && (
-                    <Button disabled variant="outline" className="w-full border-border/30 opacity-50" size="sm">
-                      {mockUser.plan === "pro" ? "即将开放" : "升级解锁"}
-                    </Button>
-                  )}
-                </GlassCard>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Badges */}
-        <div id="badges" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-display font-semibold text-foreground">我的勋章</h2>
-            <span className="text-xs text-muted-foreground">{badges.filter(b => b.earned).length}/{badges.length} 已获得</span>
-          </div>
-          <div className="flex gap-4 overflow-x-auto pb-2">
-            {badges.map((b) => (
-              <BadgeCard key={b.name} {...b} />
+                  >
+                    {item.rarity}
+                  </span>
+                </div>
+                <div className="mt-4 text-xs text-foreground/85">{item.condition}</div>
+                <div className="mt-3 text-[11px] text-muted-foreground">
+                  {item.unlocked
+                    ? `已解锁${item.unlockedAt ? ` · ${new Date(item.unlockedAt).toLocaleDateString("zh-CN")}` : ""}`
+                    : "未解锁"}
+                </div>
+              </div>
             ))}
           </div>
         </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
-        {/* Capability Nudge */}
-        <GlassCard variant="gold" className="p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="space-y-1">
-            <p className="font-medium text-foreground">你的能力正在沉淀</p>
-            <p className="text-sm text-muted-foreground">查看完整的能力评估报告，了解你的提升方向。</p>
+function SidebarBody({
+  name,
+  plan,
+  onSignOut,
+  onOpenMedals,
+}: {
+  name: string;
+  plan: string;
+  onSignOut: () => void;
+  onOpenMedals: () => void;
+}) {
+  const loc = useLocation();
+
+  return (
+    <div className="flex h-full flex-col">
+      <Link to="/" className="flex items-center gap-2.5 px-6 py-7">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-gold font-display text-base font-bold text-primary-foreground shadow-glow-gold">
+          入
+        </div>
+        <span className="font-display text-lg font-semibold">入行 RuHang</span>
+      </Link>
+      <nav className="flex-1 space-y-1 px-3">
+        {NAV.map((item) => {
+          const active = !item.medal && item.to !== "#" && loc.pathname === item.to;
+          const className = cn(
+            "group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition",
+            active
+              ? "bg-primary/10 text-foreground"
+              : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+          );
+
+          const inner = (
+            <>
+              {active && <span className="absolute left-0 h-5 w-0.5 rounded-r bg-gradient-gold" />}
+              <item.icon className="h-4 w-4" />
+              {item.label}
+            </>
+          );
+
+          if (item.medal) {
+            return (
+              <button key={item.label} type="button" onClick={onOpenMedals} className={className}>
+                {inner}
+              </button>
+            );
+          }
+
+          return (
+            <Link key={item.label} to={item.to} className={className}>
+              {inner}
+            </Link>
+          );
+        })}
+      </nav>
+      <div className="border-t border-sidebar-border p-4">
+        <div className="mb-3 flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20 text-sm text-primary">
+            {(name?.[0] ?? "U").toUpperCase()}
           </div>
-          <Button asChild variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 whitespace-nowrap">
-            <Link to="/report">查看报告 <ArrowRight className="h-3 w-3 ml-1" /></Link>
-          </Button>
-        </GlassCard>
-      </main>
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium">{name}</div>
+            <div className={cn("flex items-center gap-1 text-[10px] uppercase tracking-wider", plan === "pro" ? "text-primary" : "text-muted-foreground")}>
+              {plan === "pro" && <Sparkles className="h-3 w-3" />}
+              {plan === "pro" ? "PRO 会员" : "免费版"}
+            </div>
+          </div>
+        </div>
+        <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground hover:bg-white/5 hover:text-foreground" onClick={onSignOut}>
+          <LogOut className="mr-2 h-4 w-4" /> 退出登录
+        </Button>
+      </div>
     </div>
   );
-};
+}
 
-export default Dashboard;
+export default function Dashboard() {
+  const { user, profile, signOut } = useAuth();
+  const nav = useNavigate();
+  const [rows, setRows] = useState<SimRow[]>([]);
+  const [achievementRows, setAchievementRows] = useState<AchievementProgressRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [medalOpen, setMedalOpen] = useState(false);
+
+  useEffect(() => {
+    document.title = "控制台 · 入行 RuHang";
+  }, []);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!user) return;
+
+      const { data: userSimulations } = await supabase
+        .from("user_simulations")
+        .select("id, status, progress, offer_accepted, current_task_index, completed_at, simulation:simulations(*)")
+        .eq("user_id", user.id);
+
+      if (!userSimulations) {
+        setLoading(false);
+        return;
+      }
+
+      const enriched: SimRow[] = await Promise.all(
+        userSimulations.map(async (simulationRow: any) => {
+          const { count: total } = await supabase
+            .from("tasks")
+            .select("*", { count: "exact", head: true })
+            .eq("simulation_id", simulationRow.simulation.id);
+
+          const { count: done } = await supabase
+            .from("user_task_progress")
+            .select("*", { count: "exact", head: true })
+            .eq("user_simulation_id", simulationRow.id)
+            .eq("status", "done");
+
+          return {
+            ...simulationRow,
+            total_tasks: total ?? 0,
+            completed_tasks: done ?? 0,
+          };
+        }),
+      );
+
+      setRows(enriched);
+
+      const userSimulationIds = userSimulations.map((item: any) => item.id);
+      if (userSimulationIds.length) {
+        const { data: progressRows } = await supabase
+          .from("user_task_progress")
+          .select("status, score, submission_quality, submitted_at, self_eval, task:tasks(order_index, title), user_simulation:user_simulations(status, offer_accepted, simulation:simulations(code))")
+          .in("user_simulation_id", userSimulationIds);
+
+        const normalized = (progressRows ?? []).map((row: any) => ({
+          simulationCode: row.user_simulation?.simulation?.code ?? "ibd-ipo",
+          simulationStatus: row.user_simulation?.status ?? "not_started",
+          offerAccepted: Boolean(row.user_simulation?.offer_accepted),
+          title: row.task?.title ?? "",
+          orderIndex: row.task?.order_index ?? 0,
+          status: row.status ?? "locked",
+          score: row.score ?? null,
+          submissionQuality: row.submission_quality ?? null,
+          submittedAt: row.submitted_at ?? null,
+          selfEvalSubmitted: Boolean(row.self_eval?.submitted_at),
+        })) as AchievementProgressRow[];
+
+        setAchievementRows(normalized);
+      } else {
+        setAchievementRows([]);
+      }
+
+      setLoading(false);
+    };
+
+    void load();
+  }, [user]);
+
+  const inProgress = rows.filter((row) => row.status !== "completed");
+  const completed = rows.filter((row) => row.status === "completed");
+  const achievements = useMemo(() => buildAchievementStates(achievementRows), [achievementRows]);
+  const unlockedCount = achievements.filter((item) => item.unlocked).length;
+  const totalCompletedTasks = rows.reduce((sum, row) => sum + row.completed_tasks, 0);
+  const spotlight = inProgress[0] ?? rows[0] ?? null;
+
+  const onSignOut = async () => {
+    await signOut();
+    nav("/");
+  };
+
+  const continueLink = (row: SimRow) =>
+    row.simulation.is_pro && profile?.plan !== "pro"
+      ? "/pricing"
+      : row.offer_accepted
+        ? `/simulation/${row.simulation.id}`
+        : `/simulation/${row.simulation.id}/offer`;
+
+  const name = getPreferredDisplayName(profile ?? null, user?.email) ?? "新同学";
+  const plan = profile?.plan ?? "free";
+
+  return (
+    <div className="relative min-h-screen overflow-hidden bg-gradient-hero">
+      <div className="pointer-events-none absolute inset-0 halo-blue opacity-40" />
+      <div className="pointer-events-none absolute left-0 top-0 h-72 w-72 halo-gold opacity-80 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-[-8rem] right-[-6rem] h-80 w-80 rounded-full halo-blue blur-3xl" />
+
+      <main className="relative">
+        <div className="container mx-auto px-4 py-4 md:px-6 lg:py-6">
+          <header className="glass-strong rounded-[30px] border-white/10 px-4 py-4 md:px-6">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-gold font-display text-lg font-bold text-primary-foreground shadow-glow-gold">
+                  入
+                </div>
+                <div>
+                  <div className="font-display text-lg font-semibold">入行 RuHang</div>
+                  <div className="text-xs text-muted-foreground">真实岗位节奏驱动的金融工作台</div>
+                </div>
+              </div>
+
+              <div className="hidden items-center gap-2 lg:flex">
+                <Link to="/dashboard" className="rounded-full bg-white/8 px-4 py-2 text-sm text-foreground">
+                  控制台
+                </Link>
+                <Link to="/report" className="rounded-full px-4 py-2 text-sm text-muted-foreground transition hover:bg-white/5 hover:text-foreground">
+                  能力报告
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setMedalOpen(true)}
+                  className="rounded-full px-4 py-2 text-sm text-muted-foreground transition hover:bg-white/5 hover:text-foreground"
+                >
+                  我的勋章
+                </button>
+                <Link to="/settings" className="rounded-full px-4 py-2 text-sm text-muted-foreground transition hover:bg-white/5 hover:text-foreground">
+                  设置
+                </Link>
+              </div>
+
+              <div className="hidden items-center gap-3 lg:flex">
+                <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-right">
+                  <div className="text-sm font-medium text-foreground">{name}</div>
+                  <div className={cn("text-[10px] uppercase tracking-[0.2em]", plan === "pro" ? "text-primary" : "text-muted-foreground")}>
+                    {plan === "pro" ? "PRO MEMBER" : "FREE PLAN"}
+                  </div>
+                </div>
+                <Button variant="ghost" size="sm" className="rounded-full border border-white/10 bg-white/[0.03] px-4 hover:bg-white/5" onClick={onSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  退出
+                </Button>
+              </div>
+
+              <div className="lg:hidden">
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/5">
+                      <Menu className="h-5 w-5" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-64 border-sidebar-border bg-sidebar p-0">
+                    <SidebarBody
+                      name={name}
+                      plan={plan}
+                      onSignOut={onSignOut}
+                      onOpenMedals={() => setMedalOpen(true)}
+                    />
+                  </SheetContent>
+                </Sheet>
+              </div>
+            </div>
+          </header>
+
+          <section className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.92fr]">
+            <div className="glass-deep relative overflow-hidden rounded-[36px] p-6 md:p-8">
+              <div className="absolute inset-0 halo-gold opacity-40" />
+              <div className="absolute inset-y-0 right-0 w-1/2 halo-blue opacity-50" />
+              <div className="relative">
+                <div className="eyebrow">RuHang Control Room</div>
+                <div className="mt-4 max-w-3xl">
+                  <h1 className="font-display text-4xl font-semibold leading-tight text-white md:text-5xl">
+                    {name}，下一段金融工作线已经排好。
+                  </h1>
+                  <p className="mt-4 max-w-2xl text-sm leading-7 text-muted-foreground md:text-base">
+                    这里不是传统课程后台，而是一套围绕真实岗位推进的工作界面。继续你正在跑的模拟，或者沿着新的赛道，把 Offer、任务、反馈和能力沉淀都接回同一条主线。
+                  </p>
+                </div>
+
+                <div className="mt-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <KpiCard icon={<Clock3 className="h-4 w-4" />} label="推进中的项目" value={String(inProgress.length)} accent />
+                  <KpiCard icon={<CheckCircle2 className="h-4 w-4" />} label="已结项模拟" value={String(completed.length)} />
+                  <KpiCard icon={<ShieldCheck className="h-4 w-4" />} label="累计完成任务" value={String(totalCompletedTasks)} suffix="个" />
+                  <KpiCard icon={<Trophy className="h-4 w-4" />} label="已点亮勋章" value={String(unlockedCount)} suffix={`/ ${achievements.length}`} />
+                </div>
+
+                <div className="mt-8 flex flex-wrap gap-3">
+                  {spotlight ? (
+                    <Link
+                      to={continueLink(spotlight)}
+                      className="inline-flex items-center gap-2 rounded-full bg-gradient-gold px-5 py-3 text-sm font-medium text-primary-foreground shadow-glow-gold"
+                    >
+                      {spotlight.simulation.is_pro && plan !== "pro"
+                        ? "升级后进入当前项目"
+                        : spotlight.offer_accepted
+                          ? "继续当前项目"
+                          : "查看 Offer Letter"}
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/"
+                      className="inline-flex items-center gap-2 rounded-full bg-gradient-gold px-5 py-3 text-sm font-medium text-primary-foreground shadow-glow-gold"
+                    >
+                      浏览全部赛道
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  )}
+                  <Link to="/report" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm text-foreground transition hover:bg-white/[0.08]">
+                    打开能力报告
+                  </Link>
+                  {plan !== "pro" && (
+                    <Link
+                      to="/pricing"
+                      className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-5 py-3 text-sm text-primary transition hover:bg-primary/15"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      升级 PRO 解锁全部赛道
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <section className="glass relative overflow-hidden rounded-[36px] border-white/10 p-6 md:p-7">
+              <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+              <div className="eyebrow">推荐项目</div>
+              {spotlight ? (
+                <div className="mt-4 flex h-full flex-col">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-3xl">
+                      {spotlight.simulation.cover_emoji}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-primary">
+                        {spotlight.simulation.track}
+                      </span>
+                      {spotlight.simulation.is_pro && <span className="badge-status badge-pro px-3 py-1 text-[10px]">PRO</span>}
+                    </div>
+                  </div>
+                  <h2 className="mt-5 font-display text-3xl font-semibold leading-tight text-white">
+                    {spotlight.simulation.title}
+                  </h2>
+                  <p className="mt-2 text-sm text-foreground/85">
+                    {spotlight.simulation.company} · {spotlight.simulation.role}
+                  </p>
+                  <p className="mt-4 text-sm leading-7 text-muted-foreground">
+                    {spotlight.simulation.description}
+                  </p>
+
+                  <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                    <SpotlightMetric label="项目状态" value={spotlight.offer_accepted ? "已入组" : "待接收 Offer"} />
+                    <SpotlightMetric label="任务推进" value={`${spotlight.completed_tasks} / ${spotlight.total_tasks}`} />
+                    <SpotlightMetric label="项目周期" value={spotlight.simulation.duration_label} />
+                  </div>
+
+                  <div className="mt-6">
+                    <div className="mb-2 flex items-center justify-between text-[11px] text-muted-foreground">
+                      <span>项目推进度</span>
+                      <span className="font-mono text-primary">{spotlight.progress}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-white/5">
+                      <div className="h-full rounded-full bg-gradient-gold" style={{ width: `${spotlight.progress}%` }} />
+                    </div>
+                  </div>
+
+                  <Link
+                    to={continueLink(spotlight)}
+                    className="mt-6 inline-flex items-center gap-2 self-start rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm text-foreground transition hover:bg-white/[0.08]"
+                  >
+                    查看项目工作台
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
+              ) : (
+                <EmptyState title="还没有可继续的项目" desc="从任一赛道开始，你的控制台会自动生成项目推进、反馈和能力沉淀入口。" />
+              )}
+            </section>
+          </section>
+
+          <section className="mt-6 grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
+            <div className="glass rounded-[32px] border-white/10 p-6">
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <div className="eyebrow">赛道矩阵</div>
+                  <h2 className="mt-2 font-display text-2xl font-semibold">你的模拟线路</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    每条卡片都继续连接真实的项目入口、任务进度和 Offer 状态，不接 mock 数据。
+                  </p>
+                </div>
+                <Link to="/" className="text-xs text-primary transition hover:underline">
+                  回到首页查看赛道 →
+                </Link>
+              </div>
+
+              {loading ? (
+                <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="glass h-64 rounded-[28px] animate-pulse" />
+                  ))}
+                </div>
+              ) : rows.length === 0 ? (
+                <div className="mt-5">
+                  <EmptyState title="还没有模拟线" desc="开始第一条赛道后，这里会按真实项目节奏展示你的全部线路。" />
+                </div>
+              ) : (
+                <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {rows.map((r) => (
+                    <SimCard key={r.id} row={r} to={continueLink(r)} plan={plan} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="grid gap-6">
+              <section className="glass-deep relative overflow-hidden rounded-[32px] p-6">
+                <div className="absolute inset-0 halo-gold opacity-35" />
+                <div className="relative">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="eyebrow">成长勋章</div>
+                      <h2 className="mt-2 font-display text-2xl font-semibold text-white">成就与回看</h2>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setMedalOpen(true)}
+                      className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-primary"
+                    >
+                      {unlockedCount}/{achievements.length}
+                    </button>
+                  </div>
+                  <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                    勋章、报告和设置入口统一收束在这里，形成一套更接近真实内部系统的能力归档视图。
+                  </p>
+                  <div className="mt-5 grid grid-cols-4 gap-3">
+                    {achievements.map((item) => (
+                      <div
+                        key={item.id}
+                        className={cn(
+                          "flex h-14 items-center justify-center rounded-2xl text-lg",
+                          item.unlocked
+                            ? "bg-gradient-gold text-primary-foreground shadow-glow-gold"
+                            : "border border-white/10 bg-white/[0.04] text-muted-foreground",
+                        )}
+                        title={item.name}
+                      >
+                        {item.unlocked ? "✦" : "•"}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+
+              <section className="glass rounded-[32px] border-white/10 p-6">
+                <div className="eyebrow">快捷入口</div>
+                <div className="mt-4 grid gap-3">
+                  <QuickActionCard
+                    icon={<BookOpen className="h-4 w-4" />}
+                    title="能力报告"
+                    desc="查看反馈、成绩和后续能力沉淀。"
+                    to="/report"
+                  />
+                  <QuickActionCard
+                    icon={<Award className="h-4 w-4" />}
+                    title="我的勋章"
+                    desc="按真实完成行为点亮，随时回看。"
+                    onClick={() => setMedalOpen(true)}
+                  />
+                  <QuickActionCard
+                    icon={<SettingsIcon className="h-4 w-4" />}
+                    title="设置中心"
+                    desc="调整称呼、反馈风格和偏好。"
+                    to="/settings"
+                  />
+                  {plan !== "pro" && (
+                    <QuickActionCard
+                      icon={<Sparkles className="h-4 w-4" />}
+                      title="升级 PRO"
+                      desc="解锁完整赛道与更高阶项目线。"
+                      to="/pricing"
+                      accent
+                    />
+                  )}
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <section className="mt-6 grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
+            <section className="glass rounded-[32px] border-white/10 p-6">
+              <div className="flex items-baseline justify-between gap-4">
+                <div>
+                  <div className="eyebrow">当前推进</div>
+                  <h2 className="mt-2 font-display text-2xl font-semibold">正在进行中的项目</h2>
+                </div>
+                <Link to="/report" className="text-xs text-primary transition hover:underline">
+                  同步查看能力变化 →
+                </Link>
+              </div>
+
+              {loading ? (
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="glass h-60 rounded-[28px] animate-pulse" />
+                  ))}
+                </div>
+              ) : inProgress.length === 0 ? (
+                <div className="mt-5">
+                  <EmptyState title="还没有进行中的模拟" desc="选一条赛道，开始你的第一段金融工作线。" />
+                </div>
+              ) : (
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  {inProgress.map((r) => (
+                    <SimCard key={r.id} row={r} to={continueLink(r)} plan={plan} />
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="glass rounded-[32px] border-white/10 p-6">
+              <div className="flex items-baseline justify-between gap-4">
+                <div>
+                  <div className="eyebrow">结项回看</div>
+                  <h2 className="mt-2 font-display text-2xl font-semibold">已完成项目</h2>
+                </div>
+                <button type="button" onClick={() => setMedalOpen(true)} className="text-xs text-primary transition hover:underline">
+                  打开我的勋章 →
+                </button>
+              </div>
+
+              {completed.length === 0 ? (
+                <div className="mt-5">
+                  <EmptyState
+                    icon={<Trophy className="h-6 w-6 text-primary" />}
+                    title="还没有完成的项目"
+                    desc="完成第一条模拟线后，这里会展示你的结项项目与回看入口。"
+                  />
+                </div>
+              ) : (
+                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                  {completed.map((r) => (
+                    <CompletedCard key={r.id} row={r} />
+                  ))}
+                </div>
+              )}
+            </section>
+          </section>
+        </div>
+      </main>
+
+      <MedalShelf open={medalOpen} onOpenChange={setMedalOpen} rows={achievementRows} />
+    </div>
+  );
+}
+
+function KpiCard({
+  icon,
+  label,
+  value,
+  suffix,
+  accent,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  suffix?: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className={cn("rounded-[24px] border p-5 backdrop-blur-xl", accent ? "border-primary/20 bg-primary/10" : "border-white/10 bg-white/[0.04]")}>
+      <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+        <span className={accent ? "text-primary" : "text-muted-foreground"}>{icon}</span>
+        {label}
+      </div>
+      <div className="mt-4 flex items-baseline gap-1.5">
+        <span className={cn("font-display text-3xl font-semibold tabular-nums", accent ? "text-gradient-gold" : "text-white")}>
+          {value}
+        </span>
+        {suffix && <span className="text-xs text-muted-foreground">{suffix}</span>}
+      </div>
+    </div>
+  );
+}
+
+function SpotlightMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
+      <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
+      <div className="mt-2 font-display text-xl text-white">{value}</div>
+    </div>
+  );
+}
+
+function QuickActionCard({
+  icon,
+  title,
+  desc,
+  to,
+  onClick,
+  accent,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  to?: string;
+  onClick?: () => void;
+  accent?: boolean;
+}) {
+  const className = cn(
+    "group flex w-full items-start justify-between gap-4 rounded-[26px] border p-4 text-left transition",
+    accent
+      ? "border-primary/25 bg-primary/10 hover:bg-primary/15"
+      : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]",
+  );
+
+  const content = (
+    <>
+      <div className="flex min-w-0 gap-3">
+        <div className={cn("mt-0.5 rounded-2xl p-2.5", accent ? "bg-primary/15 text-primary" : "bg-white/[0.05] text-primary")}>
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-foreground">{title}</div>
+          <div className="mt-1 text-xs leading-6 text-muted-foreground">{desc}</div>
+        </div>
+      </div>
+      <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" />
+    </>
+  );
+
+  if (to) {
+    return (
+      <Link to={to} className={className}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button type="button" onClick={onClick} className={className}>
+      {content}
+    </button>
+  );
+}
+
+function SimCard({ row, to, plan }: { row: SimRow; to: string; plan: string }) {
+  const pct = row.total_tasks ? Math.round((row.completed_tasks / row.total_tasks) * 100) : 0;
+  const sim = row.simulation;
+  return (
+    <motion.div
+      whileHover={{ y: -4 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className="group relative flex flex-col overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-xl"
+    >
+      <div className="absolute inset-0 opacity-0 transition group-hover:opacity-100">
+        <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-primary/45 to-transparent" />
+      </div>
+      <div className="relative px-6 pb-5 pt-6">
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+        <div className="flex items-start justify-between">
+          <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-primary/10 text-2xl">
+            {sim.cover_emoji}
+          </div>
+          <div className="flex gap-1.5">
+            <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] text-primary">{sim.track}</span>
+            {sim.is_pro && <span className="badge-pro">PRO</span>}
+          </div>
+        </div>
+        <h3 className="mt-5 font-display text-xl font-semibold leading-snug text-white">{sim.title}</h3>
+        <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{sim.company} · {sim.role}</p>
+        <p className="mt-4 line-clamp-3 text-sm leading-7 text-muted-foreground">{sim.description}</p>
+      </div>
+
+      <div className="mt-auto border-t border-white/5 bg-black/10 px-6 py-4">
+        {!row.offer_accepted ? (
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-primary">待接收</div>
+              <div className="text-xs text-foreground">Offer Letter 已送达</div>
+            </div>
+            <Link
+              to={to}
+              className="inline-flex items-center gap-1 rounded-full bg-gradient-gold px-3.5 py-2 text-xs font-medium text-primary-foreground transition group-hover:shadow-glow-gold"
+            >
+              查看 <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+        ) : (
+          <>
+            <div className="mb-2 flex items-center justify-between text-[11px]">
+              <span className="text-muted-foreground">进度 {row.completed_tasks} / {row.total_tasks}</span>
+              <span className="font-mono text-primary">{pct}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
+              <div className="h-full rounded-full bg-gradient-gold transition-all" style={{ width: `${pct}%` }} />
+            </div>
+            <Link to={to} className="mt-4 inline-flex items-center gap-1 text-xs text-primary transition group-hover:gap-2">
+              {sim.is_pro && plan !== "pro" ? "升级后进入" : "继续模拟"}
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+function CompletedCard({ row }: { row: SimRow }) {
+  const sim = row.simulation;
+  return (
+    <div className="relative overflow-hidden rounded-[28px] border border-emerald-500/15 bg-emerald-500/5 p-6 backdrop-blur-xl">
+      <div className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
+        <CheckCircle2 className="h-4 w-4" />
+      </div>
+      <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-primary/10 text-2xl">
+        {sim.cover_emoji}
+      </div>
+      <h3 className="mt-4 font-display text-xl font-semibold text-white">{sim.title}</h3>
+      <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{sim.company} · {sim.role}</p>
+      <div className="mt-5 flex items-center gap-2 border-t border-white/5 pt-4 text-xs">
+        <span className="badge-done">已完成</span>
+        <span className="text-muted-foreground">{row.completed_tasks} / {row.total_tasks} 任务</span>
+        <Link to={`/simulation/${sim.id}`} className="ml-auto text-primary hover:underline">
+          回看 →
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({
+  icon,
+  title,
+  desc,
+}: {
+  icon?: React.ReactNode;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-[28px] border border-dashed border-white/10 bg-white/[0.03] px-6 py-16 text-center">
+      <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+        {icon ?? <Sparkles className="h-5 w-5" />}
+      </div>
+      <div className="font-display text-lg font-medium text-white">{title}</div>
+      <div className="mt-1.5 max-w-sm text-sm leading-7 text-muted-foreground">{desc}</div>
+    </div>
+  );
+}

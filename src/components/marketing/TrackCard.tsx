@@ -1,48 +1,39 @@
-import { GlassCard } from "./GlassCard";
-import { Badge } from "@/components/ui/badge";
 import { type LucideIcon } from "lucide-react";
 
 interface TrackCardProps {
-  title: string;
-  description: string;
-  difficulty: "初级" | "中级" | "高级";
   icon: LucideIcon;
-  features: string[];
+  tag: string;
+  title: string;
+  desc: string;
+  tasks: string[];
+  pro?: boolean;
 }
 
-const difficultyColors = {
-  "初级": "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-  "中级": "bg-primary/20 text-primary border-primary/30",
-  "高级": "bg-red-500/20 text-red-400 border-red-500/30",
-};
-
-export function TrackCard({ title, description, difficulty, icon: Icon, features }: TrackCardProps) {
+export function TrackCard({ icon: Icon, tag, title, desc, tasks, pro }: TrackCardProps) {
   return (
-    <GlassCard variant="gold" className="p-0 overflow-hidden group hover:scale-[1.02] transition-transform duration-300">
-      <div className="p-8 space-y-5">
-        <div className="flex items-start justify-between">
-          <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Icon className="h-6 w-6 text-primary" />
-          </div>
-          <Badge className={`${difficultyColors[difficulty]} text-xs border`}>{difficulty}</Badge>
+    <div className="glass group relative flex flex-col overflow-hidden rounded-2xl p-6 transition hover:border-primary/30">
+      <div className="flex items-start justify-between gap-3 mb-5">
+        <div className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/15 text-primary transition group-hover:bg-gradient-gold group-hover:text-primary-foreground">
+          <Icon className="h-5 w-5" />
         </div>
-
-        <div className="space-y-2">
-          <h3 className="text-xl font-display font-semibold text-foreground">{title}</h3>
-          <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+        <div className="flex gap-1.5">
+          <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-primary">
+            {tag}
+          </span>
+          {pro && <span className="badge-pro rounded-full px-2 py-0.5 text-[10px]">PRO</span>}
         </div>
-
-        <ul className="space-y-2">
-          {features.map((f, i) => (
-            <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-              {f}
-            </li>
-          ))}
-        </ul>
       </div>
 
-      <div className="h-1 w-full gradient-gold opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-    </GlassCard>
+      <h3 className="font-display text-xl font-semibold leading-snug">{title}</h3>
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{desc}</p>
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        {tasks.map((t) => (
+          <span key={t} className="rounded-full border border-border bg-secondary/40 px-2.5 py-0.5 text-[11px] text-muted-foreground">
+            {t}
+          </span>
+        ))}
+      </div>
+    </div>
   );
 }
