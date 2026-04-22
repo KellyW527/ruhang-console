@@ -60,9 +60,9 @@ export function resolveSupabasePublicConfig(env: PublicSupabaseEnv): SupabasePub
   };
 }
 
-export const supabasePublicConfig = resolveSupabasePublicConfig(import.meta.env);
+export const supabasePublicConfig = resolveSupabasePublicConfig(import.meta.env as unknown as PublicSupabaseEnv);
 
-export const supabase = createClient<Database>(
+export const supabase = createClient(
   supabasePublicConfig.url ?? FALLBACK_SUPABASE_URL,
   supabasePublicConfig.key ?? FALLBACK_SUPABASE_KEY,
 );
