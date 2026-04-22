@@ -1,19 +1,48 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AuthBrandPanel } from "@/components/marketing/AuthBrandPanel";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { AuthBrandPanel } from "@/components/marketing/AuthBrandPanel";
 import { ArrowLeft } from "lucide-react";
 
 const ResetPassword = () => {
   const [email, setEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [recoveryMode, setRecoveryMode] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    document.title = "重置密码 · 入行 RuHang";
+    if (window.location.hash.includes("type=recovery")) {
+      setRecoveryMode(true);
+    }
+  }, []);
+
+  const requestReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 接入现有逻辑 — Supabase auth.resetPasswordForEmail
-    setSent(true);
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
+    if (error) toast.error(error.message);
+    else {
+      setSent(true);
+      toast.success("重置链接已发送，请查收邮箱");
+    }
+  };
+
+  const updatePwd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setLoading(false);
+    if (error) toast.error(error.message);
+    else toast.success("密码已更新，请重新登录");
   };
 
   return (
@@ -27,27 +56,46 @@ const ResetPassword = () => {
             返回登录
           </Link>
 
-          <div className="space-y-2">
-            <h1 className="text-2xl font-display font-bold text-foreground">重置密码</h1>
-            <p className="text-sm text-muted-foreground">输入你的邮箱，我们将发送重置链接。</p>
-          </div>
-
-          {sent ? (
+          {recoveryMode ? (
+            <>
+              <div className="space-y-2">
+                <h1 className="text-2xl font-display font-bold text-foreground">设置新密码</h1>
+                <p className="text-sm text-muted-foreground">请设置一个新密码，下次直接用新密码登录。</p>
+              </div>
+              <form onSubmit={updatePwd} className="space-y-5">
+                <div className="space-y-2">
+                  <Label className="text-sm text-foreground">新密码</Label>
+                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="h-11 bg-secondary/50 border-border/50 focus:border-primary" placeholder="至少 6 位" />
+                </div>
+                <Button type="submit" disabled={loading} className="w-full gradient-gold text-primary-foreground border-0 hover:opacity-90 h-11">
+                  {loading ? "更新中..." : "更新密码"}
+                </Button>
+              </form>
+            </>
+          ) : sent ? (
             <div className="glass-card-gold p-6 text-center space-y-3">
+              <div className="h-16 w-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-2xl">✉️</span>
+              </div>
               <p className="text-foreground font-medium">重置链接已发送</p>
-              <p className="text-sm text-muted-foreground">请检查你的邮箱 {email}，点击链接重置密码。</p>
+              <p className="text-sm text-muted-foreground">请检查你的邮箱 <span className="text-foreground">{email}</span>，点击链接重置密码。</p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <>
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm text-foreground">邮箱</Label>
-                <Input id="email" type="email" placeholder="your@email.com" value={email}
-                  onChange={(e) => setEmail(e.target.value)} className="bg-secondary/50 border-border/50 focus:border-primary" />
+                <h1 className="text-2xl font-display font-bold text-foreground">重置密码</h1>
+                <p className="text-sm text-muted-foreground">输入你的注册邮箱，我们会发一封包含重置链接的邮件。</p>
               </div>
-              <Button type="submit" className="w-full gradient-gold text-primary-foreground border-0 hover:opacity-90 h-11">
-                发送重置链接
-              </Button>
-            </form>
+              <form onSubmit={requestReset} className="space-y-5">
+                <div className="space-y-2">
+                  <Label className="text-sm text-foreground">邮箱</Label>
+                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 bg-secondary/50 border-border/50 focus:border-primary" placeholder="yourname@school.edu.cn" />
+                </div>
+                <Button type="submit" disabled={loading} className="w-full gradient-gold text-primary-foreground border-0 hover:opacity-90 h-11">
+                  {loading ? "发送中..." : "发送重置链接"}
+                </Button>
+              </form>
+            </>
           )}
         </div>
       </div>

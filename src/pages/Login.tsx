@@ -1,19 +1,38 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { AuthBrandPanel } from "@/components/marketing/AuthBrandPanel";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
+import { AuthBrandPanel } from "@/components/marketing/AuthBrandPanel";
 import { Eye, EyeOff } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const nav = useNavigate();
+  const { session } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    document.title = "登录 · 入行 RuHang";
+    if (session) nav("/dashboard", { replace: true });
+  }, [session, nav]);
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 接入现有逻辑 — Supabase auth.signInWithPassword
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (error) {
+      toast.error("登录失败", { description: error.message });
+    } else {
+      toast.success("欢迎回来 👋");
+      nav("/dashboard");
+    }
   };
 
   return (
@@ -25,26 +44,26 @@ const Login = () => {
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <div className="h-8 w-8 rounded-lg gradient-gold flex items-center justify-center">
-              <span className="text-sm font-bold text-primary-foreground">R</span>
+              <span className="text-sm font-bold text-primary-foreground">入</span>
             </div>
-            <span className="text-lg font-display font-semibold text-foreground">RuHang</span>
+            <span className="text-lg font-display font-semibold text-foreground">入行 RuHang</span>
           </div>
 
           <div className="space-y-2">
             <h1 className="text-2xl font-display font-bold text-foreground">欢迎回来</h1>
-            <p className="text-sm text-muted-foreground">登录你的 RuHang 账户，继续训练。</p>
+            <p className="text-sm text-muted-foreground">用注册时的邮箱和密码登录。</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={onSubmit} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email" className="text-sm text-foreground">邮箱</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="your@email.com"
+                placeholder="yourname@school.edu.cn"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-secondary/50 border-border/50 focus:border-primary"
+                className="h-11 bg-secondary/50 border-border/50 focus:border-primary"
               />
             </div>
 
@@ -62,7 +81,7 @@ const Login = () => {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="bg-secondary/50 border-border/50 focus:border-primary pr-10"
+                  className="h-11 bg-secondary/50 border-border/50 focus:border-primary pr-10"
                 />
                 <button
                   type="button"
@@ -74,28 +93,15 @@ const Login = () => {
               </div>
             </div>
 
-            <Button type="submit" className="w-full gradient-gold text-primary-foreground border-0 hover:opacity-90 h-11">
-              登录
+            <Button type="submit" disabled={loading} className="w-full gradient-gold text-primary-foreground border-0 hover:opacity-90 h-11">
+              {loading ? "登录中..." : "登录"}
             </Button>
           </form>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border/30" /></div>
-            <div className="relative flex justify-center text-xs"><span className="bg-background px-2 text-muted-foreground">或</span></div>
-          </div>
-
-          <Button
-            variant="outline"
-            className="w-full border-primary/30 text-primary hover:bg-primary/10 h-11"
-            onClick={() => window.location.href = '/dashboard'}
-          >
-            🎯 演示模式（无需登录）
-          </Button>
-
           <p className="text-center text-sm text-muted-foreground">
-            还没有账户？{" "}
+            新来这里？{" "}
             <Link to="/register" className="text-primary hover:text-primary/80 font-medium transition-colors">
-              立即注册
+              创建账号 →
             </Link>
           </p>
         </div>

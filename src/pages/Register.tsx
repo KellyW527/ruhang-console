@@ -1,21 +1,44 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import { AuthBrandPanel } from "@/components/marketing/AuthBrandPanel";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
+import { useAuth } from "@/lib/auth";
+import { AuthBrandPanel } from "@/components/marketing/AuthBrandPanel";
 
 const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPw, setShowPw] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const nav = useNavigate();
+  const { session } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    document.title = "注册 · 入行 RuHang";
+    if (session) nav("/dashboard", { replace: true });
+  }, [session, nav]);
+
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: 接入现有逻辑 — Supabase auth.signUp
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/dashboard`,
+        data: { name },
+      },
+    });
+    setLoading(false);
+    if (error) {
+      toast.error("注册失败", { description: error.message });
+    } else {
+      toast.success("欢迎加入入行 🎉", { description: "正在为你打开控制台..." });
+      nav("/dashboard");
+    }
   };
 
   return (
@@ -26,55 +49,47 @@ const Register = () => {
         <div className="w-full max-w-md space-y-8">
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <div className="h-8 w-8 rounded-lg gradient-gold flex items-center justify-center">
-              <span className="text-sm font-bold text-primary-foreground">R</span>
+              <span className="text-sm font-bold text-primary-foreground">入</span>
             </div>
-            <span className="text-lg font-display font-semibold text-foreground">RuHang</span>
+            <span className="text-lg font-display font-semibold text-foreground">入行 RuHang</span>
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-2xl font-display font-bold text-foreground">创建账户</h1>
-            <p className="text-sm text-muted-foreground">注册 RuHang，开启你的沉浸式训练。</p>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs text-primary">
+              注册 · 永久免费
+            </div>
+            <h1 className="text-2xl font-display font-bold text-foreground">开启你的金融职业旅程</h1>
+            <p className="text-sm text-muted-foreground">注册即可免费体验完整 IB IPO 模拟，不需要信用卡。</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={onSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm text-foreground">姓名</Label>
-              <Input id="name" placeholder="你的姓名" value={name} onChange={(e) => setName(e.target.value)}
-                className="bg-secondary/50 border-border/50 focus:border-primary" />
+              <Label className="text-sm text-foreground">称呼</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} className="h-11 bg-secondary/50 border-border/50 focus:border-primary" placeholder="例如：李同学" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-foreground">邮箱</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 bg-secondary/50 border-border/50 focus:border-primary" placeholder="yourname@school.edu.cn" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-sm text-foreground">密码</Label>
+              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 bg-secondary/50 border-border/50 focus:border-primary" placeholder="至少 6 位" />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm text-foreground">邮箱</Label>
-              <Input id="email" type="email" placeholder="your@email.com" value={email} onChange={(e) => setEmail(e.target.value)}
-                className="bg-secondary/50 border-border/50 focus:border-primary" />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm text-foreground">密码</Label>
-              <div className="relative">
-                <Input id="password" type={showPw ? "text" : "password"} placeholder="••••••••" value={password}
-                  onChange={(e) => setPassword(e.target.value)} className="bg-secondary/50 border-border/50 focus:border-primary pr-10" />
-                <button type="button" onClick={() => setShowPw(!showPw)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirm" className="text-sm text-foreground">确认密码</Label>
-              <Input id="confirm" type="password" placeholder="••••••••" value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)} className="bg-secondary/50 border-border/50 focus:border-primary" />
-            </div>
-
-            <Button type="submit" className="w-full gradient-gold text-primary-foreground border-0 hover:opacity-90 h-11">
-              注册
+            <Button type="submit" disabled={loading} className="w-full gradient-gold text-primary-foreground border-0 hover:opacity-90 h-11">
+              {loading ? "创建账号中..." : "创建账号"}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground">
-            已有账户？{" "}
-            <Link to="/login" className="text-primary hover:text-primary/80 font-medium transition-colors">登录</Link>
+            已有账号？{" "}
+            <Link to="/login" className="text-primary hover:text-primary/80 font-medium transition-colors">
+              直接登录
+            </Link>
+          </p>
+
+          <p className="text-xs text-muted-foreground text-center">
+            创建账号即代表你同意《用户协议》与《隐私政策》。
           </p>
         </div>
       </div>

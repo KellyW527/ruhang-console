@@ -8,21 +8,21 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-lg gradient-gold flex items-center justify-center">
-                <span className="text-sm font-bold text-primary-foreground">R</span>
+                <span className="text-sm font-bold text-primary-foreground">入</span>
               </div>
-              <span className="text-lg font-display font-semibold text-foreground">RuHang</span>
+              <span className="text-lg font-display font-semibold text-foreground">入行 RuHang</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              沉浸式金融职场模拟训练平台，让你在真实场景中锻炼核心能力。
+              沉浸式金融职场训练平台，在真实场景中掌握核心能力。
             </p>
           </div>
 
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-foreground font-sans">产品</h4>
             <div className="space-y-2">
-              <a href="#tracks" className="block text-sm text-muted-foreground hover:text-primary transition-colors">模拟线</a>
+              <a href="#tracks" className="block text-sm text-muted-foreground hover:text-primary transition-colors">赛道</a>
               <Link to="/pricing" className="block text-sm text-muted-foreground hover:text-primary transition-colors">定价</Link>
-              <a href="#how-it-works" className="block text-sm text-muted-foreground hover:text-primary transition-colors">如何运作</a>
+              <a href="#how" className="block text-sm text-muted-foreground hover:text-primary transition-colors">运作方式</a>
             </div>
           </div>
 
@@ -45,12 +45,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-border/30 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-muted-foreground">© 2024 RuHang. All rights reserved.</p>
-          <div className="flex gap-6">
-            <a href="#" className="text-muted-foreground hover:text-primary transition-colors text-xs">Twitter</a>
-            <a href="#" className="text-muted-foreground hover:text-primary transition-colors text-xs">LinkedIn</a>
-            <a href="#" className="text-muted-foreground hover:text-primary transition-colors text-xs">WeChat</a>
-          </div>
+          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} RuHang. 模拟内容仅供学习交流。</p>
         </div>
       </div>
     </footer>
