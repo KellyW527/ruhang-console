@@ -485,8 +485,10 @@ export const getGroupWelcomeNotice = (simulationCode?: string | null) =>
 export const getTaskReferenceContent = (simulationCode: string | null | undefined, orderIndex: number) =>
   taskReferenceContentBySimulation[normalizeSimulationCode(simulationCode)][orderIndex];
 
-export const getPhoneScript = (simulationCode?: string | null) =>
-  phoneScriptsBySimulation[normalizeSimulationCode(simulationCode)];
+export const getPhoneScript = (simulationCode?: string | null): PhoneScript | undefined => {
+  const scripts = phoneScriptsBySimulation[normalizeSimulationCode(simulationCode)];
+  return scripts?.[0];
+};
 
 const submissionLabel: Record<string, string> = {
   email: "邮件提交",
