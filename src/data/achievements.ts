@@ -30,7 +30,7 @@ export const buildAchievementStates = (rows: AchievementProgressRow[]) => {
   const completedSimulations = new Set(
     rows.filter((row) => row.simulationStatus === "completed").map((row) => row.simulationCode),
   );
-  const validSubmissions = rows.filter((row) => row.submissionQuality === "pass" && row.submittedAt);
+  const validSubmissions = rows.filter((row) => row.status === "done" && row.submittedAt);
   const selfEvalCount = rows.filter((row) => row.selfEvalSubmitted).length;
 
   const findUnlockTime = (predicate: (row: AchievementProgressRow) => boolean) =>
