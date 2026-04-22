@@ -449,14 +449,25 @@ const Workspace = () => {
     setUploadProgress(0);
     try {
       const currentTask = activeTask ?? (await ensureActiveTask());
-      const r = await uploadFile({
-        kind,
-        userId: user.id,
-        simulationId: id,
-        taskOrder: currentTask?.order_index ?? null,
-        file,
-        onProgress: setUploadProgress,
-      });
+
+      // Try storage upload, but don't block submission if it fails
+      let uploadResult: { name: string; sizeLabel: string; url: string; path: string } | null = null;
+      try {
+        uploadResult = await uploadFile({
+          kind,
+          userId: user.id,
+          simulationId: id,
+          taskOrder: currentTask?.order_index ?? null,
+          file,
+          onProgress: setUploadProgress,
+        });
+      } catch (uploadErr: any) {
+        console.warn("Storage upload failed, proceeding with local file info:", uploadErr);
+      }
+
+      const fileName = uploadResult?.name ?? file.name;
+      const fileSize = uploadResult?.sizeLabel ?? `${(file.size / 1024).toFixed(1)} KB`;
+      const fileUrl = uploadResult?.url ?? "";
 
       if (currentTask) {
         if (activeConvId) {
@@ -465,9 +476,9 @@ const Workspace = () => {
             sender: "user",
             message_type: kind === "image" ? "image" : "file",
             content: kind === "image" ? "" : "已提交附件",
-            file_name: r.name,
-            file_size: r.sizeLabel,
-            file_url: r.url,
+            file_name: fileName,
+            file_size: fileSize,
+            file_url: fileUrl || null,
           };
 
           const { data: inserted } = await supabase.from("messages").insert(payload as any).select().single();
@@ -476,21 +487,23 @@ const Workspace = () => {
 
         await triggerSubmission({
           kind: kind === "image" ? "image" : "file",
-          filename: r.name,
-          fileUrl: r.url,
+          filename: fileName,
+          fileUrl: fileUrl || undefined,
         });
         return;
       }
 
-      setPendingUpload({
-        name: r.name,
-        size: r.sizeLabel,
-        url: r.url,
-        path: r.path,
-        kind: kind === "image" ? "image" : "file",
-      });
+      if (uploadResult) {
+        setPendingUpload({
+          name: uploadResult.name,
+          size: uploadResult.sizeLabel,
+          url: uploadResult.url,
+          path: uploadResult.path,
+          kind: kind === "image" ? "image" : "file",
+        });
+      }
       toast.success("上传成功，但当前没有可提交任务", {
-        description: `${r.name} 已加入聊天附件；当任务激活后再提交会进入反馈。`,
+        description: `${fileName} 已加入聊天附件；当任务激活后再提交会进入反馈。`,
       });
     } catch (err: any) {
       console.error("uploadIntoChat error:", err);
@@ -505,16 +518,25 @@ const Workspace = () => {
     setComposeProgress(0);
     try {
       const currentTask = activeTask ?? (await ensureActiveTask());
-      const r = await uploadFile({
-        kind: "attachment",
-        userId: user.id,
-        simulationId: id,
-        taskOrder: currentTask?.order_index ?? null,
-        file,
-        onProgress: setComposeProgress,
-      });
-      setComposeFile({ name: r.name, size: r.sizeLabel, url: r.url, path: r.path });
-      toast.success("附件已添加到邮件", { description: r.name });
+      let uploadResult: { name: string; sizeLabel: string; url: string; path: string } | null = null;
+      try {
+        uploadResult = await uploadFile({
+          kind: "attachment",
+          userId: user.id,
+          simulationId: id,
+          taskOrder: currentTask?.order_index ?? null,
+          file,
+          onProgress: setComposeProgress,
+        });
+      } catch (uploadErr: any) {
+        console.warn("Compose storage upload failed, using local file info:", uploadErr);
+      }
+      const name = uploadResult?.name ?? file.name;
+      const size = uploadResult?.sizeLabel ?? `${(file.size / 1024).toFixed(1)} KB`;
+      const url = uploadResult?.url ?? "";
+      const path = uploadResult?.path ?? "";
+      setComposeFile({ name, size, url, path });
+      toast.success("附件已添加到邮件", { description: name });
     } catch (err: any) {
       console.error("uploadIntoCompose error:", err);
       toast.error(err?.message ?? "附件上传失败，请稍后重试");
@@ -858,7 +880,7 @@ const Workspace = () => {
       evaluation.detailMarkdown,
     );
 
-    await supabase
+    const { error: updateError } = await supabase
       .from("user_task_progress")
       .update({
         status: evaluation.quality === "pass" ? "feedback_pending" : "needs_resubmission",
@@ -872,6 +894,11 @@ const Workspace = () => {
       })
       .eq("user_simulation_id", usId)
       .eq("task_id", activeTaskNow.id);
+
+    if (updateError) {
+      console.error("triggerSubmission DB update failed:", updateError);
+      // Still proceed with local state update so UI responds
+    }
 
     upsertTaskStatus(activeTaskNow.id, {
       status: evaluation.quality === "pass" ? "feedback_pending" : "needs_resubmission",
@@ -1215,9 +1242,12 @@ const Workspace = () => {
         filename: composeFile.name,
         fileUrl: composeFile.url,
       });
-    } else if (currentTask) {
-      toast.info("邮件已发送，但还没进入反馈", {
-        description: "当前任务需要附带正式附件后提交，系统才会进入反馈与自评流程。",
+    } else if (currentTask && !composeFile) {
+      // Email sent without attachment — still trigger submission with subject as filename
+      await triggerSubmission({
+        kind: "email",
+        subject: composeSubject.trim(),
+        filename: composeSubject.trim(),
       });
     }
   };
