@@ -50,7 +50,6 @@ type TaskStatusEntry = {
   score?: number;
   submission_type?: string | null;
   submission_quality?: string | null;
-  review_summary?: string | null;
 };
 
 const TRACK_LABEL_MAP: Record<string, string> = {
@@ -159,8 +158,7 @@ const Workspace = () => {
     ? applyFeedbackStyleTemplate(profilePreferences.feedback_style, feedbackTask.boss_commentary)
     : "";
   const feedbackReviewMarkdown = feedbackTask
-    ? feedbackStatus?.review_summary ??
-      `### 评分拆解\n| 维度 | 得分 |\n| --- | --- |\n${feedbackTask.scoring_rubric.map((item) => `| ${item.dim} | ${item.score} / ${item.max} |`).join("\n")}\n\n### 上级反馈\n${feedbackBossCommentary}`
+    ? `### 评分拆解\n| 维度 | 得分 |\n| --- | --- |\n${feedbackTask.scoring_rubric.map((item) => `| ${item.dim} | ${item.score} / ${item.max} |`).join("\n")}\n\n### 上级反馈\n${feedbackBossCommentary}`
     : "";
   const feedbackAnalysisMarkdown = feedbackReference?.analysis ?? feedbackReviewMarkdown;
   const selfEvalReady =
@@ -243,7 +241,7 @@ const Workspace = () => {
 
       const { data: tp } = await supabase
         .from("user_task_progress")
-        .select("task_id, status, score, self_eval, submission_type, submission_quality, review_summary")
+        .select("task_id, status, score, self_eval, submission_type, submission_quality")
         .eq("user_simulation_id", us.id);
       const map: Record<string, TaskStatusEntry> = {};
       const seMap: Record<string, SelfEvalValue | null> = {};
@@ -253,7 +251,6 @@ const Workspace = () => {
           score: p.score ?? undefined,
           submission_type: p.submission_type ?? null,
           submission_quality: p.submission_quality ?? null,
-          review_summary: p.review_summary ?? null,
         };
         seMap[p.task_id] = p.self_eval ?? null;
       });
@@ -911,25 +908,38 @@ const Workspace = () => {
       profilePreferences.feedback_style,
       evaluation.leaderMessage,
     );
-    const styledDetailMarkdown = applyFeedbackStyleTemplate(
-      profilePreferences.feedback_style,
-      evaluation.detailMarkdown,
-    );
 
-    const { error: updateError } = await supabase
+    // Upsert: check if row exists first
+    const { data: existingRow } = await supabase
       .from("user_task_progress")
-      .update({
-        status: evaluation.quality === "pass" ? "feedback_pending" : "needs_resubmission",
-        score: evaluation.score,
-        submitted_filename: submission.filename ?? submission.subject ?? null,
-        submitted_file_url: submission.fileUrl ?? null,
-        submission_type: evaluation.submissionType,
-        submission_quality: evaluation.quality,
-        review_summary: styledDetailMarkdown,
-        submitted_at: new Date().toISOString(),
-      })
+      .select("id")
       .eq("user_simulation_id", usId)
-      .eq("task_id", activeTaskNow.id);
+      .eq("task_id", activeTaskNow.id)
+      .maybeSingle();
+
+    const progressPayload: Record<string, unknown> = {
+      status: evaluation.quality === "pass" ? "feedback_pending" : "needs_resubmission",
+      score: evaluation.score,
+      submitted_filename: submission.filename ?? submission.subject ?? null,
+      submitted_file_url: submission.fileUrl ?? null,
+      submission_type: evaluation.submissionType,
+      submission_quality: evaluation.quality,
+      submitted_at: new Date().toISOString(),
+    };
+
+    let updateError: any = null;
+    if (existingRow) {
+      const res = await supabase
+        .from("user_task_progress")
+        .update(progressPayload)
+        .eq("id", existingRow.id);
+      updateError = res.error;
+    } else {
+      const res = await supabase
+        .from("user_task_progress")
+        .insert({ ...progressPayload, user_simulation_id: usId, task_id: activeTaskNow.id });
+      updateError = res.error;
+    }
 
     if (updateError) {
       console.error("triggerSubmission DB update failed:", updateError);
@@ -941,14 +951,12 @@ const Workspace = () => {
       score: evaluation.score ?? undefined,
       submission_type: evaluation.submissionType,
       submission_quality: evaluation.quality,
-      review_summary: styledDetailMarkdown,
     });
 
     if (evaluation.quality === "pass") {
-      openFeedbackForTask(activeTaskNow);
+      openFeedbackForTask(activeTaskNow, "self");
     } else {
-      setFeedbackTab("answer");
-      setFeedbackTask(activeTaskNow);
+      openFeedbackForTask(activeTaskNow, "answer");
     }
 
     toast.success(
@@ -966,11 +974,7 @@ const Workspace = () => {
         : "已收到这次提交，但还没达到最低标准。请按反馈要求补齐后重新提交。",
     );
 
-    window.setTimeout(() => {
-      if (evaluation.quality === "pass") {
-        openFeedbackForTask(activeTaskNow);
-      }
-    }, 320);
+    // No delayed re-open — the initial openFeedbackForTask above is sufficient
     setTypingConvId(leaderConversation?.id ?? null);
     window.setTimeout(async () => {
       setTypingConvId((current) => (current === leaderConversation?.id ? null : current));

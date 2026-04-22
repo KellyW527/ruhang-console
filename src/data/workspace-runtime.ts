@@ -482,8 +482,10 @@ export const getStarterKitAssets = (simulationCode?: string | null) =>
 export const getGroupWelcomeNotice = (simulationCode?: string | null) =>
   groupWelcomeBySimulation[normalizeSimulationCode(simulationCode)];
 
-export const getTaskReferenceContent = (simulationCode: string | null | undefined, orderIndex: number) =>
-  taskReferenceContentBySimulation[normalizeSimulationCode(simulationCode)][orderIndex];
+export const getTaskReferenceContent = (simulationCode: string | null | undefined, orderIndex: number) => {
+  const arr = taskReferenceContentBySimulation[normalizeSimulationCode(simulationCode)];
+  return arr?.[orderIndex] ?? null;
+};
 
 export const getPhoneScript = (simulationCode?: string | null): import("@/data/immersive-content").PhoneScript | undefined => {
   const scripts = phoneScriptsBySimulation[normalizeSimulationCode(simulationCode)];
