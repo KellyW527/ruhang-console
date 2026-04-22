@@ -470,6 +470,15 @@ const Workspace = () => {
       const fileUrl = uploadResult?.url ?? "";
 
       if (currentTask) {
+        const taskRt = getTaskRuntime(simCode, currentTask.order_index);
+        const expectedKind = taskRt?.expectedSubmissionKind;
+        if (expectedKind === "email") {
+          toast.info("这个任务需要通过邮件提交", {
+            description: "请点击"邮件提交"按钮，通过写邮件的方式提交附件。",
+          });
+          return;
+        }
+
         if (activeConvId) {
           const payload = {
             conversation_id: activeConvId,
@@ -865,7 +874,18 @@ const Workspace = () => {
       const status = taskStatuses[t.id]?.status;
       return status === "active" || status === "needs_resubmission";
     });
-    if (!activeTaskNow || !usId) return;
+
+    if (!activeTaskNow) {
+      const pendingTask = tasks.find((t) => taskStatuses[t.id]?.status === "feedback_pending");
+      if (pendingTask) {
+        openFeedbackForTask(pendingTask);
+        toast.info("你已经提交过了，请先完成反馈与自评", {
+          description: "完成自评后才能解锁下一个任务。",
+        });
+      }
+      return;
+    }
+    if (!usId) return;
     const evaluation = evaluateSubmission({
       task: activeTaskNow,
       simulationCode: simCode,
@@ -1667,10 +1687,10 @@ const Workspace = () => {
                   </div>
 
                   <div className="shrink-0 border-t border-white/5 bg-surface-1/50 p-4 lg:p-5">
+                    <input ref={fileInputRef} type="file" hidden onChange={handleChatFile} />
+                    <input ref={imageInputRef} type="file" accept="image/*" hidden onChange={handleChatImage} />
                     <DropZone kind="attachment" disabled={sending} uploading={uploadProgress !== null} onFile={uploadIntoChat}>
                       <div className="mx-auto max-w-4xl">
-                        <input ref={fileInputRef} type="file" hidden onChange={handleChatFile} />
-                        <input ref={imageInputRef} type="file" accept="image/*" hidden onChange={handleChatImage} />
 
                         {uploadProgress !== null && (
                           <div className="mb-3 flex items-center gap-3 rounded-2xl border border-white/10 bg-background/60 px-3 py-3 text-xs">
@@ -1832,10 +1852,10 @@ const Workspace = () => {
                       </div>
                     </div>
 
-                    <div className="relative min-h-0 flex-1 overflow-y-auto p-4 lg:p-6">
+                    <div className="relative min-h-0 flex-1 overflow-hidden p-4 lg:p-6">
                       {composeOpen ? (
-                        <div className="absolute inset-0 z-20 flex flex-col overflow-y-auto bg-background/95 p-4 backdrop-blur-sm lg:p-6">
-                        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col rounded-[28px] border border-white/10 bg-surface-1 shadow-[0_24px_60px_-28px_rgba(0,0,0,0.7)]">
+                        <div className="absolute inset-0 z-20 flex flex-col bg-background/95 backdrop-blur-sm">
+                        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col overflow-hidden rounded-[28px] border border-white/10 bg-surface-1 shadow-[0_24px_60px_-28px_rgba(0,0,0,0.7)] m-4 lg:m-6">
                           <div className="shrink-0 border-b border-white/5 px-6 py-5">
                             <div className="flex items-start justify-between gap-4">
                               <div>
@@ -1853,9 +1873,9 @@ const Workspace = () => {
                             </div>
                           </div>
 
-                          <div className="mt-6 min-h-0 flex-1">
+                          <div className="min-h-0 flex-1 overflow-y-auto">
                             <DropZone kind="attachment" disabled={composeBusy} uploading={composeProgress !== null} onFile={uploadIntoCompose}>
-                              <div className="space-y-4 overflow-y-auto px-6 pb-4">
+                              <div className="space-y-4 px-6 py-6">
                                 <div className="space-y-1.5">
                                   <Label className="text-xs text-muted-foreground">收件人</Label>
                                   <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-white/10 bg-background/50 px-3 py-3">
@@ -1928,7 +1948,7 @@ const Workspace = () => {
                             </DropZone>
                           </div>
 
-                          <div className="sticky bottom-0 mt-4 flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-white/5 bg-surface-1/95 px-6 py-4 backdrop-blur">
+                          <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-t border-white/5 bg-surface-1 px-6 py-4">
                             <input ref={composeFileInputRef} type="file" hidden onChange={handleComposeFile} />
                             <div className="flex items-center gap-3">
                               <Button
