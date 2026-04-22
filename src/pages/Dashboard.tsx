@@ -718,37 +718,7 @@ export default function Dashboard() {
               </section>
           </section>
 
-          <section className="mt-6 grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
-            <section className="glass rounded-[32px] border-white/10 p-6">
-              <div className="flex items-baseline justify-between gap-4">
-                <div>
-                  <div className="eyebrow">当前推进</div>
-                  <h2 className="mt-2 font-display text-2xl font-semibold">正在进行中的项目</h2>
-                </div>
-                <Link to="/report" className="text-xs text-primary transition hover:underline">
-                  同步查看能力变化 →
-                </Link>
-              </div>
-
-              {loading ? (
-                <div className="mt-5 grid gap-4 md:grid-cols-2">
-                  {[1, 2].map((i) => (
-                    <div key={i} className="glass h-60 rounded-[28px] animate-pulse" />
-                  ))}
-                </div>
-              ) : inProgress.length === 0 ? (
-                <div className="mt-5">
-                  <EmptyState title="还没有进行中的模拟" desc="选一条赛道，开始你的第一段金融工作线。" />
-                </div>
-              ) : (
-                <div className="mt-5 grid gap-4 md:grid-cols-2">
-                  {inProgress.map((r) => (
-                    <SimCard key={r.id} row={r} to={continueLink(r)} plan={plan} />
-                  ))}
-                </div>
-              )}
-            </section>
-
+          <section className="mt-6">
             <section className="glass rounded-[32px] border-white/10 p-6">
               <div className="flex items-baseline justify-between gap-4">
                 <div>
@@ -769,7 +739,7 @@ export default function Dashboard() {
                   />
                 </div>
               ) : (
-                <div className="mt-5 grid gap-4 md:grid-cols-2">
+                <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {completed.map((r) => (
                     <CompletedCard key={r.id} row={r} />
                   ))}
