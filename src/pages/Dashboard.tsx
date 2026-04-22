@@ -249,10 +249,15 @@ export default function Dashboard() {
 
       const userSimulationIds = userSimulations.map((item: any) => item.id);
       if (userSimulationIds.length) {
-        const { data: progressRows } = await supabase
+        const { data: progressRows, error: progressError } = await supabase
           .from("user_task_progress")
           .select("status, score, submission_quality, submitted_at, self_eval, task:tasks(order_index, title), user_simulation:user_simulations(status, offer_accepted, simulation:simulations(code))")
           .in("user_simulation_id", userSimulationIds);
+
+        if (progressError) {
+          console.error("[Dashboard] achievement query error:", progressError);
+        }
+        console.log("[Dashboard] progressRows count:", progressRows?.length, "raw sample:", progressRows?.[0]);
 
         const normalized = (progressRows ?? []).map((row: any) => ({
           simulationCode: row.user_simulation?.simulation?.code ?? "ibd-ipo",
@@ -266,6 +271,8 @@ export default function Dashboard() {
           submittedAt: row.submitted_at ?? null,
           selfEvalSubmitted: Boolean(row.self_eval?.submitted_at),
         })) as AchievementProgressRow[];
+
+        console.log("[Dashboard] normalized achievement rows:", normalized.map(r => ({ code: r.simulationCode, simStatus: r.simulationStatus, status: r.status, idx: r.orderIndex })));
 
         setAchievementRows(normalized);
       } else {
