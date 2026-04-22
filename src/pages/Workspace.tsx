@@ -1919,6 +1919,7 @@ const Workspace = () => {
                             </div>
                           </div>
                         </div>
+                        </div>
                       ) : activeEmail ? (
                         <div className="mx-auto max-w-3xl rounded-[28px] border border-white/10 bg-white/[0.03] p-6 lg:p-8">
                           <div className="flex flex-wrap items-start justify-between gap-3">
