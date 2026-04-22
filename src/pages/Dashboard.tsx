@@ -396,7 +396,7 @@ export default function Dashboard() {
       if (userSimulationIds.length) {
         const { data: progressRows, error: progressError } = await supabase
           .from("user_task_progress")
-          .select("status, score, submission_quality, submitted_at, self_eval, task:tasks(order_index, title), user_simulation:user_simulations(status, offer_accepted, simulation:simulations(code))")
+          .select("status, score, submitted_at, self_eval, task:tasks(order_index, title), user_simulation:user_simulations(status, offer_accepted, simulation:simulations(code))")
           .in("user_simulation_id", userSimulationIds);
 
         if (progressError) {
@@ -412,7 +412,7 @@ export default function Dashboard() {
           orderIndex: row.task?.order_index ?? 0,
           status: row.status ?? "locked",
           score: row.score ?? null,
-          submissionQuality: row.submission_quality ?? null,
+          submissionQuality: null,
           submittedAt: row.submitted_at ?? null,
           selfEvalSubmitted: Boolean(row.self_eval?.submitted_at),
         })) as AchievementProgressRow[];
