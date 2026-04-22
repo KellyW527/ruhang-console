@@ -158,8 +158,7 @@ const Workspace = () => {
     ? applyFeedbackStyleTemplate(profilePreferences.feedback_style, feedbackTask.boss_commentary)
     : "";
   const feedbackReviewMarkdown = feedbackTask
-    ? feedbackStatus?.review_summary ??
-      `### 评分拆解\n| 维度 | 得分 |\n| --- | --- |\n${feedbackTask.scoring_rubric.map((item) => `| ${item.dim} | ${item.score} / ${item.max} |`).join("\n")}\n\n### 上级反馈\n${feedbackBossCommentary}`
+    ? `### 评分拆解\n| 维度 | 得分 |\n| --- | --- |\n${feedbackTask.scoring_rubric.map((item) => `| ${item.dim} | ${item.score} / ${item.max} |`).join("\n")}\n\n### 上级反馈\n${feedbackBossCommentary}`
     : "";
   const feedbackAnalysisMarkdown = feedbackReference?.analysis ?? feedbackReviewMarkdown;
   const selfEvalReady =
@@ -252,7 +251,6 @@ const Workspace = () => {
           score: p.score ?? undefined,
           submission_type: p.submission_type ?? null,
           submission_quality: p.submission_quality ?? null,
-          review_summary: p.review_summary ?? null,
         };
         seMap[p.task_id] = p.self_eval ?? null;
       });
@@ -957,7 +955,6 @@ const Workspace = () => {
       score: evaluation.score ?? undefined,
       submission_type: evaluation.submissionType,
       submission_quality: evaluation.quality,
-      review_summary: styledDetailMarkdown,
     });
 
     if (evaluation.quality === "pass") {
