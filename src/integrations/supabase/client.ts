@@ -1,5 +1,4 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "./types";
 
 type PublicSupabaseEnv = {
   VITE_SUPABASE_URL?: string;
