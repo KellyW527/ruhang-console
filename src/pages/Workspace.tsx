@@ -124,7 +124,6 @@ const Workspace = () => {
   const [streamStarted, setStreamStarted] = useState(false);
   const [feedbackTab, setFeedbackTab] = useState<"answer" | "self">("answer");
   const [completionOpen, setCompletionOpen] = useState(false);
-  const [completionOpen, setCompletionOpen] = useState(false);
   const [completionAverageScore, setCompletionAverageScore] = useState<number | null>(null);
   const [completionAt, setCompletionAt] = useState<string | null>(null);
   const [typingConvId, setTypingConvId] = useState<string | null>(null);
