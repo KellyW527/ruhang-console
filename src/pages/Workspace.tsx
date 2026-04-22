@@ -484,6 +484,9 @@ const Workspace = () => {
       toast.success("上传成功，但当前没有可提交任务", {
         description: `${r.name} 已加入聊天附件；当任务激活后再提交会进入反馈。`,
       });
+    } catch (err: any) {
+      console.error("uploadIntoChat error:", err);
+      toast.error(err?.message ?? "上传失败，请稍后重试");
     } finally {
       setUploadProgress(null);
     }
@@ -504,6 +507,9 @@ const Workspace = () => {
       });
       setComposeFile({ name: r.name, size: r.sizeLabel, url: r.url, path: r.path });
       toast.success("附件已添加到邮件", { description: r.name });
+    } catch (err: any) {
+      console.error("uploadIntoCompose error:", err);
+      toast.error(err?.message ?? "附件上传失败，请稍后重试");
     } finally {
       setComposeProgress(null);
     }
