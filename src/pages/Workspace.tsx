@@ -908,10 +908,6 @@ const Workspace = () => {
       profilePreferences.feedback_style,
       evaluation.leaderMessage,
     );
-    const styledDetailMarkdown = applyFeedbackStyleTemplate(
-      profilePreferences.feedback_style,
-      evaluation.detailMarkdown,
-    );
 
     // Upsert: check if row exists first
     const { data: existingRow } = await supabase
