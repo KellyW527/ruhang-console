@@ -91,6 +91,7 @@ const Workspace = () => {
   const { user, profile } = useAuth();
   const nav = useNavigate();
   const [usId, setUsId] = useState<string | null>(null);
+  const [wsLoading, setWsLoading] = useState(true);
   const [currentTaskIndex, setCurrentTaskIndex] = useState<number | null>(null);
   const [simulationStatus, setSimulationStatus] = useState<string | null>(null);
   const [simTitle, setSimTitle] = useState("");
