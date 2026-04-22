@@ -162,7 +162,6 @@ const Workspace = () => {
     ? `### 评分拆解\n| 维度 | 得分 |\n| --- | --- |\n${safeScoringRubric.map((item) => `| ${item.dim} | ${item.score} / ${item.max} |`).join("\n")}\n\n### 上级反馈\n${feedbackBossCommentary}`
     : "";
   const feedbackAnalysisMarkdown = feedbackReference?.analysis ?? feedbackReviewMarkdown;
-  const selfEvalReady =
     feedbackTask && feedbackStatus?.submission_quality !== "retry"
       ? Boolean(selfEvalMap[feedbackTask.id]?.submitted_at)
       : false;
