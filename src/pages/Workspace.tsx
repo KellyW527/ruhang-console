@@ -474,7 +474,7 @@ const Workspace = () => {
         const expectedKind = taskRt?.expectedSubmissionKind;
         if (expectedKind === "email") {
           toast.info("这个任务需要通过邮件提交", {
-            description: "请点击"邮件提交"按钮，通过写邮件的方式提交附件。",
+            description: '请点击"邮件提交"按钮，通过写邮件的方式提交附件。',
           });
           return;
         }
