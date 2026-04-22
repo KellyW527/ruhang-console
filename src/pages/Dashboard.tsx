@@ -650,7 +650,7 @@ export default function Dashboard() {
             </section>
           </section>
 
-          <section className="mt-6 grid gap-6 xl:grid-cols-[1.18fr_0.82fr]">
+          <section className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_0.6fr]">
             <div className="glass rounded-[32px] border-white/10 p-6">
               <div className="flex items-end justify-between gap-4">
                 <div>
@@ -683,45 +683,6 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-
-            <div className="grid gap-6">
-              <section className="glass-deep relative overflow-hidden rounded-[32px] p-6">
-                <div className="absolute inset-0 halo-gold opacity-35" />
-                <div className="relative">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <div className="eyebrow">成长勋章</div>
-                      <h2 className="mt-2 font-display text-2xl font-semibold text-white">成就与回看</h2>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setMedalOpen(true)}
-                      className="rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-primary"
-                    >
-                      {unlockedCount}/{achievements.length}
-                    </button>
-                  </div>
-                  <p className="mt-3 text-sm leading-7 text-muted-foreground">
-                    勋章、报告和设置入口统一收束在这里，形成一套更接近真实内部系统的能力归档视图。
-                  </p>
-                  <div className="mt-5 grid grid-cols-4 gap-3">
-                    {achievements.map((item) => (
-                      <div
-                        key={item.id}
-                        className={cn(
-                          "flex h-14 items-center justify-center rounded-2xl text-lg",
-                          item.unlocked
-                            ? "bg-gradient-gold text-primary-foreground shadow-glow-gold"
-                            : "border border-white/10 bg-white/[0.04] text-muted-foreground",
-                        )}
-                        title={item.name}
-                      >
-                        {item.unlocked ? "✦" : "•"}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </section>
 
               <section className="glass rounded-[32px] border-white/10 p-6">
                 <div className="eyebrow">快捷入口</div>
