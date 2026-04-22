@@ -821,6 +821,12 @@ export default function Dashboard() {
       </main>
 
       <MedalShelf open={medalOpen} onOpenChange={setMedalOpen} rows={achievementRows} />
+      {celebrationMedals.length > 0 && (
+        <MedalCelebration
+          medals={celebrationMedals}
+          onDone={() => setCelebrationMedals([])}
+        />
+      )}
     </div>
   );
 }
