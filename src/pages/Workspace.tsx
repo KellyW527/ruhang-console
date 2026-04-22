@@ -1270,6 +1270,17 @@ const Workspace = () => {
     );
   };
 
+  if (wsLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">加载工作台…</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative h-[100dvh] overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0 bg-gradient-hero" />
