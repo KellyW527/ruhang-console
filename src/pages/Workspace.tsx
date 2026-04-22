@@ -50,7 +50,6 @@ type TaskStatusEntry = {
   score?: number;
   submission_type?: string | null;
   submission_quality?: string | null;
-  review_summary?: string | null;
 };
 
 const TRACK_LABEL_MAP: Record<string, string> = {
@@ -243,7 +242,7 @@ const Workspace = () => {
 
       const { data: tp } = await supabase
         .from("user_task_progress")
-        .select("task_id, status, score, self_eval, submission_type, submission_quality, review_summary")
+        .select("task_id, status, score, self_eval, submission_type, submission_quality")
         .eq("user_simulation_id", us.id);
       const map: Record<string, TaskStatusEntry> = {};
       const seMap: Record<string, SelfEvalValue | null> = {};
