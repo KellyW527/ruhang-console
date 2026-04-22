@@ -46,17 +46,42 @@ export function SelfEval({
     }
     setSaving(true);
     const value: SelfEvalValue = { scores, reflection: reflection.trim(), submitted_at: new Date().toISOString() };
-    const { error } = await supabase
+    console.log("[SelfEval] saving", { taskId, userSimulationId });
+
+    // Check if row exists first
+    const { data: existing } = await supabase
       .from("user_task_progress")
-      .update({ self_eval: value as any })
+      .select("id")
       .eq("user_simulation_id", userSimulationId)
-      .eq("task_id", taskId);
+      .eq("task_id", taskId)
+      .maybeSingle();
+
+    let error: any = null;
+    if (existing) {
+      const res = await supabase
+        .from("user_task_progress")
+        .update({ self_eval: value as any })
+        .eq("id", existing.id);
+      error = res.error;
+    } else {
+      const res = await supabase
+        .from("user_task_progress")
+        .insert({
+          user_simulation_id: userSimulationId,
+          task_id: taskId,
+          status: "feedback_pending",
+          self_eval: value as any,
+        });
+      error = res.error;
+    }
+
     setSaving(false);
     if (error) {
-      console.error(error);
+      console.error("[SelfEval] save failed:", error);
       toast.error("保存失败");
       return;
     }
+    console.log("[SelfEval] saved successfully");
     setSavedAt(value.submitted_at);
     setLocked(true);
     toast.success("自我评估已保存 ✨");
