@@ -916,20 +916,37 @@ const Workspace = () => {
       evaluation.detailMarkdown,
     );
 
-    const { error: updateError } = await supabase
+    // Upsert: check if row exists first
+    const { data: existingRow } = await supabase
       .from("user_task_progress")
-      .update({
-        status: evaluation.quality === "pass" ? "feedback_pending" : "needs_resubmission",
-        score: evaluation.score,
-        submitted_filename: submission.filename ?? submission.subject ?? null,
-        submitted_file_url: submission.fileUrl ?? null,
-        submission_type: evaluation.submissionType,
-        submission_quality: evaluation.quality,
-        review_summary: styledDetailMarkdown,
-        submitted_at: new Date().toISOString(),
-      })
+      .select("id")
       .eq("user_simulation_id", usId)
-      .eq("task_id", activeTaskNow.id);
+      .eq("task_id", activeTaskNow.id)
+      .maybeSingle();
+
+    const progressPayload: Record<string, unknown> = {
+      status: evaluation.quality === "pass" ? "feedback_pending" : "needs_resubmission",
+      score: evaluation.score,
+      submitted_filename: submission.filename ?? submission.subject ?? null,
+      submitted_file_url: submission.fileUrl ?? null,
+      submission_type: evaluation.submissionType,
+      submission_quality: evaluation.quality,
+      submitted_at: new Date().toISOString(),
+    };
+
+    let updateError: any = null;
+    if (existingRow) {
+      const res = await supabase
+        .from("user_task_progress")
+        .update(progressPayload)
+        .eq("id", existingRow.id);
+      updateError = res.error;
+    } else {
+      const res = await supabase
+        .from("user_task_progress")
+        .insert({ ...progressPayload, user_simulation_id: usId, task_id: activeTaskNow.id });
+      updateError = res.error;
+    }
 
     if (updateError) {
       console.error("triggerSubmission DB update failed:", updateError);
@@ -945,10 +962,9 @@ const Workspace = () => {
     });
 
     if (evaluation.quality === "pass") {
-      openFeedbackForTask(activeTaskNow);
+      openFeedbackForTask(activeTaskNow, "self");
     } else {
-      setFeedbackTab("answer");
-      setFeedbackTask(activeTaskNow);
+      openFeedbackForTask(activeTaskNow, "answer");
     }
 
     toast.success(
@@ -966,11 +982,7 @@ const Workspace = () => {
         : "已收到这次提交，但还没达到最低标准。请按反馈要求补齐后重新提交。",
     );
 
-    window.setTimeout(() => {
-      if (evaluation.quality === "pass") {
-        openFeedbackForTask(activeTaskNow);
-      }
-    }, 320);
+    // No delayed re-open — the initial openFeedbackForTask above is sufficient
     setTypingConvId(leaderConversation?.id ?? null);
     window.setTimeout(async () => {
       setTypingConvId((current) => (current === leaderConversation?.id ? null : current));
