@@ -167,20 +167,65 @@ const Workspace = () => {
   const trackLabel = getTrackLabel(simCode);
   const completionLetterUrl = completionAverageScore == null
     ? null
-    : `data:text/plain;charset=utf-8,${encodeURIComponent(
-        [
-          "入行 RuHang 模拟实习结业信",
-          "",
-          `项目：${simTitle}`,
-          `完成时间：${completionAt ? new Date(completionAt).toLocaleString("zh-CN") : new Date().toLocaleString("zh-CN")}`,
-          `平均得分：${completionAverageScore}`,
-          "",
-          `致 ${preferredDisplayName}：`,
-          runtime.leader.completionNote,
-          "",
-          `签发人：${runtime.leader.name} · ${runtime.leader.title}`,
-        ].join("\n"),
-      )}`;
+    : (() => {
+        const completionDate = completionAt ? new Date(completionAt).toLocaleString("zh-CN") : new Date().toLocaleString("zh-CN");
+        const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<title>${runtime.completionLetterTitle}</title>
+<style>
+@page{size:A4;margin:0}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif;background:#f8f6f1;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:40px}
+.cert{width:680px;background:#fff;border:3px solid #c9a84c;border-radius:12px;padding:60px 56px;position:relative;box-shadow:0 8px 40px rgba(0,0,0,0.08)}
+.cert::before{content:"";position:absolute;inset:10px;border:1px solid #c9a84c40;border-radius:8px;pointer-events:none}
+.header{text-align:center;border-bottom:2px solid #c9a84c;padding-bottom:28px;margin-bottom:36px}
+.logo-text{font-size:13px;letter-spacing:6px;color:#c9a84c;text-transform:uppercase;margin-bottom:8px}
+.title{font-size:28px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+.subtitle{font-size:14px;color:#666;margin-top:4px}
+.body{line-height:2;color:#333;font-size:15px}
+.field{display:flex;gap:12px;margin-bottom:6px}
+.field-label{color:#999;min-width:70px;text-align:right}
+.field-value{color:#1a1a2e;font-weight:500}
+.greeting{margin:24px 0 12px;font-size:16px;color:#1a1a2e}
+.note{margin:12px 0 32px;color:#444;line-height:1.9;font-size:15px}
+.score-badge{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#c9a84c,#e6c867);color:#fff;font-size:22px;font-weight:700;padding:10px 28px;border-radius:40px;margin:20px 0}
+.score-badge span{font-size:13px;font-weight:400;opacity:0.85}
+.footer{border-top:1px solid #e8e4dc;padding-top:24px;margin-top:36px;display:flex;justify-content:space-between;align-items:flex-end}
+.signer{text-align:right}
+.signer-name{font-size:16px;font-weight:600;color:#1a1a2e}
+.signer-role{font-size:12px;color:#999;margin-top:2px}
+.seal{width:60px;height:60px;border:2px solid #c9a84c;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;color:#c9a84c;font-weight:600;letter-spacing:1px}
+@media print{body{background:#fff;padding:0}.cert{box-shadow:none;border-radius:0}}
+</style>
+</head>
+<body>
+<div class="cert">
+<div class="header">
+<div class="logo-text">入行 · RuHang</div>
+<div class="title">模拟实习结业证书</div>
+<div class="subtitle">Certificate of Completion</div>
+</div>
+<div class="body">
+<div class="field"><span class="field-label">项目</span><span class="field-value">${simTitle}</span></div>
+<div class="field"><span class="field-label">完成时间</span><span class="field-value">${completionDate}</span></div>
+<div class="field"><span class="field-label">平均得分</span><span class="field-value"><span class="score-badge">${completionAverageScore} <span>/ 100</span></span></span></div>
+<div class="greeting">致 ${preferredDisplayName}：</div>
+<div class="note">${runtime.leader.completionNote}</div>
+</div>
+<div class="footer">
+<div class="seal">RuHang</div>
+<div class="signer">
+<div class="signer-name">${runtime.leader.name}</div>
+<div class="signer-role">${runtime.leader.title}</div>
+</div>
+</div>
+</div>
+</body>
+</html>`;
+        return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
+      })();
 
   // ---- Initial load ----
   useEffect(() => {
@@ -2403,8 +2448,8 @@ const Workspace = () => {
             <div className="flex items-center justify-end gap-2">
               {completionLetterUrl && (
                 <Button type="button" variant="ghost" asChild>
-                  <a href={completionLetterUrl} download={`${simTitle || "ruhang"}_completion_letter.txt`}>
-                    下载 Completion Letter
+                  <a href={completionLetterUrl} download={`${simTitle || "入行RuHang"}_结业证书.html`}>
+                    下载结业证书
                   </a>
                 </Button>
               )}
