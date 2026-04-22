@@ -14,8 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Inter", "sans-serif"],
-        display: ["Playfair Display", "serif"],
+        sans: ["Inter", "'PingFang SC'", "-apple-system", "BlinkMacSystemFont", "'Helvetica Neue'", "sans-serif"],
+        display: ["'Noto Serif SC'", "'PingFang SC'", "serif"],
+        mono: ["'JetBrains Mono'", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",
