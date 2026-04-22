@@ -214,11 +214,12 @@ const Workspace = () => {
         nav("/dashboard", { replace: true });
         return;
       }
-      if ((us.simulation as { title?: string; is_pro?: boolean } | null)?.is_pro && profile?.plan !== "pro") {
-        toast.info("这个模拟需要升级 Pro 后才能进入");
-        nav("/pricing", { replace: true });
-        return;
-      }
+      // TODO: Pro gate — temporarily bypassed for testing
+      // if ((us.simulation as { title?: string; is_pro?: boolean } | null)?.is_pro && profile?.plan !== "pro") {
+      //   toast.info("这个模拟需要升级 Pro 后才能进入");
+      //   nav("/pricing", { replace: true });
+      //   return;
+      // }
       if (!us.offer_accepted) {
         nav(`/simulation/${id}/offer`, { replace: true });
         return;

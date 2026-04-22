@@ -44,11 +44,12 @@ const OfferLetter = () => {
         .eq("id", id)
         .maybeSingle();
       if (s) {
-        if (s.is_pro && profile?.plan !== "pro") {
-          toast.info("这个模拟需要升级 Pro 后才能开始");
-          nav("/pricing", { replace: true });
-          return;
-        }
+        // TODO: Pro gate — temporarily bypassed for testing
+        // if (s.is_pro && profile?.plan !== "pro") {
+        //   toast.info("这个模拟需要升级 Pro 后才能开始");
+        //   nav("/pricing", { replace: true });
+        //   return;
+        // }
         setSim(s);
       }
       const { data: us } = await supabase
