@@ -1,171 +1,154 @@
 
-目标：只针对“提交后看不到反馈 / 无法自动解锁下一任务”这个链路做一次更彻底的修复，不再继续扩散到别的问题。
+目标：这次只收口“提交后反馈界面打不开 / 自评后无法解锁下一任务 / 右侧预览直接报错”这一条链路，不再扩散到其他功能。
 
-## 现在最可能还没修透的地方
+## 当前最可能的剩余根因
 
-### 1) 成功提交后，代码仍然把反馈弹窗强制打开到 `answer`
-虽然 `feedback_pending` 分支已经会 `openFeedbackForTask(pendingTask, "self")`，但首次成功提交时，`triggerSubmission()` 里现在仍然是：
+1. `finalizeTaskAndUnlock()` 仍在写 `feedback_seen`
+   - 文件：`src/pages/Workspace.tsx`
+   - 当前代码里 `user_task_progress` 只剩这一处还写 `feedback_seen`
+   - 之前已经出现过 `review_summary` 列不存在导致整段更新失败，这里很像同类问题
+   - 一旦这步失败，当前任务不会真正变成 `done`，下一任务也不会稳定解锁
 
-- 立即 `openFeedbackForTask(activeTaskNow)`（默认就是 `"answer"`）
-- 320ms 后又 `openFeedbackForTask(activeTaskNow)` 一次（还是 `"answer"`）
+2. 解锁链路仍然没有逐步检查 Supabase 错误
+   - `finalizeTaskAndUnlock()` 里连续执行：
+     - 当前任务改 `done`
+     - 下一任务插入/更新 `active`
+     - `user_simulations.current_task_index` 更新
+   - 目前几乎都没检查 `error`
+   - 所以即使数据库失败，前端也可能局部更新，表现成“看起来点了，但没解锁”
 
-这会把本来应该进入“自我评估”的路径重新覆盖掉。  
-也就是说，前面修掉了 `useEffect` 覆盖 tab，但提交成功主链路本身还在覆盖。
+3. `SelfEval` 仍然是纯 `update`
+   - 文件：`src/components/workspace/SelfEval.tsx`
+   - 如果当前任务的 `user_task_progress` 行缺失，`update(...).eq(...)` 可能不会真正写入
+   - 前端会显示“已保存”，但数据库没有 `self_eval`，刷新后又卡回去
 
-### 2) 还有多个入口直接 `setFeedbackTask(t)`，没有走统一的打开逻辑
-当前代码里除了 `openFeedbackForTask(...)`，还有这些入口直接：
+4. 反馈弹窗入口仍未完全统一
+   - 文件：`src/pages/Workspace.tsx`
+   - 现在还残留直接 `setFeedbackTask(t)` 的入口
+   - 这会绕过默认 tab 逻辑，导致有的入口是自评，有的入口不是，甚至可能触发不一致的渲染状态
 
-- `setFeedbackTask(t)`（任务列表/回看入口）
-- `setFeedbackTask(activeTaskNow)`（retry 分支）
+5. 反馈弹窗本身缺少兜底渲染保护
+   - 当前有多处直接使用 `feedbackTask.scoring_rubric.map(...)`
+   - 如果某个任务数据不完整，打开反馈弹窗时会直接把整个工作台打崩
+   - 这和你截图里的“整个 preview 报错”现象是匹配的
 
-这样会导致：
-- 有的入口记得切 tab
-- 有的入口不切
-- 表现不一致，用户会觉得“有时能看，有时什么都没有”
+## 实施方案
 
-### 3) 解锁逻辑对数据库失败几乎没有防护
-`finalizeTaskAndUnlock()` 里连续做了多次 Supabase 更新/插入，但目前基本没有逐步检查错误：
-
-- 当前任务改 `done`
-- 下一任务插入/改 `active`
-- `user_simulations.current_task_index` 更新
-
-如果其中任一步失败，UI 可能局部更新，但实际任务没解锁；或者刷新后又回到旧状态。
-
-### 4) `user_task_progress` 行缺失时，提交和解锁都可能“看起来执行了，实际上没落库”
-`triggerSubmission()` 现在对 `user_task_progress` 用的是 `update(...).eq(...)`。  
-如果当前任务那一行根本不存在，`update` 可能不会真正写入任何记录，但本地 `upsertTaskStatus(...)` 仍会更新前端状态，造成：
-
-```text
-前端看起来改成 feedback_pending
-但数据库没这行
-→ 自评保存 / 解锁 / 刷新恢复 全部会不稳定
-```
-
----
-
-## 这次建议的修复
-
-### 变更 1 — 把“打开反馈弹窗”收敛成唯一入口
+### 变更 1 — 先修解锁主链路里的潜在 schema 失配
 文件：`src/pages/Workspace.tsx`
 
-统一规则：
-- 所有打开反馈的地方都必须走 `openFeedbackForTask(task, tab)`
-- 不再直接 `setFeedbackTask(...)` 作为业务入口
-- 按状态决定默认 tab：
-  - `feedback_pending` → `"self"`
-  - `needs_resubmission"` → `"answer"`
-  - `done` 回看 → `"answer"`
-
-需要替换的入口包括：
-- `triggerSubmission()` 的 pass / retry 分支
-- 任务列表上的“查看反馈 / 回看反馈”
-- 侧边栏任何直接打开反馈的按钮
+处理方式：
+- 从 `finalizeTaskAndUnlock()` 的 `update({ ... })` 里移除 `feedback_seen`
+- 只写当前代码已明确在其他地方使用、并且已存在的字段：
+  - `status`
+  - `score`
+  - 如有必要再保留 `submitted_at` / `self_eval` 等已在读取中的字段
+- 如果确实需要“已看反馈”概念，后续单独走 schema 变更；这轮先不继续写不存在的列
 
 目标结果：
-- 无论用户从哪里进入反馈，表现一致
-- 不会再出现“某些入口没切到自评页”的问题
+- 避免再次出现“因为一个不存在的列，整段 done/update 全部失败”
 
----
-
-### 变更 2 — 修正首次成功提交后的默认行为
+### 变更 2 — 给 `finalizeTaskAndUnlock()` 加完整错误检查
 文件：`src/pages/Workspace.tsx`
 
-把 `triggerSubmission()` 成功通过后的逻辑改成：
+按步骤补强：
+1. 当前任务改 `done`：检查 `error`
+2. 若当前任务 progress 行不存在：先补行，再继续
+3. 下一任务插入/更新 `active`：检查 `error`
+4. 更新 `user_simulations.current_task_index`：检查 `error`
+5. 成功后同步本地：
+   - `upsertTaskStatus(task.id, { status: "done" ... })`
+   - `upsertTaskStatus(nextTask.id, { status: "active" })`
+   - `setCurrentTaskIndex(nextTask.order_index)`
 
-- 提交通过后直接 `openFeedbackForTask(activeTaskNow, "self")`
-- 删除那段 320ms 后再次 `openFeedbackForTask(activeTaskNow)` 的定时覆盖
-- retry 才打开 `"answer"`
-
-目标结果：
-```text
-首次提交成功
-→ 状态变 feedback_pending
-→ 反馈弹窗直接打开
-→ 默认落在“自我评估”
-```
-
----
-
-### 变更 3 — 给 `finalizeTaskAndUnlock()` 增加完整的错误检查和兜底
-文件：`src/pages/Workspace.tsx`
-
-补强解锁链路：
-
-1. 当前任务改 `done` 时检查 `error`
-2. 如果当前任务 progress 行不存在，先补一行再继续
-3. 下一任务插入 / 更新 `active` 时检查 `error`
-4. 更新 `user_simulations.current_task_index` 时检查 `error`
-5. 任一步失败都：
-   - `console.error(...)`
-   - 给用户清晰 toast
-   - 不要静默失败
+失败时统一：
+- `console.error("[unlock]", step, error)`
+- `toast.error("任务解锁失败，请重试")`
+- 不再静默失败
 
 目标结果：
 - 解锁失败时能准确知道卡在哪一步
-- 不会再出现“看起来点了保存，但下一任务没开”的黑盒状态
+- 本地状态与数据库状态不再长期分叉
 
----
-
-### 变更 4 — 把“提交当前任务状态”改成真正的 upsert 思路
+### 变更 3 — 把 progress 行保证逻辑抽成统一 helper
 文件：`src/pages/Workspace.tsx`
+必要时联动：`src/components/workspace/SelfEval.tsx`
 
-在 `triggerSubmission()` 中，不再假设当前任务一定已有 `user_task_progress` 记录。  
-改成：
+新增统一逻辑，例如：
+- `ensureTaskProgressRow(taskId, status?)`
 
-- 先查询当前任务 progress 行
-- 有则 update
-- 没有则 insert 一行（状态直接写成 `feedback_pending` 或 `needs_resubmission`）
+用途：
+- `triggerSubmission()` 前先确保当前任务行存在
+- `finalizeTaskAndUnlock()` 前确保当前任务行存在
+- `SelfEval.save()` 前确保当前任务行存在；若不存在则插入再写 `self_eval`
 
 目标结果：
-- 即使历史数据不完整、之前初始化漏写、或者测试环境已有脏数据，也不会因为缺行而导致反馈/解锁链路失效
+- 历史脏数据、初始化漏写、测试账号旧数据都不会再导致“前端已进入下一步，但数据库没记录”
 
----
-
-### 变更 5 — 增加最小必要日志，专门追这条状态机
+### 变更 4 — 收敛所有反馈入口到 `openFeedbackForTask`
 文件：`src/pages/Workspace.tsx`
 
-只给这几个关键点加日志：
-- `triggerSubmission`：提交前状态、判定结果、目标状态
-- `openFeedbackForTask`：task id + tab
-- `SelfEval onSaved`：task id
-- `finalizeTaskAndUnlock`：当前任务 done、下一任务 active、current_task_index 更新结果
-- `syncProgressState`：发现 pending / readyToUnlock 的判定
+统一替换这些入口：
+- 任务列表里的 `setFeedbackTask(t)`
+- done 回看入口里的 `setFeedbackTask(t)`
+- 任何 retry / pending / review 场景下的直接打开逻辑
+
+统一规则：
+- `feedback_pending` → `openFeedbackForTask(task, "self")`
+- `needs_resubmission` → `openFeedbackForTask(task, "answer")`
+- `done` 回看 → `openFeedbackForTask(task, "answer")`
 
 目标结果：
-- 如果这次修完还有问题，下一轮能直接从日志定位，不再靠猜
+- 不再出现“有时能看到自评，有时打开就不对劲”的不一致行为
 
----
+### 变更 5 — 给反馈弹窗加数据兜底，防止整个页面报错
+文件：`src/pages/Workspace.tsx`
 
-## 本次不优先改的部分
+渲染层做保护：
+- `const scoringRubric = Array.isArray(feedbackTask?.scoring_rubric) ? feedbackTask.scoring_rubric : []`
+- 所有 `.map(...)` 改为基于兜底数组
+- `standard_answer`, `boss_commentary`, `reference.analysis` 都加空值 fallback
+- `SelfEval` 的 `dimensions` 也基于兜底后的 rubric 生成
 
-### 邮件判定规则
-`workspace-runtime.ts` 里的邮件放行逻辑现在已经允许有主题的 email 通过，短期内它不再是最优先怀疑点。  
-本轮先不继续改提交标准，先把“状态写入 → 反馈打开 → 自评保存 → 解锁下一任务”这条状态机做稳定。
+目标结果：
+- 即使某个任务数据不完整，也只会显示空状态，不会把整个预览打崩
 
----
+### 变更 6 — 最小必要日志，专门跟这条状态机
+文件：`src/pages/Workspace.tsx`
+必要时联动：`src/components/workspace/SelfEval.tsx`
 
-## 预期修复后的行为
+仅加这几类日志：
+- `triggerSubmission`: task id、原状态、evaluation result、目标状态
+- `openFeedbackForTask`: task id、tab
+- `SelfEval.save`: task id、是否命中 existing row、save 成功/失败
+- `finalizeTaskAndUnlock`: done 更新、next active、current_task_index 更新
+- `syncProgressState`: pending 发现、自评已存在/不存在、是否触发 finalize
 
-```text
-发送邮件 / 正式提交
-  → triggerSubmission 写入或补建当前任务 progress
-  → 状态改为 feedback_pending
-  → 反馈弹窗统一通过 openFeedbackForTask(..., "self") 打开
-  → 用户保存自评
-  → finalizeTaskAndUnlock 严格检查并完成：
-       - 当前任务 done
-       - 下一任务 active
-       - current_task_index 前进
-  → 弹窗关闭
-  → 下一任务立即激活
-```
+目标结果：
+- 如果修完仍有问题，下一轮可以直接根据日志定位，而不是继续猜
 
----
+## 验证范围
+
+1. 登录后在右侧 preview 里复测一条 pass 链路
+   - 正式提交
+   - 自动打开反馈弹窗
+   - 默认落在“自我评估”
+   - 保存后自动解锁下一任务
+
+2. 刷新页面后复测恢复逻辑
+   - `feedback_pending + 未自评`：重新打开自评
+   - `feedback_pending + 已自评`：自动完成 finalize 并恢复下一任务
+
+3. 复测 retry 链路
+   - 只打开反馈
+   - 不解锁下一任务
+   - 不触发自评保存后的推进
+
+4. 复测 done 回看入口
+   - 可以正常打开反馈弹窗
+   - 不再让 preview 整页报错
 
 ## 涉及文件
 
 - `src/pages/Workspace.tsx`
-
-如这轮修完仍异常，再继续检查：
-- `src/components/workspace/SelfEval.tsx`（只在需要补更细日志或状态回调时）
+- `src/components/workspace/SelfEval.tsx`
