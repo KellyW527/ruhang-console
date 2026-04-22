@@ -4,7 +4,8 @@ import { Navbar } from "@/components/marketing/Navbar";
 import { Footer } from "@/components/marketing/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, ArrowRight } from "lucide-react";
+import { CheckCircle, ArrowRight, Sparkles } from "lucide-react";
+import { toast } from "sonner";
 
 const plans = [
   {
@@ -15,6 +16,7 @@ const plans = [
     features: ["1 条模拟线", "基础能力报告", "社区支持"],
     cta: "开始免费体验",
     popular: false,
+    actionType: "link" as const,
   },
   {
     name: "Pro",
@@ -24,10 +26,18 @@ const plans = [
     features: ["全部 3 条模拟线", "详细能力报告", "自定义偏好", "优先支持", "数据导出"],
     cta: "升级 Pro",
     popular: true,
+    actionType: "upgrade" as const,
   },
 ];
 
 const Pricing = () => {
+  const handleUpgrade = () => {
+    toast.info("Pro 升级通道即将开放", {
+      description: "我们正在接入支付系统，敬请期待！如需提前体验，请联系管理员。",
+      duration: 5000,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -70,15 +80,25 @@ const Pricing = () => {
                     </li>
                   ))}
                 </ul>
-                <Button
-                  asChild
-                  className={`w-full ${plan.popular ? "gradient-gold text-primary-foreground border-0" : ""}`}
-                  variant={plan.popular ? "default" : "outline"}
-                >
-                  <Link to="/register">
+                {plan.actionType === "link" ? (
+                  <Button
+                    asChild
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <Link to="/register">
+                      {plan.cta} <ArrowRight className="h-4 w-4 ml-1" />
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button
+                    className="w-full gradient-gold text-primary-foreground border-0"
+                    onClick={handleUpgrade}
+                  >
+                    <Sparkles className="h-4 w-4 mr-1" />
                     {plan.cta} <ArrowRight className="h-4 w-4 ml-1" />
-                  </Link>
-                </Button>
+                  </Button>
+                )}
               </GlassCard>
             ))}
           </div>
