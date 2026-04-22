@@ -449,14 +449,25 @@ const Workspace = () => {
     setUploadProgress(0);
     try {
       const currentTask = activeTask ?? (await ensureActiveTask());
-      const r = await uploadFile({
-        kind,
-        userId: user.id,
-        simulationId: id,
-        taskOrder: currentTask?.order_index ?? null,
-        file,
-        onProgress: setUploadProgress,
-      });
+
+      // Try storage upload, but don't block submission if it fails
+      let uploadResult: { name: string; sizeLabel: string; url: string; path: string } | null = null;
+      try {
+        uploadResult = await uploadFile({
+          kind,
+          userId: user.id,
+          simulationId: id,
+          taskOrder: currentTask?.order_index ?? null,
+          file,
+          onProgress: setUploadProgress,
+        });
+      } catch (uploadErr: any) {
+        console.warn("Storage upload failed, proceeding with local file info:", uploadErr);
+      }
+
+      const fileName = uploadResult?.name ?? file.name;
+      const fileSize = uploadResult?.sizeLabel ?? `${(file.size / 1024).toFixed(1)} KB`;
+      const fileUrl = uploadResult?.url ?? "";
 
       if (currentTask) {
         if (activeConvId) {
@@ -465,9 +476,9 @@ const Workspace = () => {
             sender: "user",
             message_type: kind === "image" ? "image" : "file",
             content: kind === "image" ? "" : "已提交附件",
-            file_name: r.name,
-            file_size: r.sizeLabel,
-            file_url: r.url,
+            file_name: fileName,
+            file_size: fileSize,
+            file_url: fileUrl || null,
           };
 
           const { data: inserted } = await supabase.from("messages").insert(payload as any).select().single();
@@ -476,21 +487,23 @@ const Workspace = () => {
 
         await triggerSubmission({
           kind: kind === "image" ? "image" : "file",
-          filename: r.name,
-          fileUrl: r.url,
+          filename: fileName,
+          fileUrl: fileUrl || undefined,
         });
         return;
       }
 
-      setPendingUpload({
-        name: r.name,
-        size: r.sizeLabel,
-        url: r.url,
-        path: r.path,
-        kind: kind === "image" ? "image" : "file",
-      });
+      if (uploadResult) {
+        setPendingUpload({
+          name: uploadResult.name,
+          size: uploadResult.sizeLabel,
+          url: uploadResult.url,
+          path: uploadResult.path,
+          kind: kind === "image" ? "image" : "file",
+        });
+      }
       toast.success("上传成功，但当前没有可提交任务", {
-        description: `${r.name} 已加入聊天附件；当任务激活后再提交会进入反馈。`,
+        description: `${fileName} 已加入聊天附件；当任务激活后再提交会进入反馈。`,
       });
     } catch (err: any) {
       console.error("uploadIntoChat error:", err);
