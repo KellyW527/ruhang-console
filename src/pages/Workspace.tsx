@@ -422,11 +422,11 @@ const Workspace = () => {
     openCompose();
   };
 
-  const openFeedbackForTask = (task: Task) => {
-    setFeedbackTab("answer");
+  const openFeedbackForTask = (task: Task, defaultTab: "answer" | "detail" | "self" = "answer") => {
+    setFeedbackTab(defaultTab);
     setFeedbackTask(task);
     window.setTimeout(() => {
-      setFeedbackTab("answer");
+      setFeedbackTab(defaultTab);
       setFeedbackTask((current) => (current?.id === task.id ? current : task));
     }, 180);
   };
@@ -878,7 +878,7 @@ const Workspace = () => {
     if (!activeTaskNow) {
       const pendingTask = tasks.find((t) => taskStatuses[t.id]?.status === "feedback_pending");
       if (pendingTask) {
-        openFeedbackForTask(pendingTask);
+        openFeedbackForTask(pendingTask, "self");
         toast.info("你已经提交过了，请先完成反馈与自评", {
           description: "完成自评后才能解锁下一个任务。",
         });
@@ -1238,14 +1238,12 @@ const Workspace = () => {
       .single();
 
     if (error || !inserted) {
-      console.error(error);
-      toast.error("发送失败，请重试");
-      setComposeSending(false);
-      return;
+      console.error("邮件存储失败（不阻塞提交流程）:", error);
+      toast.warning("邮件记录未保存，但提交将继续处理");
+    } else {
+      setEmails((es) => [inserted as Email, ...es]);
+      setActiveEmail(inserted as Email);
     }
-
-    setEmails((es) => [inserted as Email, ...es]);
-    setActiveEmail(inserted as Email);
     setComposeSentFlash(true);
     toast.success(`邮件已送达${runtime.leader.name}收件箱`, { description: composeSubject.trim() });
     await new Promise((resolve) => window.setTimeout(resolve, 320));
