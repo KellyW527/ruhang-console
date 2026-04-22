@@ -349,6 +349,7 @@ export default function Dashboard() {
   const [achievementRows, setAchievementRows] = useState<AchievementProgressRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [medalOpen, setMedalOpen] = useState(false);
+  const [celebrationMedals, setCelebrationMedals] = useState<AchievementState[]>([]);
 
   useEffect(() => {
     document.title = "控制台 · 入行 RuHang";
