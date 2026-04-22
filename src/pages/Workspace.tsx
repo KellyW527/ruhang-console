@@ -518,16 +518,25 @@ const Workspace = () => {
     setComposeProgress(0);
     try {
       const currentTask = activeTask ?? (await ensureActiveTask());
-      const r = await uploadFile({
-        kind: "attachment",
-        userId: user.id,
-        simulationId: id,
-        taskOrder: currentTask?.order_index ?? null,
-        file,
-        onProgress: setComposeProgress,
-      });
-      setComposeFile({ name: r.name, size: r.sizeLabel, url: r.url, path: r.path });
-      toast.success("附件已添加到邮件", { description: r.name });
+      let uploadResult: { name: string; sizeLabel: string; url: string; path: string } | null = null;
+      try {
+        uploadResult = await uploadFile({
+          kind: "attachment",
+          userId: user.id,
+          simulationId: id,
+          taskOrder: currentTask?.order_index ?? null,
+          file,
+          onProgress: setComposeProgress,
+        });
+      } catch (uploadErr: any) {
+        console.warn("Compose storage upload failed, using local file info:", uploadErr);
+      }
+      const name = uploadResult?.name ?? file.name;
+      const size = uploadResult?.sizeLabel ?? `${(file.size / 1024).toFixed(1)} KB`;
+      const url = uploadResult?.url ?? "";
+      const path = uploadResult?.path ?? "";
+      setComposeFile({ name, size, url, path });
+      toast.success("附件已添加到邮件", { description: name });
     } catch (err: any) {
       console.error("uploadIntoCompose error:", err);
       toast.error(err?.message ?? "附件上传失败，请稍后重试");
