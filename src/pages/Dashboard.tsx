@@ -437,6 +437,19 @@ export default function Dashboard() {
   const totalCompletedTasks = rows.reduce((sum, row) => sum + row.completed_tasks, 0);
   const spotlight = inProgress[0] ?? rows[0] ?? null;
 
+  // Detect newly unlocked achievements and trigger celebration
+  useEffect(() => {
+    if (loading || achievements.length === 0) return;
+    const unlocked = achievements.filter((a) => a.unlocked);
+    if (unlocked.length === 0) return;
+    const seen = getSeenMedals();
+    const newlyUnlocked = unlocked.filter((a) => !seen.has(a.id));
+    if (newlyUnlocked.length > 0) {
+      setCelebrationMedals(newlyUnlocked);
+      markMedalsSeen(newlyUnlocked.map((a) => a.id));
+    }
+  }, [loading, achievements]);
+
   const onSignOut = async () => {
     await signOut();
     nav("/");
