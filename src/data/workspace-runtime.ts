@@ -527,7 +527,9 @@ export const evaluateSubmission = ({
       ? true
       : Boolean(ext) &&
         (taskRuntime.allowedExtensions.length === 0 || taskRuntime.allowedExtensions.includes(ext));
-  const pass = hasFormalAttachment && matchesExt;
+  // For email submissions: allow pass even without a matching extension if there's a subject (the email itself is the deliverable)
+  const emailPassthrough = detectedType === "email" && Boolean(submission.subject);
+  const pass = hasFormalAttachment && (matchesExt || emailPassthrough);
 
   if (!pass) {
     const summary = `${taskRuntime.retryTemplate} 请按要求重新提交。`;
