@@ -62,6 +62,10 @@ export default {
           light: "hsl(var(--navy-light))",
           lighter: "hsl(var(--navy-lighter))",
         },
+        "surface-1": "hsl(var(--surface-1))",
+        "surface-2": "hsl(var(--surface-2))",
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
