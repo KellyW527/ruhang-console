@@ -157,8 +157,9 @@ const Workspace = () => {
   const feedbackBossCommentary = feedbackTask
     ? applyFeedbackStyleTemplate(profilePreferences.feedback_style, feedbackTask.boss_commentary)
     : "";
+  const safeScoringRubric = Array.isArray(feedbackTask?.scoring_rubric) ? feedbackTask.scoring_rubric : [];
   const feedbackReviewMarkdown = feedbackTask
-    ? `### 评分拆解\n| 维度 | 得分 |\n| --- | --- |\n${feedbackTask.scoring_rubric.map((item) => `| ${item.dim} | ${item.score} / ${item.max} |`).join("\n")}\n\n### 上级反馈\n${feedbackBossCommentary}`
+    ? `### 评分拆解\n| 维度 | 得分 |\n| --- | --- |\n${safeScoringRubric.map((item) => `| ${item.dim} | ${item.score} / ${item.max} |`).join("\n")}\n\n### 上级反馈\n${feedbackBossCommentary}`
     : "";
   const feedbackAnalysisMarkdown = feedbackReference?.analysis ?? feedbackReviewMarkdown;
   const selfEvalReady =
@@ -710,20 +711,45 @@ const Workspace = () => {
 
   const finalizeTaskAndUnlock = async (task: Task) => {
     if (!usId) return;
+    console.log("[unlock] start", { taskId: task.id, orderIndex: task.order_index });
     const nextTask = tasks.find((item) => item.order_index === task.order_index + 1);
     const currentScore = taskStatuses[task.id]?.score ?? task.score;
 
-    await supabase
+    // Step 1: ensure progress row exists, then mark done
+    const { data: existingDoneRow } = await supabase
       .from("user_task_progress")
-      .update({
+      .select("id")
+      .eq("user_simulation_id", usId)
+      .eq("task_id", task.id)
+      .maybeSingle();
+
+    if (!existingDoneRow) {
+      const { error: insertErr } = await supabase.from("user_task_progress").insert({
+        user_simulation_id: usId,
+        task_id: task.id,
         status: "done",
         score: currentScore,
-        feedback_seen: true,
-      })
-      .eq("user_simulation_id", usId)
-      .eq("task_id", task.id);
+      });
+      if (insertErr) {
+        console.error("[unlock] insert done row failed:", insertErr);
+        toast.error("任务完成记录写入失败，请重试");
+        return;
+      }
+    } else {
+      const { error: doneErr } = await supabase
+        .from("user_task_progress")
+        .update({ status: "done", score: currentScore })
+        .eq("id", existingDoneRow.id);
+      if (doneErr) {
+        console.error("[unlock] mark done failed:", doneErr);
+        toast.error("标记任务完成失败，请重试");
+        return;
+      }
+    }
+    console.log("[unlock] task marked done");
 
     if (nextTask) {
+      // Step 2: activate next task
       const { data: nextProgress } = await supabase
         .from("user_task_progress")
         .select("id, status")
@@ -732,28 +758,46 @@ const Workspace = () => {
         .maybeSingle();
 
       if (!nextProgress) {
-        await supabase.from("user_task_progress").insert({
+        const { error: nextInsertErr } = await supabase.from("user_task_progress").insert({
           user_simulation_id: usId,
           task_id: nextTask.id,
           status: "active",
         });
+        if (nextInsertErr) {
+          console.error("[unlock] insert next active failed:", nextInsertErr);
+          toast.error("下一任务激活失败，请刷新重试");
+          return;
+        }
       } else if (nextProgress.status === "locked") {
-        await supabase
+        const { error: nextUpdateErr } = await supabase
           .from("user_task_progress")
           .update({ status: "active" })
           .eq("id", nextProgress.id);
+        if (nextUpdateErr) {
+          console.error("[unlock] update next active failed:", nextUpdateErr);
+          toast.error("下一任务激活失败，请刷新重试");
+          return;
+        }
       }
+      console.log("[unlock] next task activated:", nextTask.id);
 
-      await supabase
+      // Step 3: update simulation index
+      const { error: simErr } = await supabase
         .from("user_simulations")
         .update({
           current_task_index: nextTask.order_index,
           progress: Math.round(((task.order_index + 1) / tasks.length) * 100),
         })
         .eq("id", usId);
+      if (simErr) {
+        console.error("[unlock] update simulation index failed:", simErr);
+        toast.error("进度更新失败，但任务已解锁");
+      }
 
+      // Step 4: sync local state
       upsertTaskStatus(task.id, { status: "done", score: currentScore });
       upsertTaskStatus(nextTask.id, { status: "active" });
+      setCurrentTaskIndex(nextTask.order_index);
 
       const leaderConversation = convs.find((item) => getConversationKind(item, simCode) === "leader");
       if (leaderConversation) {
@@ -780,15 +824,17 @@ const Workspace = () => {
 
       await postTaskMaterialsToGroup(nextTask);
       toast.success(`下一个任务：${nextTask.title}`);
+      console.log("[unlock] complete — next task ready");
       return;
     }
 
+    // No next task — simulation complete
     const totalScore = tasks.reduce(
       (sum, item) => sum + (item.id === task.id ? currentScore : taskStatuses[item.id]?.score ?? 0),
       0,
     );
 
-    await supabase
+    const { error: completeErr } = await supabase
       .from("user_simulations")
       .update({
         status: "completed",
@@ -796,6 +842,7 @@ const Workspace = () => {
         completed_at: new Date().toISOString(),
       })
       .eq("id", usId);
+    if (completeErr) console.error("[unlock] complete simulation failed:", completeErr);
 
     upsertTaskStatus(task.id, { status: "done", score: currentScore });
     setCompletionAverageScore(tasks.length ? Math.round(totalScore / tasks.length) : null);
@@ -2129,7 +2176,9 @@ const Workspace = () => {
                           key={t.id}
                           type="button"
                           onClick={() => {
-                            if (st === "feedback_pending" || st === "needs_resubmission" || st === "done") setFeedbackTask(t);
+                            if (st === "feedback_pending") openFeedbackForTask(t, "self");
+                            else if (st === "needs_resubmission") openFeedbackForTask(t, "answer");
+                            else if (st === "done") openFeedbackForTask(t, "answer");
                           }}
                           className={cn(
                             "w-full rounded-3xl border p-4 text-left transition",
@@ -2234,7 +2283,7 @@ const Workspace = () => {
                               <button
                                 key={t.id}
                                 type="button"
-                                onClick={() => setFeedbackTask(t)}
+                                onClick={() => openFeedbackForTask(t, "answer")}
                                 className="w-full rounded-3xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-left transition hover:bg-emerald-500/10"
                               >
                                 <div className="flex items-center gap-2">
@@ -2321,7 +2370,7 @@ const Workspace = () => {
                   ) : usId ? (
                     <SelfEval
                       key={feedbackTask.id}
-                      dimensions={feedbackTask.scoring_rubric.map((r) => ({ dim: r.dim, max: r.max }))}
+                      dimensions={safeScoringRubric.map((r) => ({ dim: r.dim, max: r.max }))}
                       initial={selfEvalMap[feedbackTask.id] ?? null}
                       taskId={feedbackTask.id}
                       userSimulationId={usId}
