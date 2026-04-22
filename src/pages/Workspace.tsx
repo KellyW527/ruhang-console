@@ -262,6 +262,7 @@ const Workspace = () => {
 
       const { data: em } = await supabase.from("emails").select("*").eq("user_simulation_id", us.id).order("received_at", { ascending: false });
       if (em) setEmails(em as Email[]);
+      setWsLoading(false);
     };
     load();
   }, [user, id, nav, profile?.plan]);
