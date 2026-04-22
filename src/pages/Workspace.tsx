@@ -422,7 +422,7 @@ const Workspace = () => {
     openCompose();
   };
 
-  const openFeedbackForTask = (task: Task, defaultTab: string = "answer") => {
+  const openFeedbackForTask = (task: Task, defaultTab: "answer" | "detail" | "self" = "answer") => {
     setFeedbackTab(defaultTab);
     setFeedbackTask(task);
     window.setTimeout(() => {
@@ -878,7 +878,7 @@ const Workspace = () => {
     if (!activeTaskNow) {
       const pendingTask = tasks.find((t) => taskStatuses[t.id]?.status === "feedback_pending");
       if (pendingTask) {
-        openFeedbackForTask(pendingTask, "self-eval");
+        openFeedbackForTask(pendingTask, "self");
         toast.info("你已经提交过了，请先完成反馈与自评", {
           description: "完成自评后才能解锁下一个任务。",
         });
