@@ -20,7 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { getPreferredDisplayName } from "@/lib/settings";
-import { buildAchievementStates, type AchievementProgressRow } from "@/data/achievements";
+import { buildAchievementStates, type AchievementProgressRow, type AchievementState } from "@/data/achievements";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -123,6 +123,150 @@ function MedalShelf({
   );
 }
 
+const SEEN_MEDALS_KEY = "ruhang_seen_medals";
+
+function getSeenMedals(): Set<string> {
+  try {
+    const raw = localStorage.getItem(SEEN_MEDALS_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function markMedalsSeen(ids: string[]) {
+  const existing = getSeenMedals();
+  ids.forEach((id) => existing.add(id));
+  localStorage.setItem(SEEN_MEDALS_KEY, JSON.stringify([...existing]));
+}
+
+function MedalCelebration({
+  medals,
+  onDone,
+}: {
+  medals: AchievementState[];
+  onDone: () => void;
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const current = medals[currentIndex];
+
+  if (!current) return null;
+
+  const isLast = currentIndex >= medals.length - 1;
+  const rarityColor =
+    current.rarity === "史诗"
+      ? "from-amber-400 to-amber-600"
+      : current.rarity === "稀有"
+        ? "from-sky-400 to-sky-600"
+        : "from-zinc-300 to-zinc-500";
+
+  const handleNext = () => {
+    if (isLast) {
+      onDone();
+    } else {
+      setCurrentIndex((i) => i + 1);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={() => onDone()}>
+      <DialogContent className="glass-strong max-w-md border-white/10 overflow-hidden p-0">
+        <div className="relative flex flex-col items-center px-8 py-10">
+          {/* Background glow */}
+          <div className="pointer-events-none absolute inset-0 halo-gold opacity-60" />
+          <div className="pointer-events-none absolute inset-0 halo-blue opacity-30" />
+
+          <motion.div
+            key={current.id}
+            initial={{ scale: 0, rotate: -30, opacity: 0 }}
+            animate={{ scale: 1, rotate: 0, opacity: 1 }}
+            transition={{ type: "spring", damping: 12, stiffness: 200 }}
+            className="relative z-10"
+          >
+            {/* Medal icon */}
+            <div className={cn("mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br shadow-2xl", rarityColor)}>
+              <Trophy className="h-12 w-12 text-white drop-shadow-lg" />
+            </div>
+          </motion.div>
+
+          <motion.div
+            key={`text-${current.id}`}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="relative z-10 mt-6 text-center"
+          >
+            <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
+              勋章解锁
+            </div>
+            <h2 className="mt-3 font-display text-3xl font-bold text-white">
+              {current.name}
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {current.description}
+            </p>
+            <span
+              className={cn(
+                "mt-3 inline-block rounded-full px-3 py-1 text-[11px] font-medium",
+                current.rarity === "史诗"
+                  ? "bg-amber-500/15 text-amber-200"
+                  : current.rarity === "稀有"
+                    ? "bg-sky-500/15 text-sky-200"
+                    : "bg-white/10 text-muted-foreground",
+              )}
+            >
+              {current.rarity}
+            </span>
+            <p className="mt-4 text-xs text-foreground/70">{current.condition}</p>
+          </motion.div>
+
+          {/* Sparkle particles */}
+          {[...Array(8)].map((_, i) => (
+            <motion.div
+              key={`sparkle-${current.id}-${i}`}
+              className="pointer-events-none absolute h-1.5 w-1.5 rounded-full bg-primary"
+              initial={{
+                x: 0, y: 0, opacity: 1, scale: 0,
+              }}
+              animate={{
+                x: Math.cos((i / 8) * Math.PI * 2) * 120,
+                y: Math.sin((i / 8) * Math.PI * 2) * 120,
+                opacity: 0,
+                scale: 1.5,
+              }}
+              transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
+              style={{ top: "40%", left: "50%" }}
+            />
+          ))}
+
+          <div className="relative z-10 mt-8 flex items-center gap-3">
+            <Button
+              onClick={handleNext}
+              className="rounded-full bg-gradient-gold px-6 py-3 text-sm font-medium text-primary-foreground shadow-glow-gold"
+            >
+              {isLast ? "太好了！" : `下一个 (${currentIndex + 1}/${medals.length})`}
+            </Button>
+          </div>
+
+          {medals.length > 1 && (
+            <div className="relative z-10 mt-4 flex gap-1.5">
+              {medals.map((_, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full transition-colors",
+                    i === currentIndex ? "bg-primary" : "bg-white/20",
+                  )}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function SidebarBody({
   name,
   plan,
@@ -205,6 +349,7 @@ export default function Dashboard() {
   const [achievementRows, setAchievementRows] = useState<AchievementProgressRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [medalOpen, setMedalOpen] = useState(false);
+  const [celebrationMedals, setCelebrationMedals] = useState<AchievementState[]>([]);
 
   useEffect(() => {
     document.title = "控制台 · 入行 RuHang";
@@ -249,10 +394,15 @@ export default function Dashboard() {
 
       const userSimulationIds = userSimulations.map((item: any) => item.id);
       if (userSimulationIds.length) {
-        const { data: progressRows } = await supabase
+        const { data: progressRows, error: progressError } = await supabase
           .from("user_task_progress")
           .select("status, score, submission_quality, submitted_at, self_eval, task:tasks(order_index, title), user_simulation:user_simulations(status, offer_accepted, simulation:simulations(code))")
           .in("user_simulation_id", userSimulationIds);
+
+        if (progressError) {
+          console.error("[Dashboard] achievement query error:", progressError);
+        }
+        console.log("[Dashboard] progressRows count:", progressRows?.length, "raw sample:", progressRows?.[0]);
 
         const normalized = (progressRows ?? []).map((row: any) => ({
           simulationCode: row.user_simulation?.simulation?.code ?? "ibd-ipo",
@@ -266,6 +416,8 @@ export default function Dashboard() {
           submittedAt: row.submitted_at ?? null,
           selfEvalSubmitted: Boolean(row.self_eval?.submitted_at),
         })) as AchievementProgressRow[];
+
+        console.log("[Dashboard] normalized achievement rows:", normalized.map(r => ({ code: r.simulationCode, simStatus: r.simulationStatus, status: r.status, idx: r.orderIndex })));
 
         setAchievementRows(normalized);
       } else {
@@ -284,6 +436,19 @@ export default function Dashboard() {
   const unlockedCount = achievements.filter((item) => item.unlocked).length;
   const totalCompletedTasks = rows.reduce((sum, row) => sum + row.completed_tasks, 0);
   const spotlight = inProgress[0] ?? rows[0] ?? null;
+
+  // Detect newly unlocked achievements and trigger celebration
+  useEffect(() => {
+    if (loading || achievements.length === 0) return;
+    const unlocked = achievements.filter((a) => a.unlocked);
+    if (unlocked.length === 0) return;
+    const seen = getSeenMedals();
+    const newlyUnlocked = unlocked.filter((a) => !seen.has(a.id));
+    if (newlyUnlocked.length > 0) {
+      setCelebrationMedals(newlyUnlocked);
+      markMedalsSeen(newlyUnlocked.map((a) => a.id));
+    }
+  }, [loading, achievements]);
 
   const onSignOut = async () => {
     await signOut();
@@ -656,6 +821,12 @@ export default function Dashboard() {
       </main>
 
       <MedalShelf open={medalOpen} onOpenChange={setMedalOpen} rows={achievementRows} />
+      {celebrationMedals.length > 0 && (
+        <MedalCelebration
+          medals={celebrationMedals}
+          onDone={() => setCelebrationMedals([])}
+        />
+      )}
     </div>
   );
 }
