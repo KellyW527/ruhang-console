@@ -1,6 +1,4 @@
-import { motion } from "framer-motion";
-import { ArrowRight, type LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { type LucideIcon } from "lucide-react";
 
 interface TrackCardProps {
   icon: LucideIcon;

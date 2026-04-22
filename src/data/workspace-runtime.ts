@@ -485,7 +485,7 @@ export const getGroupWelcomeNotice = (simulationCode?: string | null) =>
 export const getTaskReferenceContent = (simulationCode: string | null | undefined, orderIndex: number) =>
   taskReferenceContentBySimulation[normalizeSimulationCode(simulationCode)][orderIndex];
 
-export const getPhoneScript = (simulationCode?: string | null): PhoneScript | undefined => {
+export const getPhoneScript = (simulationCode?: string | null): import("@/data/immersive-content").PhoneScript | undefined => {
   const scripts = phoneScriptsBySimulation[normalizeSimulationCode(simulationCode)];
   return scripts?.[0];
 };
