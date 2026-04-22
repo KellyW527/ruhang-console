@@ -1783,9 +1783,10 @@ const Workspace = () => {
                       </div>
                     </div>
 
-                    <div className="min-h-0 flex-1 overflow-y-auto p-4 lg:p-6">
+                    <div className="relative min-h-0 flex-1 overflow-y-auto p-4 lg:p-6">
                       {composeOpen ? (
-                        <div className="mx-auto flex h-full max-w-3xl flex-col rounded-[28px] border border-white/10 bg-white/[0.02] shadow-[0_24px_60px_-28px_rgba(0,0,0,0.7)]">
+                        <div className="absolute inset-0 z-20 flex flex-col overflow-y-auto bg-background/95 p-4 backdrop-blur-sm lg:p-6">
+                        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col rounded-[28px] border border-white/10 bg-surface-1 shadow-[0_24px_60px_-28px_rgba(0,0,0,0.7)]">
                           <div className="shrink-0 border-b border-white/5 px-6 py-5">
                             <div className="flex items-start justify-between gap-4">
                               <div>
