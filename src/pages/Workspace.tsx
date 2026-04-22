@@ -200,6 +200,7 @@ const Workspace = () => {
   useEffect(() => {
     const load = async () => {
       if (!user || !id) return;
+      setWsLoading(true);
       setProgressLoaded(false);
       const { data: us } = await supabase
         .from("user_simulations")
@@ -207,7 +208,12 @@ const Workspace = () => {
         .eq("user_id", user.id)
         .eq("simulation_id", id)
         .maybeSingle();
-      if (!us) return;
+      if (!us) {
+        setWsLoading(false);
+        toast.error("找不到该模拟项目，可能尚未开始");
+        nav("/dashboard", { replace: true });
+        return;
+      }
       if ((us.simulation as { title?: string; is_pro?: boolean } | null)?.is_pro && profile?.plan !== "pro") {
         toast.info("这个模拟需要升级 Pro 后才能进入");
         nav("/pricing", { replace: true });
