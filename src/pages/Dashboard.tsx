@@ -716,7 +716,6 @@ export default function Dashboard() {
                   )}
                 </div>
               </section>
-            </div>
           </section>
 
           <section className="mt-6 grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
