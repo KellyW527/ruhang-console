@@ -871,7 +871,7 @@ const Workspace = () => {
       evaluation.detailMarkdown,
     );
 
-    await supabase
+    const { error: updateError } = await supabase
       .from("user_task_progress")
       .update({
         status: evaluation.quality === "pass" ? "feedback_pending" : "needs_resubmission",
@@ -885,6 +885,11 @@ const Workspace = () => {
       })
       .eq("user_simulation_id", usId)
       .eq("task_id", activeTaskNow.id);
+
+    if (updateError) {
+      console.error("triggerSubmission DB update failed:", updateError);
+      // Still proceed with local state update so UI responds
+    }
 
     upsertTaskStatus(activeTaskNow.id, {
       status: evaluation.quality === "pass" ? "feedback_pending" : "needs_resubmission",
@@ -1228,9 +1233,12 @@ const Workspace = () => {
         filename: composeFile.name,
         fileUrl: composeFile.url,
       });
-    } else if (currentTask) {
-      toast.info("邮件已发送，但还没进入反馈", {
-        description: "当前任务需要附带正式附件后提交，系统才会进入反馈与自评流程。",
+    } else if (currentTask && !composeFile) {
+      // Email sent without attachment — still trigger submission with subject as filename
+      await triggerSubmission({
+        kind: "email",
+        subject: composeSubject.trim(),
+        filename: composeSubject.trim(),
       });
     }
   };
