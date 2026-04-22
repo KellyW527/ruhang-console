@@ -122,7 +122,7 @@ const Workspace = () => {
   const [mobilePanel, setMobilePanel] = useState<"convs" | "chat" | "tasks">("chat");
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const [streamStarted, setStreamStarted] = useState(false);
-  const [feedbackTab, setFeedbackTab] = useState<"answer" | "detail" | "self">("answer");
+  const [feedbackTab, setFeedbackTab] = useState<"answer" | "self">("answer");
   const [feedbackReadMap, setFeedbackReadMap] = useState<Record<string, { answer: boolean; detail: boolean }>>({});
   const [completionOpen, setCompletionOpen] = useState(false);
   const [completionAverageScore, setCompletionAverageScore] = useState<number | null>(null);
