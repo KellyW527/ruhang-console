@@ -123,7 +123,7 @@ const Workspace = () => {
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const [streamStarted, setStreamStarted] = useState(false);
   const [feedbackTab, setFeedbackTab] = useState<"answer" | "self">("answer");
-  const [feedbackReadMap, setFeedbackReadMap] = useState<Record<string, { answer: boolean; detail: boolean }>>({});
+  const [completionOpen, setCompletionOpen] = useState(false);
   const [completionOpen, setCompletionOpen] = useState(false);
   const [completionAverageScore, setCompletionAverageScore] = useState<number | null>(null);
   const [completionAt, setCompletionAt] = useState<string | null>(null);
@@ -161,11 +161,10 @@ const Workspace = () => {
   const feedbackReviewMarkdown = feedbackTask
     ? `### 评分拆解\n| 维度 | 得分 |\n| --- | --- |\n${safeScoringRubric.map((item) => `| ${item.dim} | ${item.score} / ${item.max} |`).join("\n")}\n\n### 上级反馈\n${feedbackBossCommentary}`
     : "";
-  const feedbackAnalysisMarkdown = feedbackReference?.analysis ?? feedbackReviewMarkdown;
+  const selfEvalReady =
     feedbackTask && feedbackStatus?.submission_quality !== "retry"
       ? Boolean(selfEvalMap[feedbackTask.id]?.submitted_at)
       : false;
-  const feedbackReadState = feedbackTask ? feedbackReadMap[feedbackTask.id] : null;
   const showTypingIndicator =
     (sending && activeConversationKind === "leader" && !streamStarted) ||
     typingConvId === activeConvId;
@@ -289,18 +288,6 @@ const Workspace = () => {
     return () => window.clearTimeout(timer);
   }, [activeConvId, mobilePanel, tab]);
 
-  // Only update read-map when feedbackTask changes; do NOT override feedbackTab here
-  // (openFeedbackForTask is the sole source of truth for which tab opens)
-  useEffect(() => {
-    if (!feedbackTask) return;
-    setFeedbackReadMap((current) => ({
-      ...current,
-      [feedbackTask.id]: {
-        answer: true,
-        detail: current[feedbackTask.id]?.detail ?? false,
-      },
-    }));
-  }, [feedbackTask]);
 
   useEffect(() => {
     if (!activeConvId) return;
@@ -421,7 +408,7 @@ const Workspace = () => {
     openCompose();
   };
 
-  const openFeedbackForTask = (task: Task, defaultTab: "answer" | "detail" | "self" = "answer") => {
+  const openFeedbackForTask = (task: Task, defaultTab: "answer" | "self" = "answer") => {
     setFeedbackTab(defaultTab);
     setFeedbackTask(task);
     window.setTimeout(() => {
@@ -2332,34 +2319,17 @@ const Workspace = () => {
               <ATabs
                 value={feedbackTab}
                 onValueChange={(value) => {
-                  const next = value as "answer" | "detail" | "self";
-                  setFeedbackTab(next);
-                  if (!feedbackTask || next === "self") return;
-                  setFeedbackReadMap((current) => ({
-                    ...current,
-                    [feedbackTask.id]: {
-                      answer: current[feedbackTask.id]?.answer || next === "answer",
-                      detail: current[feedbackTask.id]?.detail || next === "detail",
-                    },
-                  }));
+                  setFeedbackTab(value as "answer" | "self");
                 }}
               >
                 <ATabsList className="bg-surface-1">
                   <ATabsTrigger value="answer" className="gap-1.5">
                     标准答案
-                    {feedbackReadState?.answer && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
-                  </ATabsTrigger>
-                  <ATabsTrigger value="detail" className="gap-1.5">
-                    详细解析
-                    {feedbackReadState?.detail && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
                   </ATabsTrigger>
                   <ATabsTrigger value="self">自我评估</ATabsTrigger>
                 </ATabsList>
                 <ATabsContent value="answer" className="max-h-[60vh] pr-3 md:max-h-[55vh] overflow-y-auto">
                   <MarkdownContent content={feedbackAnswerMarkdown} />
-                </ATabsContent>
-                <ATabsContent value="detail" className="max-h-[60vh] space-y-3 overflow-y-auto pr-3 md:max-h-[55vh]">
-                  <MarkdownContent content={feedbackAnalysisMarkdown} />
                 </ATabsContent>
                 <ATabsContent value="self">
                   {feedbackStatus?.submission_quality === "retry" ? (
