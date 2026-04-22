@@ -290,12 +290,11 @@ export default function Dashboard() {
     nav("/");
   };
 
+  // TODO: Pro gate — temporarily bypassed for testing
   const continueLink = (row: SimRow) =>
-    row.simulation.is_pro && profile?.plan !== "pro"
-      ? "/pricing"
-      : row.offer_accepted
-        ? `/simulation/${row.simulation.id}`
-        : `/simulation/${row.simulation.id}/offer`;
+    row.offer_accepted
+      ? `/simulation/${row.simulation.id}`
+      : `/simulation/${row.simulation.id}/offer`;
 
   const name = getPreferredDisplayName(profile ?? null, user?.email) ?? "新同学";
   const plan = profile?.plan ?? "free";
@@ -400,9 +399,7 @@ export default function Dashboard() {
                       to={continueLink(spotlight)}
                       className="inline-flex items-center gap-2 rounded-full bg-gradient-gold px-5 py-3 text-sm font-medium text-primary-foreground shadow-glow-gold"
                     >
-                      {spotlight.simulation.is_pro && plan !== "pro"
-                        ? "升级后进入当前项目"
-                        : spotlight.offer_accepted
+                      {spotlight.offer_accepted
                           ? "继续当前项目"
                           : "查看 Offer Letter"}
                       <ArrowRight className="h-4 w-4" />
@@ -805,7 +802,7 @@ function SimCard({ row, to, plan }: { row: SimRow; to: string; plan: string }) {
               <div className="h-full rounded-full bg-gradient-gold transition-all" style={{ width: `${pct}%` }} />
             </div>
             <Link to={to} className="mt-4 inline-flex items-center gap-1 text-xs text-primary transition group-hover:gap-2">
-              {sim.is_pro && plan !== "pro" ? "升级后进入" : "继续模拟"}
+              {sim.is_pro && plan !== "pro" ? "进入模拟" : "继续模拟"}
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </>
