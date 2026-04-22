@@ -153,9 +153,6 @@ const Workspace = () => {
   const feedbackReference = feedbackTask ? getTaskReferenceContent(simCode, feedbackTask.order_index) : null;
   const isReviewMode = feedbackStatus?.status === "done";
   const feedbackAnswerMarkdown = feedbackReference?.standardAnswer ?? feedbackTask?.standard_answer ?? "";
-  const feedbackBossCommentary = feedbackTask
-    ? applyFeedbackStyleTemplate(profilePreferences.feedback_style, feedbackTask.boss_commentary)
-    : "";
   const safeScoringRubric = Array.isArray(feedbackTask?.scoring_rubric) ? feedbackTask.scoring_rubric : [];
   const selfEvalReady =
     feedbackTask && feedbackStatus?.submission_quality !== "retry"
