@@ -292,9 +292,10 @@ const Workspace = () => {
     return () => window.clearTimeout(timer);
   }, [activeConvId, mobilePanel, tab]);
 
+  // Only update read-map when feedbackTask changes; do NOT override feedbackTab here
+  // (openFeedbackForTask is the sole source of truth for which tab opens)
   useEffect(() => {
     if (!feedbackTask) return;
-    setFeedbackTab("answer");
     setFeedbackReadMap((current) => ({
       ...current,
       [feedbackTask.id]: {
@@ -844,9 +845,23 @@ const Workspace = () => {
     if (!pendingTask) return;
 
     const readyToUnlock = Boolean(selfEvalMap[pendingTask.id]?.submitted_at);
-    setFeedbackTab("answer");
-    setFeedbackTask((current) => current ?? pendingTask);
-    if (!readyToUnlock) return;
+
+    if (readyToUnlock) {
+      // Self-eval already done — finalize and unlock next task
+      syncingProgressRef.current = true;
+      try {
+        await finalizeTaskAndUnlock(pendingTask);
+        setFeedbackTask(null);
+      } finally {
+        syncingProgressRef.current = false;
+      }
+      return;
+    }
+
+    // Self-eval not done yet — open feedback modal on self-eval tab
+    if (!feedbackTask) {
+      openFeedbackForTask(pendingTask, "self");
+    }
   };
 
   const queueAutomatedReply = async (conversation: Conv, reply: { delayMs: number; content: string }) => {
@@ -2306,7 +2321,11 @@ const Workspace = () => {
                       initial={selfEvalMap[feedbackTask.id] ?? null}
                       taskId={feedbackTask.id}
                       userSimulationId={usId}
-                      onSaved={(v) => setSelfEvalMap((m) => ({ ...m, [feedbackTask.id]: v }))}
+                      onSaved={(v) => {
+                        setSelfEvalMap((m) => ({ ...m, [feedbackTask.id]: v }));
+                        // Auto-advance: finalize current task and unlock next
+                        void advance();
+                      }}
                       readOnly={isReviewMode}
                     />
                   ) : null}
