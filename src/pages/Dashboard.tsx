@@ -24,6 +24,7 @@ import { buildAchievementStates, type AchievementProgressRow, type AchievementSt
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import logoImg from "@/assets/logo.png";
 
 type SimRow = {
   id: string;
@@ -283,9 +284,7 @@ function SidebarBody({
   return (
     <div className="flex h-full flex-col">
       <Link to="/" className="flex items-center gap-2.5 px-6 py-7">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-gold font-display text-base font-bold text-primary-foreground shadow-glow-gold">
-          入
-        </div>
+        <img src={logoImg} alt="入行" className="h-9 w-9 rounded-lg object-contain" />
         <span className="font-display text-lg font-semibold">入行 RuHang</span>
       </Link>
       <nav className="flex-1 space-y-1 px-3">
@@ -475,9 +474,7 @@ export default function Dashboard() {
           <header className="glass-strong rounded-[30px] border-white/10 px-4 py-4 md:px-6">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-gold font-display text-lg font-bold text-primary-foreground shadow-glow-gold">
-                  入
-                </div>
+                <img src={logoImg} alt="入行" className="h-11 w-11 rounded-2xl object-contain" />
                 <div>
                   <div className="font-display text-lg font-semibold">入行 RuHang</div>
                   <div className="text-xs text-muted-foreground">真实岗位节奏驱动的金融工作台</div>
