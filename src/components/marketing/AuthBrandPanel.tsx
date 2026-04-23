@@ -1,3 +1,5 @@
+import logoImg from "@/assets/logo.png";
+
 export function AuthBrandPanel() {
   return (
     <div className="hidden lg:flex flex-col justify-between p-12 gradient-navy relative overflow-hidden min-h-screen">
@@ -7,9 +9,7 @@ export function AuthBrandPanel() {
 
       <div className="space-y-6 relative z-10">
         <div className="flex items-center gap-2">
-          <div className="h-10 w-10 rounded-lg gradient-gold flex items-center justify-center">
-            <span className="text-lg font-bold text-primary-foreground">入</span>
-          </div>
+          <img src={logoImg} alt="入行" className="h-10 w-10 rounded-lg object-contain" />
           <span className="text-2xl font-display font-semibold text-foreground">入行 RuHang</span>
         </div>
         <div className="space-y-3 mt-12">
@@ -50,9 +50,7 @@ export function AuthBrandPanel() {
 export function AuthMobileBrand() {
   return (
     <div className="lg:hidden flex items-center gap-2 mb-8">
-      <div className="h-8 w-8 rounded-lg gradient-gold flex items-center justify-center">
-        <span className="text-sm font-bold text-primary-foreground">入</span>
-      </div>
+      <img src={logoImg} alt="入行" className="h-8 w-8 rounded-lg object-contain" />
       <span className="text-lg font-display font-semibold text-foreground">入行 RuHang</span>
     </div>
   );

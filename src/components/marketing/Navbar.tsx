@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import logoImg from "@/assets/logo.png";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
@@ -12,9 +13,7 @@ export function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/30 bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto flex h-16 items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg gradient-gold flex items-center justify-center">
-            <span className="text-sm font-bold text-primary-foreground">入</span>
-          </div>
+          <img src={logoImg} alt="入行" className="h-8 w-8 rounded-lg object-contain" />
           <span className="text-lg font-display font-semibold text-foreground">入行 RuHang</span>
         </Link>
 

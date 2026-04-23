@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import logoImg from "@/assets/logo.png";
 
 export function Footer() {
   return (
@@ -7,9 +8,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg gradient-gold flex items-center justify-center">
-                <span className="text-sm font-bold text-primary-foreground">入</span>
-              </div>
+              <img src={logoImg} alt="入行" className="h-8 w-8 rounded-lg object-contain" />
               <span className="text-lg font-display font-semibold text-foreground">入行 RuHang</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">

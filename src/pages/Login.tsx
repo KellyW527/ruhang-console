@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AuthBrandPanel } from "@/components/marketing/AuthBrandPanel";
 import { Eye, EyeOff } from "lucide-react";
+import logoImg from "@/assets/logo.png";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -43,9 +44,7 @@ const Login = () => {
         <div className="w-full max-w-md space-y-8">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="h-8 w-8 rounded-lg gradient-gold flex items-center justify-center">
-              <span className="text-sm font-bold text-primary-foreground">入</span>
-            </div>
+             <img src={logoImg} alt="入行" className="h-8 w-8 rounded-lg object-contain" />
             <span className="text-lg font-display font-semibold text-foreground">入行 RuHang</span>
           </div>
 
