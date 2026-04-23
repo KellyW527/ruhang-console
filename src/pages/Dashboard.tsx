@@ -766,57 +766,6 @@ function SpotlightMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function QuickActionCard({
-  icon,
-  title,
-  desc,
-  to,
-  onClick,
-  accent,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-  to?: string;
-  onClick?: () => void;
-  accent?: boolean;
-}) {
-  const className = cn(
-    "group flex w-full items-start justify-between gap-4 rounded-[26px] border p-4 text-left transition",
-    accent
-      ? "border-primary/25 bg-primary/10 hover:bg-primary/15"
-      : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]",
-  );
-
-  const content = (
-    <>
-      <div className="flex min-w-0 gap-3">
-        <div className={cn("mt-0.5 rounded-2xl p-2.5", accent ? "bg-primary/15 text-primary" : "bg-white/[0.05] text-primary")}>
-          {icon}
-        </div>
-        <div className="min-w-0">
-          <div className="text-sm font-medium text-foreground">{title}</div>
-          <div className="mt-1 text-xs leading-6 text-muted-foreground">{desc}</div>
-        </div>
-      </div>
-      <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" />
-    </>
-  );
-
-  if (to) {
-    return (
-      <Link to={to} className={className}>
-        {content}
-      </Link>
-    );
-  }
-
-  return (
-    <button type="button" onClick={onClick} className={className}>
-      {content}
-    </button>
-  );
-}
 
 function SimCard({ row, to, plan }: { row: SimRow; to: string; plan: string }) {
   const pct = row.total_tasks ? Math.round((row.completed_tasks / row.total_tasks) * 100) : 0;
