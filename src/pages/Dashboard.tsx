@@ -484,24 +484,24 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="hidden items-center gap-2 lg:flex">
-                <Link to="/dashboard" className="rounded-full bg-white/8 px-4 py-2 text-sm text-foreground">
+              <nav className="hidden items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1 lg:flex">
+                <Link to="/dashboard" className="rounded-full bg-primary/20 px-5 py-2 text-sm font-medium text-primary">
                   控制台
                 </Link>
-                <Link to="/report" className="rounded-full px-4 py-2 text-sm text-muted-foreground transition hover:bg-white/5 hover:text-foreground">
+                <Link to="/report" className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition hover:bg-white/8 hover:text-foreground">
                   能力报告
                 </Link>
                 <button
                   type="button"
                   onClick={() => setMedalOpen(true)}
-                  className="rounded-full px-4 py-2 text-sm text-muted-foreground transition hover:bg-white/5 hover:text-foreground"
+                  className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition hover:bg-white/8 hover:text-foreground"
                 >
                   我的勋章
                 </button>
-                <Link to="/settings" className="rounded-full px-4 py-2 text-sm text-muted-foreground transition hover:bg-white/5 hover:text-foreground">
+                <Link to="/settings" className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition hover:bg-white/8 hover:text-foreground">
                   设置
                 </Link>
-              </div>
+              </nav>
 
               <div className="hidden items-center gap-3 lg:flex">
                 <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-right">
@@ -683,39 +683,6 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-
-              <section className="glass rounded-[32px] border-white/10 p-6">
-                <div className="eyebrow">快捷入口</div>
-                <div className="mt-4 grid gap-3">
-                  <QuickActionCard
-                    icon={<BookOpen className="h-4 w-4" />}
-                    title="能力报告"
-                    desc="查看反馈、成绩和后续能力沉淀。"
-                    to="/report"
-                  />
-                  <QuickActionCard
-                    icon={<Award className="h-4 w-4" />}
-                    title="我的勋章"
-                    desc="按真实完成行为点亮，随时回看。"
-                    onClick={() => setMedalOpen(true)}
-                  />
-                  <QuickActionCard
-                    icon={<SettingsIcon className="h-4 w-4" />}
-                    title="设置中心"
-                    desc="调整称呼、反馈风格和偏好。"
-                    to="/settings"
-                  />
-                  {plan !== "pro" && (
-                    <QuickActionCard
-                      icon={<Sparkles className="h-4 w-4" />}
-                      title="升级 PRO"
-                      desc="解锁完整赛道与更高阶项目线。"
-                      to="/pricing"
-                      accent
-                    />
-                  )}
-                </div>
-              </section>
           </section>
 
           <section className="mt-6">
