@@ -484,24 +484,24 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="hidden items-center gap-2 lg:flex">
-                <Link to="/dashboard" className="rounded-full bg-white/8 px-4 py-2 text-sm text-foreground">
+              <nav className="hidden items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1 lg:flex">
+                <Link to="/dashboard" className="rounded-full bg-primary/20 px-5 py-2 text-sm font-medium text-primary">
                   控制台
                 </Link>
-                <Link to="/report" className="rounded-full px-4 py-2 text-sm text-muted-foreground transition hover:bg-white/5 hover:text-foreground">
+                <Link to="/report" className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition hover:bg-white/8 hover:text-foreground">
                   能力报告
                 </Link>
                 <button
                   type="button"
                   onClick={() => setMedalOpen(true)}
-                  className="rounded-full px-4 py-2 text-sm text-muted-foreground transition hover:bg-white/5 hover:text-foreground"
+                  className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition hover:bg-white/8 hover:text-foreground"
                 >
                   我的勋章
                 </button>
-                <Link to="/settings" className="rounded-full px-4 py-2 text-sm text-muted-foreground transition hover:bg-white/5 hover:text-foreground">
+                <Link to="/settings" className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition hover:bg-white/8 hover:text-foreground">
                   设置
                 </Link>
-              </div>
+              </nav>
 
               <div className="hidden items-center gap-3 lg:flex">
                 <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-right">
@@ -650,7 +650,7 @@ export default function Dashboard() {
             </section>
           </section>
 
-          <section className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_0.6fr]">
+          <section className="mt-6">
             <div className="glass rounded-[32px] border-white/10 p-6">
               <div className="flex items-end justify-between gap-4">
                 <div>
@@ -683,39 +683,6 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
-
-              <section className="glass rounded-[32px] border-white/10 p-6">
-                <div className="eyebrow">快捷入口</div>
-                <div className="mt-4 grid gap-3">
-                  <QuickActionCard
-                    icon={<BookOpen className="h-4 w-4" />}
-                    title="能力报告"
-                    desc="查看反馈、成绩和后续能力沉淀。"
-                    to="/report"
-                  />
-                  <QuickActionCard
-                    icon={<Award className="h-4 w-4" />}
-                    title="我的勋章"
-                    desc="按真实完成行为点亮，随时回看。"
-                    onClick={() => setMedalOpen(true)}
-                  />
-                  <QuickActionCard
-                    icon={<SettingsIcon className="h-4 w-4" />}
-                    title="设置中心"
-                    desc="调整称呼、反馈风格和偏好。"
-                    to="/settings"
-                  />
-                  {plan !== "pro" && (
-                    <QuickActionCard
-                      icon={<Sparkles className="h-4 w-4" />}
-                      title="升级 PRO"
-                      desc="解锁完整赛道与更高阶项目线。"
-                      to="/pricing"
-                      accent
-                    />
-                  )}
-                </div>
-              </section>
           </section>
 
           <section className="mt-6">
@@ -799,57 +766,6 @@ function SpotlightMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function QuickActionCard({
-  icon,
-  title,
-  desc,
-  to,
-  onClick,
-  accent,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-  to?: string;
-  onClick?: () => void;
-  accent?: boolean;
-}) {
-  const className = cn(
-    "group flex w-full items-start justify-between gap-4 rounded-[26px] border p-4 text-left transition",
-    accent
-      ? "border-primary/25 bg-primary/10 hover:bg-primary/15"
-      : "border-white/10 bg-white/[0.03] hover:bg-white/[0.06]",
-  );
-
-  const content = (
-    <>
-      <div className="flex min-w-0 gap-3">
-        <div className={cn("mt-0.5 rounded-2xl p-2.5", accent ? "bg-primary/15 text-primary" : "bg-white/[0.05] text-primary")}>
-          {icon}
-        </div>
-        <div className="min-w-0">
-          <div className="text-sm font-medium text-foreground">{title}</div>
-          <div className="mt-1 text-xs leading-6 text-muted-foreground">{desc}</div>
-        </div>
-      </div>
-      <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" />
-    </>
-  );
-
-  if (to) {
-    return (
-      <Link to={to} className={className}>
-        {content}
-      </Link>
-    );
-  }
-
-  return (
-    <button type="button" onClick={onClick} className={className}>
-      {content}
-    </button>
-  );
-}
 
 function SimCard({ row, to, plan }: { row: SimRow; to: string; plan: string }) {
   const pct = row.total_tasks ? Math.round((row.completed_tasks / row.total_tasks) * 100) : 0;
