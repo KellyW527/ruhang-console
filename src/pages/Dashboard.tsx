@@ -650,7 +650,7 @@ export default function Dashboard() {
             </section>
           </section>
 
-          <section className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_0.6fr]">
+          <section className="mt-6">
             <div className="glass rounded-[32px] border-white/10 p-6">
               <div className="flex items-end justify-between gap-4">
                 <div>
