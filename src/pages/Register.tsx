@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AuthBrandPanel } from "@/components/marketing/AuthBrandPanel";
+import logoImg from "@/assets/logo.png";
 
 const Register = () => {
   const [name, setName] = useState("");
