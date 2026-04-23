@@ -4,7 +4,6 @@ import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import logoImg from "@/assets/logo.png";
-import { useAuth } from "@/lib/auth";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
