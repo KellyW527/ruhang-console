@@ -864,6 +864,53 @@ function CompletedCard({ row }: { row: SimRow }) {
   );
 }
 
+function RecommendationCard({ entry }: { entry: CatalogEntry }) {
+  return (
+    <motion.div
+      whileHover={{ y: -4 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className="group relative flex flex-col overflow-hidden rounded-[28px] border border-primary/20 bg-primary/[0.04] backdrop-blur-xl"
+    >
+      <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+      <div className="absolute right-4 top-4">
+        <span className="inline-flex items-center gap-1 rounded-full bg-gradient-gold px-2.5 py-0.5 text-[10px] font-semibold text-primary-foreground shadow-glow-gold">
+          <Sparkles className="h-3 w-3" />
+          推荐
+        </span>
+      </div>
+      <div className="flex-1 px-6 pb-5 pt-6">
+        <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-primary/10 text-2xl">
+          {entry.coverEmoji}
+        </div>
+        <div className="mt-5">
+          <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.16em] text-primary">
+            {entry.trackLabel}
+          </span>
+        </div>
+        <h3 className="mt-3 font-display text-lg font-semibold leading-snug text-white">{entry.title}</h3>
+        <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+          {entry.company} · {entry.role}
+        </p>
+        <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted-foreground">{entry.description}</p>
+        <div className="mt-4 flex items-center gap-3 text-[11px] text-muted-foreground">
+          <span>📅 {entry.durationLabel}</span>
+          <span className="opacity-40">·</span>
+          <span>难度 {entry.difficulty}</span>
+        </div>
+      </div>
+      <div className="border-t border-white/5 bg-black/10 px-6 py-4">
+        <Link
+          to="/library"
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-gradient-gold px-4 py-2.5 text-xs font-medium text-primary-foreground transition group-hover:shadow-glow-gold"
+        >
+          去项目库开始
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+    </motion.div>
+  );
+}
+
 function EmptyState({
   icon,
   title,
