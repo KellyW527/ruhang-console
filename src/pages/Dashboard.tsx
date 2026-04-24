@@ -491,6 +491,9 @@ export default function Dashboard() {
                 <Link to="/dashboard" className="rounded-full bg-primary/20 px-5 py-2 text-sm font-medium text-primary">
                   控制台
                 </Link>
+                <Link to="/library" className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition hover:bg-white/8 hover:text-foreground">
+                  项目库
+                </Link>
                 <Link to="/report" className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition hover:bg-white/8 hover:text-foreground">
                   能力报告
                 </Link>
