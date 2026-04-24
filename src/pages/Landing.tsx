@@ -5,6 +5,7 @@ import {
   Briefcase,
   TrendingUp,
   BarChart3,
+  Handshake,
   Sparkles,
   GraduationCap,
   CheckCircle2,
@@ -90,8 +91,8 @@ const Landing = () => {
           className="mx-auto mt-20 grid max-w-5xl grid-cols-2 gap-px overflow-hidden rounded-[28px] border border-white/10 bg-white/5 shadow-card md:grid-cols-4"
           >
             {[
-              { v: "3", l: "核心赛道" },
-              { v: "18+", l: "真实任务" },
+              { v: "4", l: "核心赛道" },
+              { v: "22+", l: "真实任务" },
               { v: "8", l: "可解锁勋章" },
               { v: "24h", l: "AI 上级在线" },
             ].map((s) => (
@@ -159,13 +160,13 @@ const Landing = () => {
       <section className="relative py-20">
         <div className="container mx-auto px-6">
           <div className="mb-14 text-center">
-            <div className="eyebrow">三大核心赛道</div>
+            <div className="eyebrow">四大核心赛道</div>
             <h2 className="mt-3 font-display text-4xl font-bold">选一条赛道，开始你的第一段实习</h2>
             <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
               每条赛道都有专属的公司、Leader、starter kit 与完整任务流。
             </p>
           </div>
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             <TrackCard
               icon={Briefcase}
               tag="投资银行 IB"
@@ -187,6 +188,14 @@ const Landing = () => {
               title="明信证券 · 新能源组"
               desc="加入新能源组覆盖锂电链条，从行业框架到深度报告、点评写作，体验研究员的一周。"
               tasks={["行业框架", "公司深度", "电话会议纪要", "盈利模型", "深度报告", "业绩点评"]}
+            />
+            <TrackCard
+              icon={Handshake}
+              tag="并购 M&A"
+              title="华兴并购 · 京北数码买方组"
+              desc="跟随 VP 为客户鸿华百货完成对京北数码的买方收购：Target Profile、五年预测、Comps 与战略备忘一笔走通。"
+              tasks={["Target Profile", "五年利润表预测", "Trading Comps", "收购后战略备忘"]}
+              pro
             />
           </div>
         </div>
