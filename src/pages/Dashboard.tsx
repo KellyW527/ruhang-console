@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Sparkles,
   Trophy,
+  Library as LibraryIcon,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +22,7 @@ import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { getPreferredDisplayName } from "@/lib/settings";
 import { buildAchievementStates, type AchievementProgressRow, type AchievementState } from "@/data/achievements";
+import { getRecommendedProjects, type CatalogEntry } from "@/data/simulation-catalog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -51,6 +53,7 @@ type SimRow = {
 
 const NAV: { label: string; icon: any; to: string; medal?: boolean }[] = [
   { label: "我的模拟", icon: LayoutDashboard, to: "/dashboard" },
+  { label: "项目库", icon: LibraryIcon, to: "/library" },
   { label: "能力报告", icon: BookOpen, to: "/report" },
   { label: "我的勋章", icon: Award, to: "#", medal: true },
   { label: "设置", icon: SettingsIcon, to: "/settings" },
