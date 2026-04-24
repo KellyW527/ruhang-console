@@ -69,6 +69,8 @@ const simulationAliasMap: Record<string, string> = {
   "pe-zhiyuan": "pe-growth",
   "er-new-energy": "er-new-energy",
   "er-mingxin": "er-new-energy",
+  "ma-buyside": "ma-buyside",
+  "ma-huaxing": "ma-buyside",
 };
 
 export const normalizeSimulationCode = (code?: string | null) =>
@@ -78,6 +80,7 @@ export const groupWelcomeBySimulation: Record<string, string> = {
   "ibd-ipo": "【华锐证券投资银行部｜星瞳智能科技 IPO 项目组】\n欢迎加入项目组。项目简报和财务包已同步至共享盘，请在正式接任务前完整阅读。底稿命名规范和保密要求见置顶消息。",
   "pe-growth": "【知远资本｜拾野生活项目组】\n你好，欢迎进组。",
   "er-new-energy": "【明澈研究所｜企业服务组｜新成员同步】\n欢迎，先了解一下组里的工作节奏。",
+  "ma-buyside": "【华兴并购 M&A 组｜京北数码买方收购项目】\n欢迎进组。客户是鸿华百货控股，目标 100% 现金+换股收购京北数码。项目简报、财务包、可比公司清单已同步至共享盘 /京北数码M&A/，正式接任务前请把简报完整看过。M&A 材料一律走加密渠道。",
 };
 
 export type StarterKitAsset = {
