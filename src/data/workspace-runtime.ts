@@ -450,6 +450,96 @@ const runtimeMap = {
       },
     ],
   },
+  "ma-buyside": {
+    leader: {
+      name: "沈承宇",
+      title: "华兴并购 M&A 组 VP",
+      roleLabel: "VP · 买方并购项目负责人",
+      avatarEmoji: "🤝",
+      email: "shenchengyu@huaxingma.com",
+      greeting: "欢迎进组。买方组节奏快、客户压力大，先把估值和材料的基本盘做扎实。",
+      tonePrompt: "像 sell-side M&A 银行家，强调结构化输出、估值口径、客户视角和过会逻辑。",
+      completionNote: "你已经能独立把一笔买方交易的核心估值和材料跑通了。后面把客户沟通和反方质疑练扎实，会更接近真正的 deal team 节奏。",
+    },
+    groupName: "华兴并购 京北数码 M&A 项目组",
+    groupRoleLabel: "群聊 · 估值 / 模板 / 共享盘",
+    hrName: "华兴并购 HR",
+    hrRoleLabel: "HR · 入职与制度",
+    hrEmail: "hr@huaxingma.com",
+    hrFaq: "入职手册、保密协议、并购合规培训和共享盘权限都在附件包里。M&A 项目对客户信息保密要求最高，任何材料一律走加密渠道。",
+    groupReply: "共享盘路径和模板我重新贴一下。M&A 材料先按格式走，IC 材料最怕版本错乱。",
+    completionLetterTitle: "华兴并购 · 模拟实习结业通知",
+    tasks: [
+      {
+        expectedSubmissionKind: "email",
+        allowedExtensions: ["pptx", "pdf", "docx", "md"],
+        minimumRequirement: "通过邮件提交 Target Profile 文档，需含业务概述、股权结构、管理层、EV 测算四部分。",
+        retryTemplate: "这次还不能按 Target Profile 完成来判。这个任务要求邮件提交结构化文档/演示稿，至少要算出 EV 并列出业务和股权要点。",
+        passTemplate: "这版 profile 已经能给客户看了，EV 计算也走通了。下一轮把估值折价的初步判断写得更直接一点，IC 才会买账。",
+        groupNudge: "项目简报和市场数据快照都在共享盘 /京北数码M&A/ 下，先按 profile 模板填。",
+        materials: [
+          {
+            id: "ma-0-pack",
+            title: "Target Profile 骨架模板",
+            description: "Profile 五段结构 + EV 计算公式提示。",
+            filename: "ma-task-1-target-profile-template.md",
+            content: `# Target Profile 模板（京北数码）\n\n## 1. 一页核心数据\n- 股价 / 市值 / EV / 52 周区间\n- FY24 营收 / EBITDA / 净利润\n- 评级与目标价（如有）\n\n## 2. 业务概述\n- 4 条业务线收入与占比\n- 商业模式 + 渠道结构\n\n## 3. 股权结构与管理层\n- Top 5 股东及持股比例\n- 实控人、董事长、CEO、CFO\n\n## 4. Enterprise Value 计算\nEV = 市值 + 有息负债 - 现金及等价物\n\n## 5. 初步交易考虑\n- 折价/溢价初判\n- 与客户战略契合点`,
+          },
+        ],
+      },
+      {
+        expectedSubmissionKind: "chat_attachment",
+        allowedExtensions: ["xlsx", "csv"],
+        minimumRequirement: "通过聊天附件提交 IS 模型，需覆盖 FY22A-FY27E 五年预测，并标出 D&A 跳升对净利润的影响。",
+        retryTemplate: "模型这次不能算完成。要交一版表格附件，至少 FY25E-FY27E 三年预测，关键假设（增速、毛利率、D&A）必须能看出来。",
+        passTemplate: "这版预测的骨架立起来了，D&A 跳升那块也注意到了。下一轮把 D&A 一次性影响和经营性 EBITDA 拆开讲，结论会更稳。",
+        groupNudge: "财务包里有 FY22-FY24 三年实际数据和 D&A 跳升说明，先按模板续到 FY27E。",
+        materials: [
+          {
+            id: "ma-1-pack",
+            title: "IS 预测建模模板",
+            description: "FY22A-FY27E 利润表预测样表与关键假设。",
+            filename: "ma-task-2-is-template.csv",
+            content: `指标,FY22A,FY23A,FY24A,FY25E,FY26E,FY27E\n营业收入,7521,6853,6418,6610,6940,7287\n增长率,,−8.9%,−6.3%,3.0%,5.0%,5.0%\n毛利率,23.6%,23.8%,22.4%,22.8%,23.2%,23.6%\n销售管理费用率,16.1%,16.6%,16.8%,16.4%,16.0%,15.6%\nEBITDA,560,538,424,468,540,612\nD&A,148,156,168,256,232,210\nEBIT,412,382,256,212,308,402\n净利润,278,273,182,148,224,302\n备注,,,,FY25E D&A 跳升致净利润短期回落,,`,
+          },
+        ],
+      },
+      {
+        expectedSubmissionKind: "email",
+        allowedExtensions: ["xlsx", "csv"],
+        minimumRequirement: "通过邮件提交 Trading Comps 表格，至少含 7 家可比公司、EV/Revenue 与 EV/EBITDA 倍数、均值/中位数。",
+        retryTemplate: "这次不能按 Comps 完成来收。要邮件交一版表格，必须算出每家可比的 EV、EV/Rev、EV/EBITDA，并列出均值与中位数。",
+        passTemplate: "这版 comps 至少把可比池跑通了，折价幅度也看得见。下一轮把'为什么折价合理'和'协同填补缺口'这两段写在前面。",
+        groupNudge: "可比公司清单和最新市场快照都贴群里了，目标公司不要进可比池。",
+        materials: [
+          {
+            id: "ma-2-pack",
+            title: "Trading Comps 模板",
+            description: "可比公司估值倍数模板与公式提示。",
+            filename: "ma-task-3-comps-template.csv",
+            content: `公司,股价,股本(亿),市值,有息负债,现金,EV,LTM收入,LTM EBITDA,EV/Revenue,EV/EBITDA\n苏宁易购,2.34,93.0,2176,5240,1820,5596,12480,860,0.45,6.51\n国美零售,0.86,32.4,279,1840,520,1599,5420,-180,0.30,nm\n京东集团-SW,128.6,31.2,40123,8240,12860,35503,288400,12640,0.12,2.81\n永辉超市,3.18,90.7,2884,3260,1480,4664,8650,420,0.54,11.10\n物美科技,15.40,18.6,2864,2180,860,4184,4250,520,0.98,8.05\n三江购物,9.85,5.42,534,180,220,494,3820,180,0.13,2.74\n中百集团,5.62,6.81,383,420,180,623,2840,160,0.22,3.89\n均值,,,,,,,,,0.39,5.85\n中位数,,,,,,,,,0.30,5.20\n京北数码（目标）,7.68,22.86,1756,412,226,1942,6418,424,0.30,4.58\n备注,目标 EV/Rev 与中位数接近·EV/EBITDA 显著低于均值,,,,,,,,,`,
+          },
+        ],
+      },
+      {
+        expectedSubmissionKind: "chat_attachment",
+        allowedExtensions: ["docx", "pdf", "md"],
+        minimumRequirement: "通过聊天附件提交 ≤200 字战略备忘录，至少覆盖 3 个收购后投入方向（健康科技 / 出行电气化 / 户外生活方式）并给出排序判断。",
+        retryTemplate: "这次不能按战略备忘录完成来收。要交一版结构化短稿，三个方向都要展开，至少给出排序与一句话理由。",
+        passTemplate: "Memo 收尾已经有 IC 答辩的味道了，三个方向的优先级也排得清。下一轮把每个方向的资本开支量级和 2-3 年回报路径补上。",
+        groupNudge: "三个方向的行业资料和管理层访谈纪要已经放在群里了，先按那个材料组织判断。",
+        materials: [
+          {
+            id: "ma-3-pack",
+            title: "战略备忘录提示卡",
+            description: "三个收购后投入方向的论证框架。",
+            filename: "ma-task-4-strategic-memo.md",
+            content: `# 收购后战略备忘录提示\n\n## 候选方向\n1. 健康科技（智能穿戴 + 健康监测设备）\n2. 出行电气化（电动两轮车 + 充电配件 + 储能）\n3. 户外生活方式（露营 / 家庭健身 / 智能家居延伸）\n\n## 写作要点（≤200 字）\n- 排序：先写最优先方向，再写第二/第三\n- 每个方向 1 句话回答：为什么打、靠什么打、2-3 年看到什么\n- 结论必须落到"对鸿华百货收购后的协同价值"上\n\n## 不能写的话\n- "都很重要" → 客户不会买\n- "未来空间大" → 没有判断的空话`,
+          },
+        ],
+      },
+    ],
+  },
 } as const satisfies Record<string, SimulationRuntime>;
 
 export const getSimulationRuntime = (code?: string | null) => {
