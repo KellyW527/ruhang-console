@@ -20,6 +20,9 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-8">
           <a href="#tracks" className="text-sm text-muted-foreground hover:text-foreground transition-colors">赛道</a>
           <a href="#how" className="text-sm text-muted-foreground hover:text-foreground transition-colors">运作方式</a>
+          {session && (
+            <Link to="/library" className="text-sm text-muted-foreground hover:text-foreground transition-colors">项目库</Link>
+          )}
           <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">定价</Link>
         </div>
 
@@ -49,6 +52,9 @@ export function Navbar() {
         <div className="md:hidden border-t border-border/30 bg-background/95 backdrop-blur-xl p-6 space-y-4">
           <a href="#tracks" className="block text-sm text-muted-foreground">赛道</a>
           <a href="#how" className="block text-sm text-muted-foreground">运作方式</a>
+          {session && (
+            <Link to="/library" className="block text-sm text-muted-foreground">项目库</Link>
+          )}
           <Link to="/pricing" className="block text-sm text-muted-foreground">定价</Link>
           <div className="flex gap-3 pt-4">
             {session ? (
