@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Sparkles,
   Trophy,
+  Library as LibraryIcon,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +22,7 @@ import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { getPreferredDisplayName } from "@/lib/settings";
 import { buildAchievementStates, type AchievementProgressRow, type AchievementState } from "@/data/achievements";
+import { getRecommendedProjects, type CatalogEntry } from "@/data/simulation-catalog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -51,6 +53,7 @@ type SimRow = {
 
 const NAV: { label: string; icon: any; to: string; medal?: boolean }[] = [
   { label: "我的模拟", icon: LayoutDashboard, to: "/dashboard" },
+  { label: "项目库", icon: LibraryIcon, to: "/library" },
   { label: "能力报告", icon: BookOpen, to: "/report" },
   { label: "我的勋章", icon: Award, to: "#", medal: true },
   { label: "设置", icon: SettingsIcon, to: "/settings" },
@@ -429,12 +432,15 @@ export default function Dashboard() {
     void load();
   }, [user]);
 
-  const inProgress = rows.filter((row) => row.status !== "completed");
-  const completed = rows.filter((row) => row.status === "completed");
+  // 只显示用户已经"开始"的项目（接收过 Offer 或已完成）
+  const startedRows = rows.filter((row) => row.offer_accepted || row.status === "in_progress" || row.status === "completed");
+  const inProgress = startedRows.filter((row) => row.status !== "completed");
+  const completed = startedRows.filter((row) => row.status === "completed");
   const achievements = useMemo(() => buildAchievementStates(achievementRows), [achievementRows]);
   const unlockedCount = achievements.filter((item) => item.unlocked).length;
-  const totalCompletedTasks = rows.reduce((sum, row) => sum + row.completed_tasks, 0);
-  const spotlight = inProgress[0] ?? rows[0] ?? null;
+  const totalCompletedTasks = startedRows.reduce((sum, row) => sum + row.completed_tasks, 0);
+  const spotlight = inProgress[0] ?? startedRows[0] ?? null;
+  const recommendations = useMemo(() => getRecommendedProjects(), []);
 
   // Detect newly unlocked achievements and trigger celebration
   useEffect(() => {
@@ -484,6 +490,9 @@ export default function Dashboard() {
               <nav className="hidden items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1 lg:flex">
                 <Link to="/dashboard" className="rounded-full bg-primary/20 px-5 py-2 text-sm font-medium text-primary">
                   控制台
+                </Link>
+                <Link to="/library" className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition hover:bg-white/8 hover:text-foreground">
+                  项目库
                 </Link>
                 <Link to="/report" className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition hover:bg-white/8 hover:text-foreground">
                   能力报告
@@ -651,14 +660,18 @@ export default function Dashboard() {
             <div className="glass rounded-[32px] border-white/10 p-6">
               <div className="flex items-end justify-between gap-4">
                 <div>
-                  <div className="eyebrow">赛道矩阵</div>
-                  <h2 className="mt-2 font-display text-2xl font-semibold">你的模拟线路</h2>
+                  <div className="eyebrow">{startedRows.length === 0 ? "推荐项目" : "我的项目"}</div>
+                  <h2 className="mt-2 font-display text-2xl font-semibold">
+                    {startedRows.length === 0 ? "开始你的第一个模拟" : "你的模拟线路"}
+                  </h2>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    每条卡片都继续连接真实的项目入口、任务进度和 Offer 状态，不接 mock 数据。
+                    {startedRows.length === 0
+                      ? "RuHang 为你精选 3 个不同方向的项目，挑一个开始你的金融职业旅程。"
+                      : "每条卡片都继续连接真实的项目入口、任务进度和 Offer 状态，不接 mock 数据。"}
                   </p>
                 </div>
-                <Link to="/" className="text-xs text-primary transition hover:underline">
-                  回到首页查看赛道 →
+                <Link to="/library" className="text-xs text-primary transition hover:underline">
+                  浏览全部项目 →
                 </Link>
               </div>
 
@@ -668,13 +681,15 @@ export default function Dashboard() {
                     <div key={i} className="glass h-64 rounded-[28px] animate-pulse" />
                   ))}
                 </div>
-              ) : rows.length === 0 ? (
-                <div className="mt-5">
-                  <EmptyState title="还没有模拟线" desc="开始第一条赛道后，这里会按真实项目节奏展示你的全部线路。" />
+              ) : startedRows.length === 0 ? (
+                <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {recommendations.map((rec) => (
+                    <RecommendationCard key={rec.code} entry={rec} />
+                  ))}
                 </div>
               ) : (
                 <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {rows.map((r) => (
+                  {startedRows.map((r) => (
                     <SimCard key={r.id} row={r} to={continueLink(r)} plan={plan} />
                   ))}
                 </div>
@@ -846,6 +861,53 @@ function CompletedCard({ row }: { row: SimRow }) {
         </Link>
       </div>
     </div>
+  );
+}
+
+function RecommendationCard({ entry }: { entry: CatalogEntry }) {
+  return (
+    <motion.div
+      whileHover={{ y: -4 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      className="group relative flex flex-col overflow-hidden rounded-[28px] border border-primary/20 bg-primary/[0.04] backdrop-blur-xl"
+    >
+      <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
+      <div className="absolute right-4 top-4">
+        <span className="inline-flex items-center gap-1 rounded-full bg-gradient-gold px-2.5 py-0.5 text-[10px] font-semibold text-primary-foreground shadow-glow-gold">
+          <Sparkles className="h-3 w-3" />
+          推荐
+        </span>
+      </div>
+      <div className="flex-1 px-6 pb-5 pt-6">
+        <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-primary/10 text-2xl">
+          {entry.coverEmoji}
+        </div>
+        <div className="mt-5">
+          <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.16em] text-primary">
+            {entry.trackLabel}
+          </span>
+        </div>
+        <h3 className="mt-3 font-display text-lg font-semibold leading-snug text-white">{entry.title}</h3>
+        <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+          {entry.company} · {entry.role}
+        </p>
+        <p className="mt-3 line-clamp-3 text-sm leading-6 text-muted-foreground">{entry.description}</p>
+        <div className="mt-4 flex items-center gap-3 text-[11px] text-muted-foreground">
+          <span>📅 {entry.durationLabel}</span>
+          <span className="opacity-40">·</span>
+          <span>难度 {entry.difficulty}</span>
+        </div>
+      </div>
+      <div className="border-t border-white/5 bg-black/10 px-6 py-4">
+        <Link
+          to="/library"
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-gradient-gold px-4 py-2.5 text-xs font-medium text-primary-foreground transition group-hover:shadow-glow-gold"
+        >
+          去项目库开始
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
+    </motion.div>
   );
 }
 
