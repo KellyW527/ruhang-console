@@ -660,14 +660,18 @@ export default function Dashboard() {
             <div className="glass rounded-[32px] border-white/10 p-6">
               <div className="flex items-end justify-between gap-4">
                 <div>
-                  <div className="eyebrow">赛道矩阵</div>
-                  <h2 className="mt-2 font-display text-2xl font-semibold">你的模拟线路</h2>
+                  <div className="eyebrow">{startedRows.length === 0 ? "推荐项目" : "我的项目"}</div>
+                  <h2 className="mt-2 font-display text-2xl font-semibold">
+                    {startedRows.length === 0 ? "开始你的第一个模拟" : "你的模拟线路"}
+                  </h2>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    每条卡片都继续连接真实的项目入口、任务进度和 Offer 状态，不接 mock 数据。
+                    {startedRows.length === 0
+                      ? "RuHang 为你精选 3 个不同方向的项目，挑一个开始你的金融职业旅程。"
+                      : "每条卡片都继续连接真实的项目入口、任务进度和 Offer 状态，不接 mock 数据。"}
                   </p>
                 </div>
-                <Link to="/" className="text-xs text-primary transition hover:underline">
-                  回到首页查看赛道 →
+                <Link to="/library" className="text-xs text-primary transition hover:underline">
+                  浏览全部项目 →
                 </Link>
               </div>
 
@@ -677,13 +681,15 @@ export default function Dashboard() {
                     <div key={i} className="glass h-64 rounded-[28px] animate-pulse" />
                   ))}
                 </div>
-              ) : rows.length === 0 ? (
-                <div className="mt-5">
-                  <EmptyState title="还没有模拟线" desc="开始第一条赛道后，这里会按真实项目节奏展示你的全部线路。" />
+              ) : startedRows.length === 0 ? (
+                <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {recommendations.map((rec) => (
+                    <RecommendationCard key={rec.code} entry={rec} />
+                  ))}
                 </div>
               ) : (
                 <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {rows.map((r) => (
+                  {startedRows.map((r) => (
                     <SimCard key={r.id} row={r} to={continueLink(r)} plan={plan} />
                   ))}
                 </div>
