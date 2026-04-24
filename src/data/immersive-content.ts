@@ -103,6 +103,10 @@ export const starterKitAssetsBySimulation: Record<string, StarterKitAsset[]> = {
   "er-new-energy": [
     { id: "er-framework", title: "赛道研究框架", description: "企业服务 SaaS 研究背景", filename: "企业服务SaaS赛道研究框架_初稿_v1.0.html", sizeLabel: "HTML · 研究大纲", url: "/starter-kits/er/saas-research-framework.html" },
   ],
+  "ma-buyside": [
+    { id: "ma-brief", title: "项目背景简报", description: "京北数码 M&A 项目全景简报：客户、标的、业务结构、红旗事项、4 个任务交付物路径", filename: "京北数码_M&A项目背景简报_v2.0.html", sizeLabel: "HTML · 6节", url: "/starter-kits/ma/jingbei-project-brief.html" },
+    { id: "ma-financial-package", title: "京北数码三年财务数据包", description: "FY22-FY24 利润表、资产负债表、现金流、门店与会员、市场数据、EV 倍数完整数据", filename: "京北数码_三年财务数据包_v2.0.csv", sizeLabel: "CSV · 50+行", url: "/starter-kits/ma/jingbei-financial-package.csv" },
+  ],
 };
 
 export type PhoneScript = {
