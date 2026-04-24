@@ -432,12 +432,15 @@ export default function Dashboard() {
     void load();
   }, [user]);
 
-  const inProgress = rows.filter((row) => row.status !== "completed");
-  const completed = rows.filter((row) => row.status === "completed");
+  // 只显示用户已经"开始"的项目（接收过 Offer 或已完成）
+  const startedRows = rows.filter((row) => row.offer_accepted || row.status === "in_progress" || row.status === "completed");
+  const inProgress = startedRows.filter((row) => row.status !== "completed");
+  const completed = startedRows.filter((row) => row.status === "completed");
   const achievements = useMemo(() => buildAchievementStates(achievementRows), [achievementRows]);
   const unlockedCount = achievements.filter((item) => item.unlocked).length;
-  const totalCompletedTasks = rows.reduce((sum, row) => sum + row.completed_tasks, 0);
-  const spotlight = inProgress[0] ?? rows[0] ?? null;
+  const totalCompletedTasks = startedRows.reduce((sum, row) => sum + row.completed_tasks, 0);
+  const spotlight = inProgress[0] ?? startedRows[0] ?? null;
+  const recommendations = useMemo(() => getRecommendedProjects(), []);
 
   // Detect newly unlocked achievements and trigger celebration
   useEffect(() => {
