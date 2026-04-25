@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { buildOfferSeed } from "@/data/seed-data";
 import { getSimulationRuntime } from "@/data/workspace-runtime";
 import { getPreferredDisplayName } from "@/lib/settings";
+import { PreSimulationSurvey } from "@/components/feedback/PreSimulationSurvey";
+import { getPreSimulationSurvey } from "@/lib/feedback";
 
 type Sim = {
   id: string;
@@ -28,6 +30,7 @@ const OfferLetter = () => {
   const [usId, setUsId] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
   const [exit, setExit] = useState(false);
+  const [showPreSurvey, setShowPreSurvey] = useState(false);
   const runtime = getSimulationRuntime(sim?.code);
   const preferredName = getPreferredDisplayName(profile ?? null, user?.email);
 
@@ -61,7 +64,13 @@ const OfferLetter = () => {
       if (us) {
         setUsId(us.id);
         if (us.offer_accepted) {
-          nav(`/simulation/${id}`, { replace: true });
+          // Offer 已接受。如果还没填入项问卷（老用户或上次没填完），需要在这里补填。
+          const survey = await getPreSimulationSurvey(us.id);
+          if (survey) {
+            nav(`/simulation/${id}`, { replace: true });
+          } else {
+            setShowPreSurvey(true);
+          }
         }
       }
     };
@@ -158,7 +167,8 @@ const OfferLetter = () => {
     }
 
     setExit(true);
-    setTimeout(() => nav(`/simulation/${id}`), 600);
+    // 弹出入项问卷；提交后才跳 Workspace
+    setTimeout(() => setShowPreSurvey(true), 600);
   };
 
   if (!sim) {
@@ -252,6 +262,19 @@ const OfferLetter = () => {
           )}
         </AnimatePresence>
       </div>
+
+      {usId && sim && (
+        <PreSimulationSurvey
+          open={showPreSurvey}
+          userSimulationId={usId}
+          simulationCode={sim.code}
+          simulationTitle={sim.title}
+          onSubmitted={() => {
+            setShowPreSurvey(false);
+            nav(`/simulation/${id}`);
+          }}
+        />
+      )}
     </div>
   );
 };

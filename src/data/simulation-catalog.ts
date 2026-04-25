@@ -30,6 +30,14 @@ export type CatalogEntry = {
   tags: string[];
   /** 是否在首页空状态推荐区出现（每个赛道至多 1 个） */
   recommended?: boolean;
+  /** 证书上展示的项目方文字 logo（后续可换成真实 PNG/SVG） */
+  companyLogoText: string;
+  /** 证书上展示的"在本项目中你证明了你掌握了"技能列表 */
+  skills: string[];
+  /** 证书签名人姓名 */
+  signoffName: string;
+  /** 证书签名人头衔 */
+  signoffTitle: string;
 };
 
 export const SIMULATION_TRACKS: Array<{
@@ -61,6 +69,10 @@ export const SIMULATION_CATALOG: CatalogEntry[] = [
     isPro: false,
     tags: ["IPO", "估值", "工作底稿", "适合新手"],
     recommended: true,
+    companyLogoText: "兴通投行",
+    skills: ["可比公司估值", "工作底稿撰写", "行业研究框架", "路演材料制作"],
+    signoffName: "周恺",
+    signoffTitle: "兴通投行 IPO 项目组 VP",
   },
   {
     code: "ma-buyside",
@@ -77,6 +89,10 @@ export const SIMULATION_CATALOG: CatalogEntry[] = [
     isPro: true,
     tags: ["买方并购", "DCF", "Trading Comps", "战略备忘"],
     recommended: true,
+    companyLogoText: "华兴并购",
+    skills: ["Target Profile 撰写", "DCF 估值建模", "Trading Comps 分析", "并购整合战略"],
+    signoffName: "沈承宇",
+    signoffTitle: "华兴并购 M&A 组 VP",
   },
   {
     code: "pe-deal",
@@ -93,6 +109,10 @@ export const SIMULATION_CATALOG: CatalogEntry[] = [
     isPro: true,
     tags: ["尽调", "LBO", "投决", "消费"],
     recommended: true,
+    companyLogoText: "时晔资本",
+    skills: ["商业尽调", "LBO 模型搭建", "投资备忘录撰写", "投委会答辩"],
+    signoffName: "林骁",
+    signoffTitle: "时晔资本 投资合伙人",
   },
   {
     code: "er-saas",
@@ -108,6 +128,10 @@ export const SIMULATION_CATALOG: CatalogEntry[] = [
     difficulty: "入门",
     isPro: false,
     tags: ["行业研究", "SaaS", "估值锚定", "适合新手"],
+    companyLogoText: "明信证券研究所",
+    skills: ["行业地图绘制", "关键指标分析", "公司画像撰写", "投资观点输出"],
+    signoffName: "高航",
+    signoffTitle: "明信证券研究所 SaaS 首席",
   },
 ];
 

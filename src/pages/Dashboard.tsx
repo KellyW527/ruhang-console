@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import logoImg from "@/assets/logo.png";
+import { CertificateWall } from "@/components/dashboard/CertificateWall";
 
 type SimRow = {
   id: string;
