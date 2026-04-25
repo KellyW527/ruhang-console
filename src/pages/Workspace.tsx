@@ -876,6 +876,8 @@ body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans S
     setCompletionAverageScore(tasks.length ? Math.round(totalScore / tasks.length) : null);
     setCompletionAt(new Date().toISOString());
     setCompletionOpen(true);
+    // 同时弹出出项问卷（必填，提交后才能查证书）
+    setShowPostSurvey(true);
 
     const leaderConversation = convs.find((item) => getConversationKind(item, simCode) === "leader");
     const hrConversation = convs.find((item) => getConversationKind(item, simCode) === "hr");
