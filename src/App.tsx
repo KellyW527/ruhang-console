@@ -16,6 +16,7 @@ import Settings from "./pages/Settings";
 import Pricing from "./pages/Pricing";
 import Library from "./pages/Library";
 import ResetPassword from "./pages/ResetPassword";
+import Certificate from "./pages/Certificate";
 import NotFound from "./pages/NotFound";
 import { supabasePublicConfig } from "./integrations/supabase/client";
 
@@ -75,6 +76,7 @@ function AppRoutes() {
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
       <Route path="/simulation/:id/offer" element={<ProtectedRoute><OfferLetter /></ProtectedRoute>} />
+      <Route path="/simulation/:id/certificate" element={<ProtectedRoute><Certificate /></ProtectedRoute>} />
       <Route path="/simulation/:id" element={<ProtectedRoute><Workspace /></ProtectedRoute>} />
       <Route path="/report" element={<ProtectedRoute><Report /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
