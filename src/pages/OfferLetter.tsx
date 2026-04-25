@@ -30,6 +30,7 @@ const OfferLetter = () => {
   const [usId, setUsId] = useState<string | null>(null);
   const [accepting, setAccepting] = useState(false);
   const [exit, setExit] = useState(false);
+  const [showPreSurvey, setShowPreSurvey] = useState(false);
   const runtime = getSimulationRuntime(sim?.code);
   const preferredName = getPreferredDisplayName(profile ?? null, user?.email);
 
