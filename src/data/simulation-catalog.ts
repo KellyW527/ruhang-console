@@ -30,6 +30,14 @@ export type CatalogEntry = {
   tags: string[];
   /** 是否在首页空状态推荐区出现（每个赛道至多 1 个） */
   recommended?: boolean;
+  /** 证书上展示的项目方文字 logo（后续可换成真实 PNG/SVG） */
+  companyLogoText: string;
+  /** 证书上展示的"在本项目中你证明了你掌握了"技能列表 */
+  skills: string[];
+  /** 证书签名人姓名 */
+  signoffName: string;
+  /** 证书签名人头衔 */
+  signoffTitle: string;
 };
 
 export const SIMULATION_TRACKS: Array<{
