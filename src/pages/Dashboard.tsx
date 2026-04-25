@@ -682,7 +682,7 @@ export default function Dashboard() {
                     <div key={i} className="glass h-64 rounded-[28px] animate-pulse" />
                   ))}
                 </div>
-              ) : startedRows.length === 0 ? (
+              ) : inProgress.length === 0 ? (
                 <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {recommendations.map((rec) => (
                     <RecommendationCard key={rec.code} entry={rec} />
@@ -690,7 +690,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {startedRows.map((r) => (
+                  {inProgress.map((r) => (
                     <SimCard key={r.id} row={r} to={continueLink(r)} plan={plan} />
                   ))}
                 </div>
