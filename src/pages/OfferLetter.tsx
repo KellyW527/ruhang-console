@@ -262,6 +262,19 @@ const OfferLetter = () => {
           )}
         </AnimatePresence>
       </div>
+
+      {usId && sim && (
+        <PreSimulationSurvey
+          open={showPreSurvey}
+          userSimulationId={usId}
+          simulationCode={sim.code}
+          simulationTitle={sim.title}
+          onSubmitted={() => {
+            setShowPreSurvey(false);
+            nav(`/simulation/${id}`);
+          }}
+        />
+      )}
     </div>
   );
 };
