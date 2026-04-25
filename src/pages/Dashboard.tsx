@@ -727,6 +727,22 @@ export default function Dashboard() {
               )}
             </section>
           </section>
+
+          <section className="mt-6">
+            <CertificateWall
+              completed={completed.map((r) => ({
+                id: r.id,
+                completed_at: r.completed_at,
+                simulation: {
+                  id: r.simulation.id,
+                  code: r.simulation.code,
+                  title: r.simulation.title,
+                  company: r.simulation.company,
+                  cover_emoji: r.simulation.cover_emoji,
+                },
+              }))}
+            />
+          </section>
         </div>
       </main>
 
