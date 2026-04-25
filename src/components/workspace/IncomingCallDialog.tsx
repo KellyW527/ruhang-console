@@ -69,26 +69,29 @@ export function IncomingCallDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="glass-strong h-[100dvh] max-h-none w-full max-w-none border-none bg-background/95 p-0 sm:rounded-none">
-        <div className="flex h-full flex-col px-6 py-10 text-center">
-          <div className="flex flex-1 flex-col items-center justify-center">
+      <DialogContent className="glass-strong h-[100dvh] max-h-none w-full max-w-none border-none bg-background/95 p-0 sm:rounded-none [&>button]:hidden">
+        <div className="flex h-full flex-col">
+          {/* 固定头部：头像 + 姓名 + 状态 */}
+          <div className="flex flex-col items-center px-6 pb-4 pt-8 text-center">
             <div className="relative">
-              <div className="flex h-28 w-28 items-center justify-center rounded-full bg-gradient-gold text-4xl text-primary-foreground shadow-glow-gold">
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-gold text-3xl text-primary-foreground shadow-glow-gold">
                 {callerName.slice(0, 1)}
               </div>
               {phase === "ringing" && <span className="absolute inset-0 animate-ping rounded-full border border-primary/50" />}
             </div>
-
-            <div className="mt-8">
-              <div className="font-display text-3xl font-semibold">{callerName}</div>
-              <div className="mt-2 text-sm text-muted-foreground">{callerRole}</div>
-              <div className="mt-4 text-sm text-primary">
+            <div className="mt-4">
+              <div className="font-display text-2xl font-semibold">{callerName}</div>
+              <div className="mt-1 text-xs text-muted-foreground">{callerRole}</div>
+              <div className="mt-2 text-sm text-primary">
                 {phase === "ringing" ? "来电接入中…" : phase === "active" ? formatDuration(seconds) : "通话结束"}
               </div>
             </div>
+          </div>
 
+          {/* 中间可滚动区：脚本 + 字幕 */}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-6 pb-4" style={{ touchAction: "pan-y", WebkitOverflowScrolling: "touch" }}>
             {script && (
-              <div className="mt-8 w-full max-w-2xl rounded-3xl border border-white/10 bg-white/[0.03] p-5 text-left">
+              <div className="mx-auto w-full max-w-2xl rounded-3xl border border-white/10 bg-white/[0.03] p-5 text-left">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] text-primary">{script.taskDirection}</span>
                   <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-muted-foreground">{script.style}</span>
@@ -122,7 +125,7 @@ export function IncomingCallDialog({
             )}
 
             {phase === "active" && (
-              <div className="mt-8 flex h-20 items-end gap-1">
+              <div className="mx-auto mt-6 flex h-16 max-w-2xl items-end justify-center gap-1">
                 {waveform.map((height, index) => (
                   <span
                     key={index}
@@ -134,7 +137,8 @@ export function IncomingCallDialog({
             )}
           </div>
 
-          <div className="mt-12 flex items-center justify-center gap-4">
+          {/* 固定底部：操作按钮 */}
+          <div className="flex shrink-0 items-center justify-center gap-4 border-t border-white/5 bg-background/80 px-6 py-6 backdrop-blur">
             {phase === "ringing" ? (
               <>
                 <Button
