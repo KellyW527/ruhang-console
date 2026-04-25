@@ -2395,6 +2395,24 @@ body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans S
                   ) : null}
                 </ATabsContent>
               </ATabs>
+
+              {/* Forage 风格的"这个任务体验如何" — 任务通过且不是重交时显示 */}
+              {usId &&
+                feedbackTask &&
+                simCode &&
+                feedbackStatus?.status === "done" &&
+                feedbackStatus?.submission_quality !== "retry" && (
+                  <div className="mt-4">
+                    <TaskFeedbackBar
+                      key={`fb-${feedbackTask.id}`}
+                      userSimulationId={usId}
+                      taskId={feedbackTask.id}
+                      simulationCode={simCode}
+                      taskOrderIndex={feedbackTask.order_index}
+                    />
+                  </div>
+                )}
+
               <div className="flex justify-end border-t border-white/5 pt-4">
                 <div className="flex flex-col items-end gap-2">
                   {feedbackStatus?.submission_quality === "retry" ? (
