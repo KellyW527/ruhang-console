@@ -661,14 +661,14 @@ export default function Dashboard() {
             <div className="glass rounded-[32px] border-white/10 p-6">
               <div className="flex items-end justify-between gap-4">
                 <div>
-                  <div className="eyebrow">{startedRows.length === 0 ? "推荐项目" : "我的项目"}</div>
+                  <div className="eyebrow">{inProgress.length === 0 ? "推荐项目" : "我的项目"}</div>
                   <h2 className="mt-2 font-display text-2xl font-semibold">
-                    {startedRows.length === 0 ? "开始你的第一个模拟" : "你的模拟线路"}
+                    {inProgress.length === 0 ? "开始你的第一个模拟" : "你的模拟线路"}
                   </h2>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    {startedRows.length === 0
+                    {inProgress.length === 0
                       ? "RuHang 为你精选 3 个不同方向的项目，挑一个开始你的金融职业旅程。"
-                      : "每条卡片都继续连接真实的项目入口、任务进度和 Offer 状态，不接 mock 数据。"}
+                      : "这里只展示你正在进行中的项目；已结项的项目会沉淀到下方的「已完成项目」区块。"}
                   </p>
                 </div>
                 <Link to="/library" className="text-xs text-primary transition hover:underline">
@@ -682,7 +682,7 @@ export default function Dashboard() {
                     <div key={i} className="glass h-64 rounded-[28px] animate-pulse" />
                   ))}
                 </div>
-              ) : startedRows.length === 0 ? (
+              ) : inProgress.length === 0 ? (
                 <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {recommendations.map((rec) => (
                     <RecommendationCard key={rec.code} entry={rec} />
@@ -690,7 +690,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {startedRows.map((r) => (
+                  {inProgress.map((r) => (
                     <SimCard key={r.id} row={r} to={continueLink(r)} plan={plan} />
                   ))}
                 </div>
