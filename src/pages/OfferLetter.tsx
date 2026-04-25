@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { buildOfferSeed } from "@/data/seed-data";
 import { getSimulationRuntime } from "@/data/workspace-runtime";
 import { getPreferredDisplayName } from "@/lib/settings";
+import { PreSimulationSurvey } from "@/components/feedback/PreSimulationSurvey";
+import { getPreSimulationSurvey } from "@/lib/feedback";
 
 type Sim = {
   id: string;
