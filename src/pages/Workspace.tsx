@@ -2470,24 +2470,31 @@ body{font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans S
               <div className="mt-1 text-sm text-amber-50/80">完成任意一条模拟线的全部任务。</div>
             </div>
             <div className="flex items-center justify-end gap-2">
-              {completionLetterUrl && (
-                <Button type="button" variant="ghost" asChild>
-                  <a href={completionLetterUrl} download={`${simTitle || "入行RuHang"}_结业证书.html`}>
-                    下载结业证书
-                  </a>
-                </Button>
-              )}
               <Button type="button" variant="ghost" onClick={() => nav("/dashboard")}>
                 返回控制台
               </Button>
-              <Button type="button" onClick={() => nav("/report")} className="bg-gradient-gold text-primary-foreground hover:opacity-95">
-                查看能力报告
+              <Button
+                type="button"
+                onClick={() => nav(`/simulation/${id}/certificate`)}
+                className="bg-gradient-gold text-primary-foreground hover:opacity-95"
+              >
+                查看结业证书
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* 出项问卷：必填，提交后才能去看证书 */}
+      {usId && simCode && (
+        <PostSimulationSurvey
+          open={showPostSurvey}
+          userSimulationId={usId}
+          simulationCode={simCode}
+          simulationTitle={simTitle}
+          onSubmitted={() => setShowPostSurvey(false)}
+        />
+      )}
       <IncomingCallDialog
         open={callOpen}
         callerName={runtime.leader.name}
