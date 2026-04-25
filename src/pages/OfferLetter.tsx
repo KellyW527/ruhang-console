@@ -64,7 +64,13 @@ const OfferLetter = () => {
       if (us) {
         setUsId(us.id);
         if (us.offer_accepted) {
-          nav(`/simulation/${id}`, { replace: true });
+          // Offer 已接受。如果还没填入项问卷（老用户或上次没填完），需要在这里补填。
+          const survey = await getPreSimulationSurvey(us.id);
+          if (survey) {
+            nav(`/simulation/${id}`, { replace: true });
+          } else {
+            setShowPreSurvey(true);
+          }
         }
       }
     };
@@ -161,7 +167,8 @@ const OfferLetter = () => {
     }
 
     setExit(true);
-    setTimeout(() => nav(`/simulation/${id}`), 600);
+    // 弹出入项问卷；提交后才跳 Workspace
+    setTimeout(() => setShowPreSurvey(true), 600);
   };
 
   if (!sim) {
