@@ -26,6 +26,9 @@ import { MarkdownContent } from "@/components/content/MarkdownContent";
 import { TypingIndicator } from "@/components/workspace/TypingIndicator";
 import { DropZone } from "@/components/workspace/DropZone";
 import { IncomingCallDialog } from "@/components/workspace/IncomingCallDialog";
+import { TaskFeedbackBar } from "@/components/feedback/TaskFeedbackBar";
+import { PostSimulationSurvey } from "@/components/feedback/PostSimulationSurvey";
+import { getPostSimulationSurvey } from "@/lib/feedback";
 import {
   evaluateSubmission,
   getAutomatedReply,
@@ -129,6 +132,7 @@ const Workspace = () => {
   const [typingConvId, setTypingConvId] = useState<string | null>(null);
   const [callOpen, setCallOpen] = useState(false);
   const [doneCollapsed, setDoneCollapsed] = useState(true);
+  const [showPostSurvey, setShowPostSurvey] = useState(false);
   const [draftSaving, setDraftSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
