@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useUserAccess } from "@/hooks/useUserAccess";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,12 +41,14 @@ type LibraryItem = CatalogEntry & {
   simulationId: string | null;
   userStatus: "not_started" | "in_progress" | "completed";
   offerAccepted: boolean;
+  locked: boolean;
 };
 
 type FilterKey = SimulationTrack | "all";
 
 export default function Library() {
   const { user, profile } = useAuth();
+  const { hasAccess, subscription, loading: accessLoading } = useUserAccess();
   const nav = useNavigate();
   const [dbSims, setDbSims] = useState<SimRow[]>([]);
   const [userSims, setUserSims] = useState<UserSimRow[]>([]);
@@ -92,9 +95,11 @@ export default function Library() {
         simulationId: dbSim?.id ?? null,
         userStatus,
         offerAccepted: Boolean(userSim?.offer_accepted),
+        // 已经在做或做完的项目不锁，否则用 hasAccess 判断
+        locked: userStatus === "not_started" && !hasAccess(entry.code),
       };
     });
-  }, [dbSims, userSims]);
+  }, [dbSims, userSims, hasAccess]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
