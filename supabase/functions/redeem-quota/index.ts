@@ -34,10 +34,9 @@ Deno.serve(async (req) => {
     const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsErr } = await userClient.auth.getClaims(token);
-    if (claimsErr || !claimsData?.claims) return json({ error: "登录已失效" }, 401);
-    const userId = claimsData.claims.sub as string;
+    const { data: userData, error: userErr } = await userClient.auth.getUser();
+    if (userErr || !userData?.user) return json({ error: "登录已失效" }, 401);
+    const userId = userData.user.id;
 
     const body = await req.json().catch(() => ({}));
     const simulationCode = (body.simulation_code as string | undefined)?.trim();

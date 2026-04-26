@@ -37,13 +37,12 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsErr } = await supabase.auth.getClaims(token);
-    if (claimsErr || !claimsData?.claims) {
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    if (userErr || !userData?.user) {
       return json({ error: "登录已失效" }, 401);
     }
-    const userId = claimsData.claims.sub as string;
-    const email = (claimsData.claims.email as string | undefined) ?? undefined;
+    const userId = userData.user.id;
+    const email = userData.user.email ?? undefined;
 
     // 2) 解析输入
     const body = await req.json().catch(() => ({}));

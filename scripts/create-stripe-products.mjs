@@ -87,14 +87,15 @@ const STRIPE_API = "https://api.stripe.com/v1";
 async function stripeReq(path, params = {}, method = "POST") {
   const body = new URLSearchParams();
   flatten(params, body);
-  const res = await fetch(`${STRIPE_API}${path}`, {
+  const init = {
     method,
     headers: {
       Authorization: `Bearer ${STRIPE_KEY}`,
       "Content-Type": "application/x-www-form-urlencoded",
     },
-    body: method === "GET" ? undefined : body.toString(),
-  });
+  };
+  if (method !== "GET") init.body = body.toString();
+  const res = await fetch(`${STRIPE_API}${path}`, init);
   const json = await res.json();
   if (!res.ok) throw new Error(`${path} -> ${res.status} ${JSON.stringify(json)}`);
   return json;
