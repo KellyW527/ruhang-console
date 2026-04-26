@@ -193,12 +193,23 @@ const Workspace = () => {
         nav("/dashboard", { replace: true });
         return;
       }
-      // TODO: Pro gate — temporarily bypassed for testing
-      // if ((us.simulation as { title?: string; is_pro?: boolean } | null)?.is_pro && profile?.plan !== "pro") {
-      //   toast.info("这个模拟需要升级 Pro 后才能进入");
-      //   nav("/pricing", { replace: true });
-      //   return;
-      // }
+      // 会员 gate：通过 has_simulation_access RPC 校验（服务端真值）
+      const simCodeForGate = (us.simulation as { code?: string } | null)?.code;
+      if (simCodeForGate) {
+        try {
+          const { data: ok } = await supabase.rpc("has_simulation_access", {
+            _user_id: user.id,
+            _simulation_code: simCodeForGate,
+          });
+          if (ok === false) {
+            toast.info("这个模拟需要升级会员后才能进入");
+            nav("/pricing", { replace: true });
+            return;
+          }
+        } catch {
+          // RPC 还没部署时（数据库迁移未跑）静默降级，避免阻塞老用户
+        }
+      }
       if (!us.offer_accepted) {
         nav(`/simulation/${id}/offer`, { replace: true });
         return;
