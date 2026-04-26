@@ -218,7 +218,8 @@ function getSubscriptionPeriod(subscription: Stripe.Subscription): { rawStart: n
     current_period_start?: unknown;
     current_period_end?: unknown;
   };
-  const itemWithPeriod = subscription.items?.data?.find((item) => {
+  const items = (subscription.items?.data ?? []) as Stripe.SubscriptionItem[];
+  const itemWithPeriod = items.find((item: Stripe.SubscriptionItem) => {
     const periodItem = item as unknown as { current_period_start?: unknown; current_period_end?: unknown };
     return isValidUnixTimestamp(periodItem.current_period_start) && isValidUnixTimestamp(periodItem.current_period_end);
   });
