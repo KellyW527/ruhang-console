@@ -199,9 +199,10 @@ const Pricing = () => {
                     }
                     variant={plan.popular ? "default" : "outline"}
                     onClick={() => handleCheckout(plan.key)}
+                    disabled={loadingKey === plan.key}
                   >
                     {plan.popular && <Sparkles className="h-4 w-4 mr-1" />}
-                    {plan.cta} <ArrowRight className="h-4 w-4 ml-1" />
+                    {loadingKey === plan.key ? "正在跳转..." : <>{plan.cta} <ArrowRight className="h-4 w-4 ml-1" /></>}
                   </Button>
                 )}
               </GlassCard>
@@ -251,8 +252,13 @@ const Pricing = () => {
                       可在项目库自由选择
                     </li>
                   </ul>
-                  <Button variant="outline" className="w-full" onClick={() => handleCheckout(item.key)}>
-                    立即购买 <ArrowRight className="h-4 w-4 ml-1" />
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => handleCheckout(item.key)}
+                    disabled={loadingKey === item.key}
+                  >
+                    {loadingKey === item.key ? "正在跳转..." : <>立即购买 <ArrowRight className="h-4 w-4 ml-1" /></>}
                   </Button>
                 </GlassCard>
               ))}
