@@ -35,6 +35,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
+import { useUserAccess } from "@/hooks/useUserAccess";
 import {
   DEFAULT_PROFILE_NOTIFICATIONS,
   DEFAULT_PROFILE_PREFERENCES,
@@ -144,7 +145,10 @@ export default function Settings() {
     void loadRows();
   }, [user]);
 
-  const isPro = profile?.plan === "pro";
+  const { subscription, entitlements } = useUserAccess();
+  const tier = subscription?.tier ?? null; // 'basic' | 'premium' | null
+  const isPro = tier !== null || profile?.plan === "pro"; // 兼容老 plan 字段
+  const isPremium = tier === "premium";
   const preferredName = getPreferredDisplayName(profile ?? null, user?.email);
   const resetTarget = rows.find((item) => item.id === selectedResetId) ?? null;
 
@@ -654,25 +658,40 @@ export default function Settings() {
             )}
 
             {active === "subscription" && (
-              <SectionCard title="订阅与权益" desc="查看你的当前套餐、可访问赛道和已解锁模拟线。">
+              <SectionCard title="订阅与权益" desc="查看你的当前套餐、剩余配额和已解锁项目。">
                 <div className={cn("rounded-2xl border p-6", isPro ? "border-primary/30 bg-primary/10" : "border-white/10 bg-white/[0.02]")}>
                   <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                     <div>
                       <div className="eyebrow">当前套餐</div>
                       <div className="mt-2 flex items-center gap-2">
-                        <span className="font-display text-2xl font-semibold">{isPro ? "PRO 会员" : "免费版"}</span>
-                        {isPro && <span className="rounded-full bg-gradient-gold px-2 py-0.5 text-[10px] text-primary-foreground">全部赛道已解锁</span>}
+                        <span className="font-display text-2xl font-semibold">
+                          {tier === "premium" ? "高级月度会员" : tier === "basic" ? "基础月度会员" : "免费版"}
+                        </span>
+                        {isPremium && <span className="rounded-full bg-gradient-gold px-2 py-0.5 text-[10px] text-primary-foreground">PREMIUM</span>}
                       </div>
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        {isPro
-                          ? "你可以访问全部模拟线，并享有完整成长闭环。"
-                          : "免费版可进入第一条模拟线，后续赛道需升级 PRO 解锁。"}
-                      </p>
+                      {subscription ? (
+                        <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+                          <div>
+                            剩余可解锁额度{" "}
+                            <span className="font-display text-base text-primary">{subscription.quotaRemaining}</span>
+                            <span className="text-muted-foreground"> / {subscription.quotaTotal} 个项目</span>
+                          </div>
+                          <div>
+                            本周期到期：{new Date(subscription.currentPeriodEnd).toLocaleDateString("zh-CN")}
+                            {subscription.cancelAtPeriodEnd && <span className="ml-2 text-amber-300">（到期后不再续订）</span>}
+                          </div>
+                          <div>已解锁项目：{entitlements.filter((e) => !e.simulation_code.startsWith("__")).length} 个</div>
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          免费版可进入「兴通投行 IPO」体验项目，其他项目需购买会员或单买额度解锁。
+                        </p>
+                      )}
                     </div>
-                    {!isPro && (
+                    {!isPremium && (
                       <Link to="/pricing" className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-gold px-4 py-2 text-xs font-medium text-primary-foreground shadow-[0_0_24px_rgba(201,168,76,0.25)] hover:opacity-95">
                         <Sparkles className="h-3.5 w-3.5" />
-                        升级 PRO
+                        {tier === "basic" ? "升级到高级" : "升级会员"}
                         <ArrowRight className="h-3.5 w-3.5" />
                       </Link>
                     )}
@@ -681,7 +700,13 @@ export default function Settings() {
 
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
                   {rows.map((row) => {
-                    const lockedByPlan = row.simulation.is_pro && !isPro;
+                    const unlocked =
+                      row.simulation.code === "ibd-ipo" ||
+                      entitlements.some(
+                        (e) =>
+                          e.simulation_code === row.simulation.code &&
+                          (!e.expires_at || new Date(e.expires_at).getTime() > Date.now()),
+                      );
                     return (
                       <div key={row.id} className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
                         <div className="flex items-center justify-between gap-3">
@@ -692,8 +717,8 @@ export default function Settings() {
                               <div className="text-[11px] text-muted-foreground">{row.simulation.track}</div>
                             </div>
                           </div>
-                          <span className={cn("rounded-full px-2 py-0.5 text-[10px]", lockedByPlan ? "border border-primary/30 bg-primary/5 text-primary" : "bg-emerald-500/15 text-emerald-200")}>
-                            {lockedByPlan ? "待升级" : "已解锁"}
+                          <span className={cn("rounded-full px-2 py-0.5 text-[10px]", unlocked ? "bg-emerald-500/15 text-emerald-200" : "border border-primary/30 bg-primary/5 text-primary")}>
+                            {unlocked ? "已解锁" : "待解锁"}
                           </span>
                         </div>
                       </div>

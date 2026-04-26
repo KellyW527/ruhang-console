@@ -48,7 +48,7 @@ type FilterKey = SimulationTrack | "all";
 
 export default function Library() {
   const { user } = useAuth();
-  const { hasAccess, subscription } = useUserAccess();
+  const { hasAccess, subscription, refresh: refreshAccess } = useUserAccess();
   const nav = useNavigate();
   const [dbSims, setDbSims] = useState<SimRow[]>([]);
   const [userSims, setUserSims] = useState<UserSimRow[]>([]);
@@ -141,21 +141,37 @@ export default function Library() {
       return;
     }
 
-    // 未开始 + 锁定 → 引导到定价页或说明
+    // 未开始 + 锁定 → 用配额兑换 / 引导付费
     if (item.locked) {
+      // 有套餐配额 → 调 redeem-quota 真正解锁
       if (subscription && subscription.quotaRemaining > 0) {
-        // 有套餐+剩余配额 → 提示用配额解锁（Stripe 启用后接 redeem-quota 函数）
-        toast.info("用 1 个套餐配额解锁这个项目？", {
-          description: `当前剩余 ${subscription.quotaRemaining} 个配额。配额兑换功能将在支付系统上线后开放。`,
-          duration: 5000,
-        });
-      } else {
-        toast.info("这是会员项目", {
-          description: "免费用户只能体验「兴通投行 IPO」。升级 Pro 解锁更多项目。",
-          action: { label: "查看定价", onClick: () => nav("/pricing") },
-          duration: 6000,
-        });
+        const confirmed = window.confirm(
+          `用 1 个配额解锁「${item.title}」吗？\n\n当前剩余：${subscription.quotaRemaining} / ${subscription.quotaTotal}`,
+        );
+        if (!confirmed) return;
+        setStarting(item.code);
+        try {
+          const { data, error } = await supabase.functions.invoke("redeem-quota", {
+            body: { simulation_code: item.code },
+          });
+          if (error || (data as { error?: string })?.error) {
+            const msg = (data as { error?: string })?.error ?? error?.message ?? "解锁失败，请稍后再试。";
+            toast.error(msg);
+            return;
+          }
+          toast.success(`「${item.title}」已解锁！`);
+          await refreshAccess();
+        } finally {
+          setStarting(null);
+        }
+        return;
       }
+      // 无配额 → 引导去定价页
+      toast.info("这是会员项目", {
+        description: "免费用户只能体验「兴通投行 IPO」。升级会员或单买额度解锁。",
+        action: { label: "查看定价", onClick: () => nav("/pricing") },
+        duration: 6000,
+      });
       return;
     }
 
