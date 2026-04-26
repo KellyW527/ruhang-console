@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AuthBrandPanel } from "@/components/marketing/AuthBrandPanel";
+import { CheckCircle2, Mail } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 
 const Register = () => {
@@ -14,6 +15,8 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  /** 注册成功（邮件已发出）后展示验证提示界面，禁止直接进入 Dashboard */
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const nav = useNavigate();
   const { session } = useAuth();
 
@@ -24,24 +27,108 @@ const Register = () => {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password.length < 8) {
+      toast.error("密码至少需要 8 位");
+      return;
+    }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        // 邮箱验证完成后回到 dashboard
         emailRedirectTo: `${window.location.origin}/dashboard`,
         data: { name },
       },
     });
     setLoading(false);
+
     if (error) {
       toast.error("注册失败", { description: error.message });
-    } else {
-      toast.success("欢迎加入入行 🎉", { description: "正在为你打开控制台..." });
+      return;
+    }
+
+    // Supabase 行为：开启邮箱验证后，data.session 会是 null，data.user 仍存在
+    // 不再直接 nav("/dashboard")，强制走邮件验证
+    if (data.session) {
+      // 没开邮箱验证时（不应该是上线状态）兜底：直接进 dashboard
+      toast.success("欢迎加入入行 🎉");
       nav("/dashboard");
+    } else {
+      setPendingEmail(email);
     }
   };
 
+  const resendEmail = async () => {
+    if (!pendingEmail) return;
+    setLoading(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: pendingEmail,
+      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+    });
+    setLoading(false);
+    if (error) {
+      toast.error("重发失败", { description: error.message });
+    } else {
+      toast.success("验证邮件已重新发送，请查收");
+    }
+  };
+
+  // ------ 已发出验证邮件的成功界面 ------
+  if (pendingEmail) {
+    return (
+      <div className="min-h-screen grid lg:grid-cols-2">
+        <AuthBrandPanel />
+        <div className="flex items-center justify-center p-8 bg-background">
+          <div className="w-full max-w-md space-y-8">
+            <div className="lg:hidden flex items-center gap-2 mb-8">
+              <img src={logoImg} alt="入行" className="h-8 w-8 rounded-lg object-contain" />
+              <span className="text-lg font-display font-semibold text-foreground">入行 RuHang</span>
+            </div>
+
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20">
+              <Mail className="h-6 w-6 text-primary" />
+            </div>
+
+            <div className="space-y-3">
+              <h1 className="text-2xl font-display font-bold text-foreground">查收你的邮箱</h1>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                我们已向 <span className="text-foreground font-medium">{pendingEmail}</span> 发送了一封验证邮件。
+                请点击邮件里的链接完成验证，验证完成后会自动登录到控制台。
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/50 bg-secondary/30 p-4 space-y-2 text-xs text-muted-foreground">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <div>邮件可能在 1–2 分钟内送达，请稍等</div>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <div>如果没收到，请检查 <span className="text-foreground">垃圾邮件 / 推广邮件</span> 文件夹</div>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <div>校园邮箱有时会延迟更久，建议使用 Gmail / QQ / 163 邮箱注册</div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Button onClick={resendEmail} disabled={loading} variant="outline" className="w-full h-11">
+                {loading ? "发送中..." : "重新发送验证邮件"}
+              </Button>
+              <Button asChild variant="ghost" className="w-full h-11 text-muted-foreground">
+                <Link to="/login">已经验证过了？去登录</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ------ 默认注册表单 ------
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
       <AuthBrandPanel />
@@ -58,7 +145,9 @@ const Register = () => {
               注册 · 永久免费
             </div>
             <h1 className="text-2xl font-display font-bold text-foreground">开启你的金融职业旅程</h1>
-            <p className="text-sm text-muted-foreground">注册即可免费体验完整 IB IPO 模拟，不需要信用卡。</p>
+            <p className="text-sm text-muted-foreground">
+              注册即可免费体验「兴通投行 IPO」项目，不需要信用卡。
+            </p>
           </div>
 
           <form onSubmit={onSubmit} className="space-y-5">
@@ -68,11 +157,11 @@ const Register = () => {
             </div>
             <div className="space-y-2">
               <Label className="text-sm text-foreground">邮箱</Label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 bg-secondary/50 border-border/50 focus:border-primary" placeholder="yourname@school.edu.cn" />
+              <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 bg-secondary/50 border-border/50 focus:border-primary" placeholder="yourname@example.com" />
             </div>
             <div className="space-y-2">
               <Label className="text-sm text-foreground">密码</Label>
-              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 bg-secondary/50 border-border/50 focus:border-primary" placeholder="至少 6 位" />
+              <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 bg-secondary/50 border-border/50 focus:border-primary" placeholder="至少 8 位，建议含字母与数字" minLength={8} />
             </div>
 
             <Button type="submit" disabled={loading} className="w-full gradient-gold text-primary-foreground border-0 hover:opacity-90 h-11">
@@ -88,7 +177,7 @@ const Register = () => {
           </p>
 
           <p className="text-xs text-muted-foreground text-center">
-            创建账号即代表你同意《用户协议》与《隐私政策》。
+            创建账号即代表你同意《用户协议》与《隐私政策》。注册后需要完成邮箱验证才能开始使用。
           </p>
         </div>
       </div>
