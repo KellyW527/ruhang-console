@@ -378,14 +378,25 @@ function LibraryCard({
           disabled={starting || !item.simulationId}
           className={cn(
             "inline-flex w-full items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-medium transition",
-            item.userStatus === "not_started"
-              ? "bg-gradient-gold text-primary-foreground group-hover:shadow-glow-gold"
-              : "border border-white/10 bg-white/[0.04] text-foreground hover:bg-white/[0.08]",
+            item.locked
+              ? "border border-primary/25 bg-primary/[0.08] text-primary hover:bg-primary/[0.12]"
+              : item.userStatus === "not_started"
+                ? "bg-gradient-gold text-primary-foreground group-hover:shadow-glow-gold"
+                : "border border-white/10 bg-white/[0.04] text-foreground hover:bg-white/[0.08]",
             (starting || !item.simulationId) && "cursor-not-allowed opacity-60",
           )}
         >
-          {starting ? "启动中…" : ctaLabel}
-          {!starting && <ArrowRight className="h-3.5 w-3.5" />}
+          {item.locked ? (
+            <>
+              <Lock className="h-3.5 w-3.5" />
+              升级解锁
+            </>
+          ) : (
+            <>
+              {starting ? "启动中…" : ctaLabel}
+              {!starting && <ArrowRight className="h-3.5 w-3.5" />}
+            </>
+          )}
         </button>
         {!item.simulationId && (
           <div className="mt-2 flex items-center justify-center gap-1 text-[10px] text-muted-foreground">
