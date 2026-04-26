@@ -1,0 +1,13 @@
+project_id = "xhkthstyxqbqymwvrdgb"
+
+# create-checkout 需要登录态,验证 JWT
+[functions.create-checkout]
+verify_jwt = true
+
+# stripe-webhook 来自 Stripe,不能验证 JWT,改用 webhook 签名校验
+[functions.stripe-webhook]
+verify_jwt = false
+
+# redeem-quota 用户从配额选项目,需要登录态
+[functions.redeem-quota]
+verify_jwt = true
