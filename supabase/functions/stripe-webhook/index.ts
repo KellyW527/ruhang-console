@@ -140,9 +140,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 }
 
-async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
-  const userId = subscription.metadata?.user_id;
-  const tier = subscription.metadata?.tier as "basic" | "premium" | undefined;
+async function handleSubscriptionUpdated(
+  subscription: Stripe.Subscription,
+  fallback?: { userId?: string; productType?: string },
+) {
+  const userId = subscription.metadata?.user_id ?? fallback?.userId;
+  const productType = subscription.metadata?.product_type ?? fallback?.productType;
+  const tier =
+    (subscription.metadata?.tier as "basic" | "premium" | undefined) ??
+    (productType === "subscription_premium" ? "premium" : productType === "subscription_basic" ? "basic" : undefined);
   if (!userId || !tier) {
     console.error("[webhook] missing metadata on subscription", subscription.id);
     return;
