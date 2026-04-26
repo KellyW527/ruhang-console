@@ -129,14 +129,26 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
-  // 4) 订阅类(basic / premium):由 customer.subscription.created 处理(Stripe 会同时触发)
-  // checkout.session.completed 里 mode=subscription 时 session.subscription 已经存在,
-  // 但 entitlement 池的创建放在 subscription handler 里,避免重复处理。
+  // 4) 订阅类(basic / premium):checkout 成功时立即补写 subscription。
+  // 不只依赖 customer.subscription.created/updated，避免订阅事件延迟或失败时前端仍显示免费版。
+  if (
+    (productType === "subscription_basic" || productType === "subscription_premium") &&
+    session.subscription
+  ) {
+    const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+    await handleSubscriptionUpdated(subscription, { userId, productType });
+  }
 }
 
-async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
-  const userId = subscription.metadata?.user_id;
-  const tier = subscription.metadata?.tier as "basic" | "premium" | undefined;
+async function handleSubscriptionUpdated(
+  subscription: Stripe.Subscription,
+  fallback?: { userId?: string; productType?: string },
+) {
+  const userId = subscription.metadata?.user_id ?? fallback?.userId;
+  const productType = subscription.metadata?.product_type ?? fallback?.productType;
+  const tier =
+    (subscription.metadata?.tier as "basic" | "premium" | undefined) ??
+    (productType === "subscription_premium" ? "premium" : productType === "subscription_basic" ? "basic" : undefined);
   if (!userId || !tier) {
     console.error("[webhook] missing metadata on subscription", subscription.id);
     return;
