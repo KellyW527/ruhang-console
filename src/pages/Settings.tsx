@@ -145,7 +145,10 @@ export default function Settings() {
     void loadRows();
   }, [user]);
 
-  const isPro = profile?.plan === "pro";
+  const { subscription, entitlements } = useUserAccess();
+  const tier = subscription?.tier ?? null; // 'basic' | 'premium' | null
+  const isPro = tier !== null || profile?.plan === "pro"; // 兼容老 plan 字段
+  const isPremium = tier === "premium";
   const preferredName = getPreferredDisplayName(profile ?? null, user?.email);
   const resetTarget = rows.find((item) => item.id === selectedResetId) ?? null;
 
