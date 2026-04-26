@@ -19,6 +19,7 @@ import {
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useUserAccess } from "@/hooks/useUserAccess";
 import { cn } from "@/lib/utils";
 import { getPreferredDisplayName } from "@/lib/settings";
 import { buildAchievementStates, type AchievementProgressRow, type AchievementState } from "@/data/achievements";
@@ -347,6 +348,7 @@ function SidebarBody({
 
 export default function Dashboard() {
   const { user, profile, signOut } = useAuth();
+  const { subscription } = useUserAccess();
   const nav = useNavigate();
   const [rows, setRows] = useState<SimRow[]>([]);
   const [achievementRows, setAchievementRows] = useState<AchievementProgressRow[]>([]);
