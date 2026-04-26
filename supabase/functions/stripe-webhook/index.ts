@@ -155,8 +155,30 @@ async function handleSubscriptionUpdated(
   }
 
   const quotaTotal = tier === "premium" ? 10 : 3;
-  const periodEnd = new Date(subscription.current_period_end * 1000).toISOString();
-  const periodStart = new Date(subscription.current_period_start * 1000).toISOString();
+
+  // Stripe API 在 2024-10-28 之后把 current_period_start/end 从 subscription 顶层
+  // 移到了 items.data[0] 上。这里两边都兜一下,避免 "Invalid time value"。
+  const item = subscription.items?.data?.[0] as
+    | (Stripe.SubscriptionItem & { current_period_start?: number; current_period_end?: number })
+    | undefined;
+  const rawStart =
+    (subscription as unknown as { current_period_start?: number }).current_period_start ??
+    item?.current_period_start;
+  const rawEnd =
+    (subscription as unknown as { current_period_end?: number }).current_period_end ??
+    item?.current_period_end;
+
+  if (!rawStart || !rawEnd || !Number.isFinite(rawStart) || !Number.isFinite(rawEnd)) {
+    console.error("[webhook] subscription missing period fields", {
+      id: subscription.id,
+      rawStart,
+      rawEnd,
+    });
+    return;
+  }
+
+  const periodEnd = new Date(rawEnd * 1000).toISOString();
+  const periodStart = new Date(rawStart * 1000).toISOString();
 
   // upsert by stripe_subscription_id
   const { data: existing } = await supabase
