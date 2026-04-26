@@ -47,8 +47,8 @@ type LibraryItem = CatalogEntry & {
 type FilterKey = SimulationTrack | "all";
 
 export default function Library() {
-  const { user, profile } = useAuth();
-  const { hasAccess, subscription, loading: accessLoading } = useUserAccess();
+  const { user } = useAuth();
+  const { hasAccess, subscription } = useUserAccess();
   const nav = useNavigate();
   const [dbSims, setDbSims] = useState<SimRow[]>([]);
   const [userSims, setUserSims] = useState<UserSimRow[]>([]);
