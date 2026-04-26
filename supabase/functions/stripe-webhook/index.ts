@@ -164,7 +164,7 @@ async function handleSubscriptionUpdated(
       rawStart,
       rawEnd,
       itemCount: subscription.items?.data?.length ?? 0,
-      itemPeriods: subscription.items?.data?.map((item) => ({
+      itemPeriods: subscription.items?.data?.map((item: Stripe.SubscriptionItem) => ({
         id: item.id,
         current_period_start: (item as unknown as { current_period_start?: unknown }).current_period_start,
         current_period_end: (item as unknown as { current_period_end?: unknown }).current_period_end,
@@ -211,6 +211,32 @@ async function handleSubscriptionUpdated(
       cancel_at_period_end: subscription.cancel_at_period_end,
     });
   }
+}
+
+function getSubscriptionPeriod(subscription: Stripe.Subscription): { rawStart: number | undefined; rawEnd: number | undefined } {
+  const legacySubscription = subscription as unknown as {
+    current_period_start?: unknown;
+    current_period_end?: unknown;
+  };
+  const itemWithPeriod = subscription.items?.data?.find((item) => {
+    const periodItem = item as unknown as { current_period_start?: unknown; current_period_end?: unknown };
+    return isValidUnixTimestamp(periodItem.current_period_start) && isValidUnixTimestamp(periodItem.current_period_end);
+  });
+  const periodItem = itemWithPeriod as unknown as { current_period_start?: unknown; current_period_end?: unknown } | undefined;
+
+  return {
+    rawStart: normalizeUnixTimestamp(legacySubscription.current_period_start ?? periodItem?.current_period_start),
+    rawEnd: normalizeUnixTimestamp(legacySubscription.current_period_end ?? periodItem?.current_period_end),
+  };
+}
+
+function normalizeUnixTimestamp(value: unknown): number | undefined {
+  const timestamp = typeof value === "string" ? Number(value) : value;
+  return isValidUnixTimestamp(timestamp) ? timestamp : undefined;
+}
+
+function isValidUnixTimestamp(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
