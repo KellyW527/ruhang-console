@@ -156,23 +156,19 @@ async function handleSubscriptionUpdated(
 
   const quotaTotal = tier === "premium" ? 10 : 3;
 
-  // Stripe API 在 2024-10-28 之后把 current_period_start/end 从 subscription 顶层
-  // 移到了 items.data[0] 上。这里两边都兜一下,避免 "Invalid time value"。
-  const item = subscription.items?.data?.[0] as
-    | (Stripe.SubscriptionItem & { current_period_start?: number; current_period_end?: number })
-    | undefined;
-  const rawStart =
-    (subscription as unknown as { current_period_start?: number }).current_period_start ??
-    item?.current_period_start;
-  const rawEnd =
-    (subscription as unknown as { current_period_end?: number }).current_period_end ??
-    item?.current_period_end;
+  const { rawStart, rawEnd } = getSubscriptionPeriod(subscription);
 
-  if (!rawStart || !rawEnd || !Number.isFinite(rawStart) || !Number.isFinite(rawEnd)) {
+  if (!isValidUnixTimestamp(rawStart) || !isValidUnixTimestamp(rawEnd)) {
     console.error("[webhook] subscription missing period fields", {
       id: subscription.id,
       rawStart,
       rawEnd,
+      itemCount: subscription.items?.data?.length ?? 0,
+      itemPeriods: subscription.items?.data?.map((item) => ({
+        id: item.id,
+        current_period_start: (item as unknown as { current_period_start?: unknown }).current_period_start,
+        current_period_end: (item as unknown as { current_period_end?: unknown }).current_period_end,
+      })),
     });
     return;
   }
@@ -183,13 +179,13 @@ async function handleSubscriptionUpdated(
   // upsert by stripe_subscription_id
   const { data: existing } = await supabase
     .from("subscriptions")
-    .select("id, quota_used")
+    .select("id, quota_used, current_period_start")
     .eq("stripe_subscription_id", subscription.id)
     .maybeSingle();
 
   if (existing) {
     // 续费/状态变更 → 周期重置,quota_used 归零(进入新周期)
-    const isNewPeriod = periodStart !== existing.id; // 简单判断,真实场景用 period_start 对比
+    const isNewPeriod = periodStart !== existing.current_period_start;
     await supabase
       .from("subscriptions")
       .update({
