@@ -158,23 +158,31 @@ async function handleSubscriptionUpdated(
 
   const { rawStart, rawEnd } = getSubscriptionPeriod(subscription);
 
+  // 新版 Stripe API (2026-04-22.dahlia) 在 customer.subscription.created/updated 事件中
+  // 可能完全不返回 current_period_start/end。此时降级:
+  // - periodStart 用 subscription.start_date 或当前时间
+  // - periodEnd 用 +30 天兜底(后续 invoice.* 事件会校正)
+  // 绝不能因为缺 period 就 return,否则订阅永远写不进库,前端永远显示免费版。
+  const nowSec = Math.floor(Date.now() / 1000);
+  const fallbackStart =
+    normalizeUnixTimestamp((subscription as unknown as { start_date?: unknown }).start_date) ?? nowSec;
+  const fallbackEnd = fallbackStart + 30 * 24 * 60 * 60;
+
+  const effectiveStart = isValidUnixTimestamp(rawStart) ? rawStart : fallbackStart;
+  const effectiveEnd = isValidUnixTimestamp(rawEnd) ? rawEnd : fallbackEnd;
+
   if (!isValidUnixTimestamp(rawStart) || !isValidUnixTimestamp(rawEnd)) {
-    console.error("[webhook] subscription missing period fields", {
+    console.warn("[webhook] subscription missing period fields, using fallback", {
       id: subscription.id,
       rawStart,
       rawEnd,
-      itemCount: subscription.items?.data?.length ?? 0,
-      itemPeriods: subscription.items?.data?.map((item: Stripe.SubscriptionItem) => ({
-        id: item.id,
-        current_period_start: (item as unknown as { current_period_start?: unknown }).current_period_start,
-        current_period_end: (item as unknown as { current_period_end?: unknown }).current_period_end,
-      })),
+      effectiveStart,
+      effectiveEnd,
     });
-    return;
   }
 
-  const periodEnd = new Date(rawEnd * 1000).toISOString();
-  const periodStart = new Date(rawStart * 1000).toISOString();
+  const periodEnd = new Date(effectiveEnd * 1000).toISOString();
+  const periodStart = new Date(effectiveStart * 1000).toISOString();
 
   // upsert by stripe_subscription_id
   const { data: existing } = await supabase
