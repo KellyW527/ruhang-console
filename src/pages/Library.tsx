@@ -134,17 +134,32 @@ export default function Library() {
       toast.error("该项目还没在后端就绪，请稍后再试。");
       return;
     }
-    if (item.isPro && profile?.plan !== "pro") {
-      // TODO: Pro gate — temporarily allow during testing, mirrors OfferLetter
-    }
 
-    // 已开始 → 直接进对应入口
+    // 已开始 → 直接进对应入口（已经有 entitlement 或开始过的项目继续可用）
     if (item.userStatus !== "not_started") {
       nav(item.offerAccepted ? `/simulation/${item.simulationId}` : `/simulation/${item.simulationId}/offer`);
       return;
     }
 
-    // 未开始 → 确保 user_simulations 行存在，然后跳 Offer 页
+    // 未开始 + 锁定 → 引导到定价页或说明
+    if (item.locked) {
+      if (subscription && subscription.quotaRemaining > 0) {
+        // 有套餐+剩余配额 → 提示用配额解锁（Stripe 启用后接 redeem-quota 函数）
+        toast.info("用 1 个套餐配额解锁这个项目？", {
+          description: `当前剩余 ${subscription.quotaRemaining} 个配额。配额兑换功能将在支付系统上线后开放。`,
+          duration: 5000,
+        });
+      } else {
+        toast.info("这是会员项目", {
+          description: "免费用户只能体验「兴通投行 IPO」。升级 Pro 解锁更多项目。",
+          action: { label: "查看定价", onClick: () => nav("/pricing") },
+          duration: 6000,
+        });
+      }
+      return;
+    }
+
+    // 未开始 + 已解锁 → 创建 user_simulations 行，跳 Offer 页
     setStarting(item.code);
     try {
       const { data: existing } = await supabase
