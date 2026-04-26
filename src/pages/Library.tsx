@@ -48,7 +48,7 @@ type FilterKey = SimulationTrack | "all";
 
 export default function Library() {
   const { user } = useAuth();
-  const { hasAccess, subscription, entitlements, refresh: refreshAccess } = useUserAccess();
+  const { hasAccess, subscription, refresh: refreshAccess } = useUserAccess();
   const nav = useNavigate();
   const [dbSims, setDbSims] = useState<SimRow[]>([]);
   const [userSims, setUserSims] = useState<UserSimRow[]>([]);
