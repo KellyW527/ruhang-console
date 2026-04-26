@@ -6,6 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, ArrowRight, Sparkles, Crown, Zap, Package } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
+import { useNavigate } from "react-router-dom";
 
 type Plan = {
   key: string;
@@ -84,11 +88,44 @@ const SINGLE_PURCHASES = [
 ];
 
 const Pricing = () => {
-  const handleCheckout = (planKey: string) => {
-    toast.info("支付通道即将开放", {
-      description: `${planKey === "premium" ? "高级会员" : planKey === "basic" ? "基础会员" : "购买"}支付即将上线，我们正在接入 Stripe，敬请期待！`,
-      duration: 5000,
-    });
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [loadingKey, setLoadingKey] = useState<string | null>(null);
+
+  // planKey 来自前端按钮,要映射到 edge function 接受的 product_type
+  const PLAN_TO_PRODUCT: Record<string, string> = {
+    basic: "subscription_basic",
+    premium: "subscription_premium",
+    upgrade: "upgrade_diff",
+    single_1: "single_1",
+    single_2: "single_2",
+    single_3: "single_3",
+  };
+
+  const handleCheckout = async (planKey: string) => {
+    if (!user) {
+      toast.info("请先登录", { description: "登录后即可购买套餐" });
+      navigate("/login?redirect=/pricing");
+      return;
+    }
+    const productType = PLAN_TO_PRODUCT[planKey];
+    if (!productType) {
+      toast.error("未知的套餐类型");
+      return;
+    }
+    setLoadingKey(planKey);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { product_type: productType },
+      });
+      if (error) throw error;
+      if (!data?.url) throw new Error("未收到支付链接");
+      window.location.href = data.url as string;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "创建支付订单失败";
+      toast.error("无法跳转到支付", { description: msg, duration: 6000 });
+      setLoadingKey(null);
+    }
   };
 
   return (
@@ -162,9 +199,10 @@ const Pricing = () => {
                     }
                     variant={plan.popular ? "default" : "outline"}
                     onClick={() => handleCheckout(plan.key)}
+                    disabled={loadingKey === plan.key}
                   >
                     {plan.popular && <Sparkles className="h-4 w-4 mr-1" />}
-                    {plan.cta} <ArrowRight className="h-4 w-4 ml-1" />
+                    {loadingKey === plan.key ? "正在跳转..." : <>{plan.cta} <ArrowRight className="h-4 w-4 ml-1" /></>}
                   </Button>
                 )}
               </GlassCard>
@@ -214,8 +252,13 @@ const Pricing = () => {
                       可在项目库自由选择
                     </li>
                   </ul>
-                  <Button variant="outline" className="w-full" onClick={() => handleCheckout(item.key)}>
-                    立即购买 <ArrowRight className="h-4 w-4 ml-1" />
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => handleCheckout(item.key)}
+                    disabled={loadingKey === item.key}
+                  >
+                    {loadingKey === item.key ? "正在跳转..." : <>立即购买 <ArrowRight className="h-4 w-4 ml-1" /></>}
                   </Button>
                 </GlassCard>
               ))}
