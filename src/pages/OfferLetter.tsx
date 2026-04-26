@@ -10,6 +10,8 @@ import { getSimulationRuntime } from "@/data/workspace-runtime";
 import { getPreferredDisplayName } from "@/lib/settings";
 import { PreSimulationSurvey } from "@/components/feedback/PreSimulationSurvey";
 import { getPreSimulationSurvey } from "@/lib/feedback";
+import { useUserAccess } from "@/hooks/useUserAccess";
+import { toast as sonnerToast } from "sonner";
 
 type Sim = {
   id: string;
@@ -25,6 +27,7 @@ type Sim = {
 const OfferLetter = () => {
   const { id } = useParams<{ id: string }>();
   const { user, profile } = useAuth();
+  const { hasAccess, loading: accessLoading } = useUserAccess();
   const nav = useNavigate();
   const [sim, setSim] = useState<Sim | null>(null);
   const [usId, setUsId] = useState<string | null>(null);
@@ -41,20 +44,26 @@ const OfferLetter = () => {
   useEffect(() => {
     const load = async () => {
       if (!user || !id) return;
+      if (accessLoading) return; // 等 access 数据加载完再判断
       const { data: s } = await supabase
         .from("simulations")
         .select("id,code,title,company,role,track,description,is_pro")
         .eq("id", id)
         .maybeSingle();
-      if (s) {
-        // TODO: Pro gate — temporarily bypassed for testing
-        // if (s.is_pro && profile?.plan !== "pro") {
-        //   toast.info("这个模拟需要升级 Pro 后才能开始");
-        //   nav("/pricing", { replace: true });
-        //   return;
-        // }
-        setSim(s);
+      if (!s) return;
+
+      // 会员 gate：检查用户是否有访问权（兴通投行始终可访问；其他需 entitlement）
+      if (!hasAccess(s.code)) {
+        sonnerToast.info("这是会员项目", {
+          description: "免费用户只能体验「兴通投行 IPO」。升级 Pro 解锁更多项目。",
+          action: { label: "查看定价", onClick: () => nav("/pricing") },
+          duration: 6000,
+        });
+        nav("/library", { replace: true });
+        return;
       }
+
+      setSim(s);
       const { data: us } = await supabase
         .from("user_simulations")
         .select("id, offer_accepted")
@@ -75,7 +84,7 @@ const OfferLetter = () => {
       }
     };
     load();
-  }, [user, id, nav, profile?.plan]);
+  }, [user, id, nav, accessLoading, hasAccess]);
 
   const accept = async () => {
     if (!usId || !id) return;

@@ -19,6 +19,7 @@ import {
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useUserAccess } from "@/hooks/useUserAccess";
 import { cn } from "@/lib/utils";
 import { getPreferredDisplayName } from "@/lib/settings";
 import { buildAchievementStates, type AchievementProgressRow, type AchievementState } from "@/data/achievements";
@@ -347,6 +348,7 @@ function SidebarBody({
 
 export default function Dashboard() {
   const { user, profile, signOut } = useAuth();
+  const { subscription } = useUserAccess();
   const nav = useNavigate();
   const [rows, setRows] = useState<SimRow[]>([]);
   const [achievementRows, setAchievementRows] = useState<AchievementProgressRow[]>([]);
@@ -588,16 +590,59 @@ export default function Dashboard() {
                   <Link to="/report" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm text-foreground transition hover:bg-white/[0.08]">
                     打开能力报告
                   </Link>
-                  {plan !== "pro" && (
+                  {!subscription && plan !== "pro" && (
                     <Link
                       to="/pricing"
                       className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-5 py-3 text-sm text-primary transition hover:bg-primary/15"
                     >
                       <Sparkles className="h-4 w-4" />
-                      升级 PRO 解锁全部赛道
+                      升级会员解锁更多项目
                     </Link>
                   )}
                 </div>
+
+                {/* 会员状态条：有订阅时展示当前档位、剩余配额与到期日 */}
+                {subscription && (
+                  <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/[0.06] p-4 md:p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                          <Sparkles className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <div className="text-[11px] uppercase tracking-[0.2em] text-primary">
+                            {subscription.tier === "premium" ? "高级月度会员" : "基础月度会员"}
+                          </div>
+                          <div className="mt-0.5 text-sm text-foreground">
+                            剩余可解锁 <span className="font-display text-lg text-primary">{subscription.quotaRemaining}</span>
+                            <span className="text-muted-foreground"> / {subscription.quotaTotal} 个项目</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right text-[11px] text-muted-foreground">
+                          <div>本周期截止</div>
+                          <div className="text-foreground font-mono">
+                            {new Date(subscription.currentPeriodEnd).toLocaleDateString("zh-CN")}
+                          </div>
+                        </div>
+                        <Link
+                          to="/library"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-xs text-primary transition hover:bg-primary/15"
+                        >
+                          去解锁项目
+                          <ArrowRight className="h-3 w-3" />
+                        </Link>
+                      </div>
+                    </div>
+                    {subscription.tier === "basic" && (
+                      <div className="mt-3 border-t border-primary/15 pt-3 text-[11px] text-muted-foreground">
+                        想解锁更多项目？升级到高级月度会员仅需补差价 ¥139，已用项目数继承。
+                        <Link to="/pricing" className="ml-1 text-primary hover:underline">查看升级方案 →</Link>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

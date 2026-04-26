@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useUserAccess } from "@/hooks/useUserAccess";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,12 +41,14 @@ type LibraryItem = CatalogEntry & {
   simulationId: string | null;
   userStatus: "not_started" | "in_progress" | "completed";
   offerAccepted: boolean;
+  locked: boolean;
 };
 
 type FilterKey = SimulationTrack | "all";
 
 export default function Library() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
+  const { hasAccess, subscription } = useUserAccess();
   const nav = useNavigate();
   const [dbSims, setDbSims] = useState<SimRow[]>([]);
   const [userSims, setUserSims] = useState<UserSimRow[]>([]);
@@ -92,9 +95,11 @@ export default function Library() {
         simulationId: dbSim?.id ?? null,
         userStatus,
         offerAccepted: Boolean(userSim?.offer_accepted),
+        // 已经在做或做完的项目不锁，否则用 hasAccess 判断
+        locked: userStatus === "not_started" && !hasAccess(entry.code),
       };
     });
-  }, [dbSims, userSims]);
+  }, [dbSims, userSims, hasAccess]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -129,17 +134,32 @@ export default function Library() {
       toast.error("该项目还没在后端就绪，请稍后再试。");
       return;
     }
-    if (item.isPro && profile?.plan !== "pro") {
-      // TODO: Pro gate — temporarily allow during testing, mirrors OfferLetter
-    }
 
-    // 已开始 → 直接进对应入口
+    // 已开始 → 直接进对应入口（已经有 entitlement 或开始过的项目继续可用）
     if (item.userStatus !== "not_started") {
       nav(item.offerAccepted ? `/simulation/${item.simulationId}` : `/simulation/${item.simulationId}/offer`);
       return;
     }
 
-    // 未开始 → 确保 user_simulations 行存在，然后跳 Offer 页
+    // 未开始 + 锁定 → 引导到定价页或说明
+    if (item.locked) {
+      if (subscription && subscription.quotaRemaining > 0) {
+        // 有套餐+剩余配额 → 提示用配额解锁（Stripe 启用后接 redeem-quota 函数）
+        toast.info("用 1 个套餐配额解锁这个项目？", {
+          description: `当前剩余 ${subscription.quotaRemaining} 个配额。配额兑换功能将在支付系统上线后开放。`,
+          duration: 5000,
+        });
+      } else {
+        toast.info("这是会员项目", {
+          description: "免费用户只能体验「兴通投行 IPO」。升级 Pro 解锁更多项目。",
+          action: { label: "查看定价", onClick: () => nav("/pricing") },
+          duration: 6000,
+        });
+      }
+      return;
+    }
+
+    // 未开始 + 已解锁 → 创建 user_simulations 行，跳 Offer 页
     setStarting(item.code);
     try {
       const { data: existing } = await supabase
@@ -358,14 +378,25 @@ function LibraryCard({
           disabled={starting || !item.simulationId}
           className={cn(
             "inline-flex w-full items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-medium transition",
-            item.userStatus === "not_started"
-              ? "bg-gradient-gold text-primary-foreground group-hover:shadow-glow-gold"
-              : "border border-white/10 bg-white/[0.04] text-foreground hover:bg-white/[0.08]",
+            item.locked
+              ? "border border-primary/25 bg-primary/[0.08] text-primary hover:bg-primary/[0.12]"
+              : item.userStatus === "not_started"
+                ? "bg-gradient-gold text-primary-foreground group-hover:shadow-glow-gold"
+                : "border border-white/10 bg-white/[0.04] text-foreground hover:bg-white/[0.08]",
             (starting || !item.simulationId) && "cursor-not-allowed opacity-60",
           )}
         >
-          {starting ? "启动中…" : ctaLabel}
-          {!starting && <ArrowRight className="h-3.5 w-3.5" />}
+          {item.locked ? (
+            <>
+              <Lock className="h-3.5 w-3.5" />
+              升级解锁
+            </>
+          ) : (
+            <>
+              {starting ? "启动中…" : ctaLabel}
+              {!starting && <ArrowRight className="h-3.5 w-3.5" />}
+            </>
+          )}
         </button>
         {!item.simulationId && (
           <div className="mt-2 flex items-center justify-center gap-1 text-[10px] text-muted-foreground">
