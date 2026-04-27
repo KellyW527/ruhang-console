@@ -2598,16 +2598,30 @@ const Workspace = () => {
                     : isReviewMode
                       ? "回看模式：可随时关闭。"
                       : selfEvalReady
-                        ? "自评已保存。关闭本窗口后，请到右侧任务列表手动点击「完成并解锁下一任务」。"
-                        : "先完成自评，再回到任务列表手动解锁下一任务。"}
+                        ? "自评已保存。点击右侧按钮完成本任务，并自动进入下一任务。"
+                        : "请先在「自我评估」tab 完成并保存自评。"}
                 </div>
-                <Button
-                  type="button"
-                  onClick={closeFeedbackModal}
-                  className="bg-gradient-gold text-primary-foreground hover:opacity-95"
-                >
-                  关闭
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={closeFeedbackModal}
+                  >
+                    关闭
+                  </Button>
+                  {!isReviewMode && feedbackStatus?.status === "feedback_pending" && (
+                    <Button
+                      type="button"
+                      disabled={!selfEvalReady}
+                      onClick={() => {
+                        if (feedbackTask) void advanceTaskById(feedbackTask.id);
+                      }}
+                      className="bg-gradient-gold text-primary-foreground hover:opacity-95 disabled:opacity-50"
+                    >
+                      {selfEvalReady ? "完成并进入下一任务" : "先保存自评"}
+                    </Button>
+                  )}
+                </div>
               </div>
             </>
           )}
