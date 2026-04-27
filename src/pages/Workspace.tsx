@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Send, Paperclip, Image as ImageIcon, Mail, MessageCircle, CheckCircle2, Lock, Circle, PenSquare, X, Loader2, Clock, Phone, ChevronDown, FileText, Download, BriefcaseBusiness, FolderOpen, Inbox, ListTodo, Sparkles, Target, Users } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Image as ImageIcon, Mail, MessageCircle, CheckCircle2, Lock, Circle, PenSquare, X, Loader2, Clock, Phone, ChevronDown, FileText, Download, BriefcaseBusiness, FolderOpen, Inbox, ListTodo, Sparkles, Target, Users, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase, supabasePublicConfig } from "@/integrations/supabase/client";
