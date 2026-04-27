@@ -175,32 +175,9 @@ export default function Library() {
       return;
     }
 
-    // 未开始 + 已解锁 → 创建 user_simulations 行，跳 Offer 页
+    // 未开始 + 已解锁 → 直接跳 Offer 页（行将在用户点"接受 Offer"时再创建）
     setStarting(item.code);
     try {
-      const { data: existing } = await supabase
-        .from("user_simulations")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("simulation_id", item.simulationId)
-        .maybeSingle();
-
-      if (!existing) {
-        const { error } = await supabase.from("user_simulations").insert({
-          user_id: user.id,
-          simulation_id: item.simulationId,
-          status: "not_started",
-          offer_accepted: false,
-          progress: 0,
-          current_task_index: 0,
-        });
-        if (error) {
-          console.error("[Library] create user_simulations error:", error);
-          toast.error("启动项目失败，请稍后重试。");
-          setStarting(null);
-          return;
-        }
-      }
       nav(`/simulation/${item.simulationId}/offer`);
     } finally {
       setStarting(null);

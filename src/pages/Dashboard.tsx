@@ -435,8 +435,8 @@ export default function Dashboard() {
     void load();
   }, [user]);
 
-  // 只显示用户已经"开始"的项目（接收过 Offer 或已完成）
-  const startedRows = rows.filter((row) => row.offer_accepted || row.status === "in_progress" || row.status === "completed");
+  // 只显示用户已经"接受 Offer"或已完成的项目；未接 Offer 的入口在「项目库」
+  const startedRows = rows.filter((row) => row.offer_accepted === true || row.status === "completed");
   const inProgress = startedRows.filter((row) => row.status !== "completed");
   const completed = startedRows.filter((row) => row.status === "completed");
   const achievements = useMemo(() => buildAchievementStates(achievementRows), [achievementRows]);
