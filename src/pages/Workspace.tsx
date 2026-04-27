@@ -1673,7 +1673,7 @@ const Workspace = () => {
                 <>
                   <div className="min-h-0 flex-1 bg-[radial-gradient(circle_at_top,hsl(var(--primary)/0.08),transparent_35%)]">
                     <div ref={scrollRef} className="h-full overflow-y-auto px-4 py-4 lg:px-6 lg:py-6">
-                      <div className="mx-auto max-w-4xl space-y-4">
+                      <div className="mx-auto flex max-w-4xl flex-col gap-4">
                         {activeTask && (
                           <div className="grid gap-3 rounded-[28px] border border-primary/20 bg-primary/6 p-4 shadow-[0_24px_60px_-36px_rgba(201,168,76,0.45)] lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
                             <div>
@@ -2513,7 +2513,7 @@ function MessageBubble({
 
   if (msg.message_type === "task" && task) {
     return (
-      <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="max-w-[85%]">
+      <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mr-auto max-w-[85%]">
         <div className="rounded-2xl border border-primary/40 bg-primary/5 p-4">
           <div className="text-[10px] uppercase tracking-wider text-primary">📌 新任务</div>
           <div className="mt-1 font-display text-base font-semibold">{task.title}</div>
@@ -2529,7 +2529,7 @@ function MessageBubble({
 
   if (msg.message_type === "image" && msg.file_url) {
     return (
-      <div className={cn("flex max-w-[85%]", isUser && "ml-auto")}>
+      <div className={cn("flex max-w-[85%]", isUser ? "ml-auto justify-end" : "mr-auto justify-start")}>
         <a href={msg.file_url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-2xl border border-white/10">
           <img src={msg.file_url} alt={msg.file_name ?? "image"} className="max-h-[18rem] w-auto max-w-full object-cover lg:max-h-[20rem]" />
         </a>
@@ -2566,7 +2566,7 @@ function MessageBubble({
       </div>
     );
     return (
-      <div className={cn("flex max-w-[85%]", isUser && "ml-auto")}>
+      <div className={cn("flex max-w-[85%]", isUser ? "ml-auto justify-end" : "mr-auto justify-start")}>
         {msg.file_url ? (
           <a href={msg.file_url} target="_blank" rel="noreferrer" className="hover:opacity-90">{inner}</a>
         ) : inner}
@@ -2576,7 +2576,7 @@ function MessageBubble({
 
   if (msg.message_type === "audio") {
     return (
-      <div className={cn("flex max-w-[60%]", isUser && "ml-auto")}>
+      <div className={cn("flex max-w-[60%]", isUser ? "ml-auto justify-end" : "mr-auto justify-start")}>
         <div className={cn("rounded-2xl px-4 py-3", isUser ? "bg-gradient-gold text-primary-foreground" : "bg-white/5")}>
           <div className="flex items-center gap-3">
             <button type="button" className="flex h-8 w-8 items-center justify-center rounded-full bg-background/40">
@@ -2611,7 +2611,7 @@ function MessageBubble({
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className={cn("flex max-w-[85%]", isUser && "ml-auto")}>
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className={cn("flex max-w-[85%]", isUser ? "ml-auto justify-end" : "mr-auto justify-start")}>
       <div className={cn(
         "whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
         isUser ? "rounded-tr-sm bg-gradient-gold text-primary-foreground" : "rounded-tl-sm bg-white/5 text-foreground",
