@@ -700,6 +700,18 @@ const Workspace = () => {
 
   const finalizeTaskAndUnlock = async (task: Task) => {
     if (!usId) return;
+    // 防御：必须 feedback_pending + 已保存自评，才允许推进。任何自动调用/异常路径都会被这里挡掉。
+    const st = taskStatuses[task.id]?.status;
+    if (st !== "feedback_pending") {
+      console.warn("[unlock] blocked: task not in feedback_pending", { taskId: task.id, st });
+      toast.error("当前任务还不能解锁下一任务");
+      return;
+    }
+    if (!selfEvalMap[task.id]?.submitted_at) {
+      console.warn("[unlock] blocked: self_eval not submitted", { taskId: task.id });
+      toast.error("请先完成并保存自评");
+      return;
+    }
     console.log("[unlock] start", { taskId: task.id, orderIndex: task.order_index });
     const nextTask = tasks.find((item) => item.order_index === task.order_index + 1);
     const currentScore = taskStatuses[task.id]?.score ?? task.score;
