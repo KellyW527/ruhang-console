@@ -93,7 +93,49 @@ const SINGLE_PURCHASES = [
   { key: "single_3", count: 3, price: "¥66", desc: "三个项目额度" },
 ];
 
-const Pricing = () => {
+type Cell = boolean | string;
+const COMPARISON: { feature: string; free: Cell; basic: Cell; premium: Cell }[] = [
+  { feature: "可解锁项目数", free: "1（兴通投行 IPO）", basic: "1 + 自选 3 个 Pro", premium: "1 + 自选 10 个 Pro" },
+  { feature: "覆盖赛道", free: "投行 IBD", basic: "可跨 4 大赛道", premium: "全部 4 大赛道" },
+  { feature: "完整任务流程 + AI 反馈", free: true, basic: true, premium: true },
+  { feature: "结业证书 + 能力报告", free: true, basic: true, premium: true },
+  { feature: "项目库新项目优先解锁", free: false, basic: false, premium: true },
+  { feature: "优先客服支持", free: false, basic: false, premium: true },
+  { feature: "支持升级补差价", free: false, basic: "升级到高级 ¥139", premium: "—" },
+  { feature: "有效期", free: "永久", basic: "30 天周期", premium: "30 天周期" },
+];
+
+const FAQS = [
+  {
+    q: "免费体验和付费会员的核心区别是什么？",
+    a: "免费体验固定只能做「兴通投行 IPO」一个项目，但流程、AI 反馈、证书、能力报告完全相同。付费会员的差异在于：可以解锁更多 Pro 项目、跨赛道学习、获得新项目优先体验权。",
+  },
+  {
+    q: "月度会员到期后会自动续费吗？可以取消吗？",
+    a: "会自动续费。订阅会按下单日的次月同一日扣款，你可以在「设置 → 订阅管理」里随时取消，取消后当前周期内仍可正常使用，到期后停止续费，不再扣款。",
+  },
+  {
+    q: "基础会员能升级到高级会员吗？",
+    a: "可以。升级只需补差价 ¥139（198 - 59）。升级后总额度按 11 个项目计算（1 免费 + 10 Pro），已使用项目数自动继承，剩余额度 = 11 - 已用项目数。",
+  },
+  {
+    q: "单买项目和会员的区别？哪个更划算？",
+    a: "单买项目是永久解锁，不会过期，适合只想完成 1–3 个特定项目的同学。会员是 30 天周期套餐，适合想多体验、跨赛道学习的同学。如果你只想做 1–2 个项目，单买更省钱；3 个以上建议直接订阅基础会员。",
+  },
+  {
+    q: "退款政策是什么？",
+    a: "购买后 7 天内、且尚未开始任何 Pro 项目的，可联系客服全额退款。已开始的项目按已消耗的项目额度比例扣减后退款。免费体验项目不影响退款。",
+  },
+  {
+    q: "支付安全吗？发票怎么开？",
+    a: "支付全程通过 Stripe 处理，符合 PCI-DSS 国际安全标准，我们的服务器从不接触你的信用卡信息。如需开具电子发票，请在购买后联系客服，提供订单号与抬头信息即可。",
+  },
+  {
+    q: "完成项目后我会得到什么？",
+    a: "每完成一个项目你会得到：① 一份带 5 维评分的能力报告；② 一张可下载的结业证书；③ 全部交付物（PPT / Excel / Memo）作为作品集留存；④ 对应的能力勋章解锁到你的档案。",
+  },
+];
+
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loadingKey, setLoadingKey] = useState<string | null>(null);
