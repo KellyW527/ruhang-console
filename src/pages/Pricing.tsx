@@ -258,6 +258,83 @@ const Pricing = () => {
             ))}
           </div>
 
+          {/* 套餐对比表 */}
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-display font-semibold text-foreground">详细功能对比</h2>
+              <p className="text-sm text-muted-foreground">把三档套餐放在一起，看清楚再决定。</p>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-border/60 bg-secondary/20">
+              {/* 桌面端表格 */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/60 bg-background/40">
+                      <th className="px-5 py-4 text-left font-medium text-muted-foreground w-[34%]">功能</th>
+                      <th className="px-5 py-4 text-center font-display font-semibold text-foreground">免费体验</th>
+                      <th className="px-5 py-4 text-center font-display font-semibold text-foreground">基础月度</th>
+                      <th className="px-5 py-4 text-center font-display font-semibold text-primary">
+                        高级月度
+                        <Badge className="ml-2 bg-primary/20 text-primary border-primary/30 border text-[10px]">推荐</Badge>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {COMPARISON.map((row, i) => (
+                      <tr key={row.feature} className={i % 2 === 0 ? "bg-background/20" : ""}>
+                        <td className="px-5 py-3.5 text-foreground/90">{row.feature}</td>
+                        {(["free", "basic", "premium"] as const).map((col) => {
+                          const v = row[col];
+                          return (
+                            <td key={col} className="px-5 py-3.5 text-center">
+                              {typeof v === "boolean" ? (
+                                v ? (
+                                  <CheckCircle className="inline h-4 w-4 text-primary" />
+                                ) : (
+                                  <X className="inline h-4 w-4 text-muted-foreground/40" />
+                                )
+                              ) : (
+                                <span className="text-xs text-foreground/80">{v}</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {/* 移动端：分块卡片 */}
+              <div className="md:hidden divide-y divide-border/40">
+                {COMPARISON.map((row) => (
+                  <div key={row.feature} className="p-4 space-y-2">
+                    <div className="text-sm font-medium text-foreground">{row.feature}</div>
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      {(["free", "basic", "premium"] as const).map((col) => {
+                        const v = row[col];
+                        const labels = { free: "免费", basic: "基础", premium: "高级" };
+                        return (
+                          <div key={col} className="rounded-lg border border-border/40 bg-background/30 px-2 py-2 text-center">
+                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{labels[col]}</div>
+                            {typeof v === "boolean" ? (
+                              v ? (
+                                <CheckCircle className="inline h-3.5 w-3.5 text-primary" />
+                              ) : (
+                                <X className="inline h-3.5 w-3.5 text-muted-foreground/40" />
+                              )
+                            ) : (
+                              <span className="text-foreground/80 text-[11px] leading-tight">{v}</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* 升级补差价说明 */}
           <div className="mx-auto max-w-3xl rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center space-y-2">
             <div className="text-sm font-medium text-foreground">已是基础会员？升级到高级仅需补差价 ¥139</div>
