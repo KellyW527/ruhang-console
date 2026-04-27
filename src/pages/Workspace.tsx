@@ -1474,134 +1474,196 @@ const Workspace = () => {
           <div className="flex min-h-0 flex-1 gap-3">
             <aside
               className={cn(
-                "glass-deep w-full shrink-0 overflow-hidden rounded-[28px] lg:flex lg:w-[308px] lg:flex-col",
+                "glass-deep w-full shrink-0 overflow-hidden rounded-[28px] transition-[width] duration-200 ease-out lg:flex lg:flex-col",
+                leftCollapsed ? "lg:w-[60px]" : "lg:w-[308px]",
                 mobilePanel === "convs" ? "flex flex-1 flex-col" : "hidden",
               )}
             >
-              <div className="border-b border-white/5 px-5 py-5">
-                <div className="eyebrow">Project Brief</div>
-                <div className="mt-3 rounded-[28px] border border-primary/20 bg-primary/8 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 text-sm text-foreground">
-                        <BriefcaseBusiness className="h-4 w-4 text-primary" />
-                        当前项目线
-                      </div>
-                      <div className="mt-2 line-clamp-2 font-display text-lg font-semibold">{simTitle}</div>
-                    </div>
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-xl">
-                      {runtime.leader.avatarEmoji}
-                    </div>
-                  </div>
-                  <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                    <div className="rounded-2xl border border-white/10 bg-background/40 px-3 py-2">
-                      <div className="text-muted-foreground">带教人</div>
-                      <div className="mt-1 font-medium text-foreground">{runtime.leader.name}</div>
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-background/40 px-3 py-2">
-                      <div className="text-muted-foreground">赛道</div>
-                      <div className="mt-1 font-medium text-foreground">{trackLabel}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <ScrollArea className="flex-1">
-                <div className="space-y-5 px-4 py-4">
-                  <section>
-                    <div className="mb-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                        <Users className="h-4 w-4 text-primary" />
-                        项目会话
-                      </div>
-                      <span className="text-xs text-muted-foreground">{convs.length} 个</span>
-                    </div>
-                    <div className="space-y-2">
-                      {convs.map((c) => {
-                        const kind = getConversationKind(c, simCode);
-                        return (
-                          <button
-                            key={c.id}
-                            onClick={() => {
-                              setActiveConvId(c.id);
-                              setMobilePanel("chat");
-                            }}
-                            className={cn(
-                              "relative w-full rounded-2xl border px-3 py-3 text-left transition",
-                              activeConvId === c.id
-                                ? "border-primary/35 bg-primary/10 shadow-[0_0_0_1px_rgba(201,168,76,0.12)]"
-                                : "border-white/6 bg-white/[0.02] hover:border-white/12 hover:bg-white/[0.04]",
-                            )}
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-background/70 text-lg shadow-inner">
-                                {c.avatar_emoji}
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between gap-3">
-                                  <div className="truncate text-sm font-medium text-foreground">{c.name}</div>
-                                  {c.unread_count > 0 ? (
-                                    <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
-                                      {c.unread_count}
-                                    </span>
-                                  ) : (
-                                    <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
-                                  )}
-                                </div>
-                                <div className="mt-1 truncate text-xs text-muted-foreground">{c.role_label}</div>
-                                <div className="mt-2 flex items-center gap-2">
-                                  <span className={cn(
-                                    "badge-status",
-                                    kind === "leader"
-                                      ? "badge-active"
-                                      : kind === "group"
-                                        ? "border border-sky-500/20 bg-sky-500/10 text-sky-200"
-                                        : "border border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-200",
-                                  )}>
-                                    {kind === "leader" ? "带教" : kind === "group" ? "项目组" : "HR"}
-                                  </span>
-                                  {activeConvId === c.id && <span className="text-[11px] text-primary">当前窗口</span>}
-                                </div>
-                              </div>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </section>
-
+              {/* Collapsed rail (desktop only) */}
+              {leftCollapsed && (
+                <div className="hidden h-full flex-col items-center gap-3 px-2 py-4 lg:flex">
+                  <button
+                    type="button"
+                    onClick={() => setLeftCollapsed(false)}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-muted-foreground transition hover:border-primary/30 hover:bg-primary/10 hover:text-primary"
+                    title="展开会话面板"
+                  >
+                    <PanelLeftOpen className="h-4 w-4" />
+                  </button>
+                  <div className="my-1 h-px w-6 bg-white/10" />
+                  <button
+                    type="button"
+                    onClick={() => setLeftCollapsed(false)}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"
+                    title="项目简报"
+                  >
+                    <BriefcaseBusiness className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLeftCollapsed(false)}
+                    className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-muted-foreground transition hover:border-white/20 hover:text-foreground"
+                    title="项目会话"
+                  >
+                    <Users className="h-4 w-4" />
+                    {unreadConversationCount > 0 && (
+                      <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[9px] font-medium text-primary-foreground">
+                        {unreadConversationCount}
+                      </span>
+                    )}
+                  </button>
                   {starterKitAssets.length > 0 && (
-                    <section>
-                      <div className="mb-3 flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                          <FolderOpen className="h-4 w-4 text-primary" />
-                          项目资料包
-                        </div>
-                        <Badge className="bg-primary/15 text-primary">{starterKitAssets.length} 份</Badge>
-                      </div>
-                      <div className="space-y-2">
-                        {starterKitAssets.map((asset) => (
-                          <a
-                            key={asset.id}
-                            href={asset.url}
-                            download={asset.filename}
-                            className="flex items-start gap-3 rounded-2xl border border-white/8 bg-white/[0.02] px-3 py-3 transition hover:border-white/12 hover:bg-white/[0.04]"
-                          >
-                            <div className="mt-0.5 rounded-xl bg-primary/10 p-2 text-primary">
-                              <FileText className="h-3.5 w-3.5" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="truncate text-sm font-medium text-foreground">{asset.title}</div>
-                              <div className="mt-1 text-xs text-muted-foreground">{asset.description}</div>
-                              <div className="mt-2 text-[11px] text-primary">{asset.sizeLabel}</div>
-                            </div>
-                          </a>
-                        ))}
-                      </div>
-                    </section>
+                    <button
+                      type="button"
+                      onClick={() => setLeftCollapsed(false)}
+                      className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-muted-foreground transition hover:border-white/20 hover:text-foreground"
+                      title="项目资料包"
+                    >
+                      <FolderOpen className="h-4 w-4" />
+                    </button>
                   )}
                 </div>
-              </ScrollArea>
+              )}
+
+              {/* Expanded content */}
+              {!leftCollapsed && (
+                <>
+                  <div className="border-b border-white/5 px-5 py-5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="eyebrow">Project Brief</div>
+                      <button
+                        type="button"
+                        onClick={() => setLeftCollapsed(true)}
+                        className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-white/5 hover:text-foreground lg:inline-flex"
+                        title="收起面板"
+                      >
+                        <PanelLeftClose className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="mt-3 rounded-[28px] border border-primary/20 bg-primary/8 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 text-sm text-foreground">
+                            <BriefcaseBusiness className="h-4 w-4 text-primary" />
+                            当前项目线
+                          </div>
+                          <div className="mt-2 line-clamp-2 font-display text-lg font-semibold">{simTitle}</div>
+                        </div>
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-xl">
+                          {runtime.leader.avatarEmoji}
+                        </div>
+                      </div>
+                      <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                        <div className="rounded-2xl border border-white/10 bg-background/40 px-3 py-2">
+                          <div className="text-muted-foreground">带教人</div>
+                          <div className="mt-1 font-medium text-foreground">{runtime.leader.name}</div>
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-background/40 px-3 py-2">
+                          <div className="text-muted-foreground">赛道</div>
+                          <div className="mt-1 font-medium text-foreground">{trackLabel}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <ScrollArea className="flex-1">
+                    <div className="space-y-5 px-4 py-4">
+                      <section>
+                        <div className="mb-3 flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                            <Users className="h-4 w-4 text-primary" />
+                            项目会话
+                          </div>
+                          <span className="text-xs text-muted-foreground">{convs.length} 个</span>
+                        </div>
+                        <div className="space-y-2">
+                          {convs.map((c) => {
+                            const kind = getConversationKind(c, simCode);
+                            return (
+                              <button
+                                key={c.id}
+                                onClick={() => {
+                                  setActiveConvId(c.id);
+                                  setMobilePanel("chat");
+                                }}
+                                className={cn(
+                                  "relative w-full rounded-2xl border px-3 py-3 text-left transition",
+                                  activeConvId === c.id
+                                    ? "border-primary/35 bg-primary/10 shadow-[0_0_0_1px_rgba(201,168,76,0.12)]"
+                                    : "border-white/6 bg-white/[0.02] hover:border-white/12 hover:bg-white/[0.04]",
+                                )}
+                              >
+                                <div className="flex items-start gap-3">
+                                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-background/70 text-lg shadow-inner">
+                                    {c.avatar_emoji}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <div className="flex items-center justify-between gap-3">
+                                      <div className="truncate text-sm font-medium text-foreground">{c.name}</div>
+                                      {c.unread_count > 0 ? (
+                                        <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
+                                          {c.unread_count}
+                                        </span>
+                                      ) : (
+                                        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/40" />
+                                      )}
+                                    </div>
+                                    <div className="mt-1 truncate text-xs text-muted-foreground">{c.role_label}</div>
+                                    <div className="mt-2 flex items-center gap-2">
+                                      <span className={cn(
+                                        "badge-status",
+                                        kind === "leader"
+                                          ? "badge-active"
+                                          : kind === "group"
+                                            ? "border border-sky-500/20 bg-sky-500/10 text-sky-200"
+                                            : "border border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-200",
+                                      )}>
+                                        {kind === "leader" ? "带教" : kind === "group" ? "项目组" : "HR"}
+                                      </span>
+                                      {activeConvId === c.id && <span className="text-[11px] text-primary">当前窗口</span>}
+                                    </div>
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </section>
+
+                      {starterKitAssets.length > 0 && (
+                        <section>
+                          <div className="mb-3 flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                              <FolderOpen className="h-4 w-4 text-primary" />
+                              项目资料包
+                            </div>
+                            <Badge className="bg-primary/15 text-primary">{starterKitAssets.length} 份</Badge>
+                          </div>
+                          <div className="space-y-2">
+                            {starterKitAssets.map((asset) => (
+                              <a
+                                key={asset.id}
+                                href={asset.url}
+                                download={asset.filename}
+                                className="flex items-start gap-3 rounded-2xl border border-white/8 bg-white/[0.02] px-3 py-3 transition hover:border-white/12 hover:bg-white/[0.04]"
+                              >
+                                <div className="mt-0.5 rounded-xl bg-primary/10 p-2 text-primary">
+                                  <FileText className="h-3.5 w-3.5" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="truncate text-sm font-medium text-foreground">{asset.title}</div>
+                                  <div className="mt-1 text-xs text-muted-foreground">{asset.description}</div>
+                                  <div className="mt-2 text-[11px] text-primary">{asset.sizeLabel}</div>
+                                </div>
+                              </a>
+                            ))}
+                          </div>
+                        </section>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </>
+              )}
             </aside>
 
             <main
