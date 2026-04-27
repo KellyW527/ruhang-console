@@ -15,6 +15,11 @@ import {
   FileText,
   Phone,
   Quote,
+  FileSpreadsheet,
+  Presentation,
+  FileSignature,
+  ScrollText,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/marketing/Navbar";
