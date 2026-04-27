@@ -569,17 +569,46 @@ const Workspace = () => {
   const ensureActiveTask = async () => {
     if (!usId || !tasks.length || simulationStatus === "completed" || !progressLoaded) return null;
 
-    // 1) 已有正在进行/等待自评/需重交的任务 → 直接返回，绝不写库、不切换 current_task_index、不激活下一任务。
-    //    这能阻止 feedback_pending 在重渲染时被当作"缺失 active"而触发 fallback，导致表面上"自动开启下一任务"。
+    // 1) 已有正在进行/等待自评/需重交的任务 → 直接返回。
     const currentActive = tasks.find((task) => {
       const status = taskStatuses[task.id]?.status;
       return status === "active" || status === "feedback_pending" || status === "needs_resubmission";
     });
     if (currentActive) return currentActive;
 
-    // 2) 真正没有 active/pending/retry 时，才考虑恢复。fallback 只允许：
-    //    - 第一个任务（order_index === 0），或
-    //    - 前一个任务已经 done 的紧邻任务
+    // 2) 本地没有 active/pending/retry → 先去数据库重新拉一次真实状态，避免"DB 已有 active 但本地仍 locked"。
+    const { data: dbProgress } = await supabase
+      .from("user_task_progress")
+      .select("task_id, status, score, self_eval, submission_type, submission_quality")
+      .eq("user_simulation_id", usId);
+
+    if (dbProgress && dbProgress.length) {
+      const map: Record<string, TaskStatusEntry> = {};
+      const seMap: Record<string, SelfEvalValue | null> = {};
+      dbProgress.forEach((p: any) => {
+        map[p.task_id] = {
+          status: p.status,
+          score: p.score ?? undefined,
+          submission_type: p.submission_type ?? null,
+          submission_quality: p.submission_quality ?? null,
+        };
+        seMap[p.task_id] = p.self_eval ?? null;
+      });
+      // 合并而不是覆盖，避免把刚刚本地 upsert 的覆盖掉
+      setTaskStatuses((current) => ({ ...current, ...map }));
+      setSelfEvalMap((current) => ({ ...current, ...seMap }));
+
+      const recovered = tasks.find((task) => {
+        const status = map[task.id]?.status;
+        return status === "active" || status === "feedback_pending" || status === "needs_resubmission";
+      });
+      if (recovered) {
+        console.log("[ensureActiveTask] recovered from DB:", recovered.id, map[recovered.id]?.status);
+        return recovered;
+      }
+    }
+
+    // 3) DB 也没有可进行的任务 → fallback 只允许第一个任务或前一个已 done 的紧邻任务。
     const sorted = [...tasks].sort((a, b) => a.order_index - b.order_index);
     const fallbackTask = sorted.find((task) => {
       if (taskStatuses[task.id]?.status === "done") return false;
@@ -597,22 +626,25 @@ const Workspace = () => {
       .eq("task_id", fallbackTask.id)
       .maybeSingle();
 
-    // 已有非 locked 状态（如 feedback_pending / needs_resubmission / done）就不再覆盖
     if (existingProgress && existingProgress.status && existingProgress.status !== "locked") {
+      // DB 已有非 locked 状态：同步回前端
+      upsertTaskStatus(fallbackTask.id, { status: existingProgress.status });
       return fallbackTask;
     }
 
     if (!existingProgress) {
-      await supabase.from("user_task_progress").insert({
+      const { error: insErr } = await supabase.from("user_task_progress").insert({
         user_simulation_id: usId,
         task_id: fallbackTask.id,
         status: "active",
       });
+      if (insErr) console.error("[ensureActiveTask] insert active failed:", insErr);
     } else {
-      await supabase
+      const { error: updErr } = await supabase
         .from("user_task_progress")
         .update({ status: "active" })
         .eq("id", existingProgress.id);
+      if (updErr) console.error("[ensureActiveTask] update active failed:", updErr);
     }
 
     if (currentTaskIndex !== fallbackTask.order_index) {
@@ -624,6 +656,7 @@ const Workspace = () => {
     }
 
     upsertTaskStatus(fallbackTask.id, { status: "active" });
+    console.log("[ensureActiveTask] activated fallback:", fallbackTask.id);
     return fallbackTask;
   };
 
@@ -848,8 +881,7 @@ const Workspace = () => {
     upsertTaskStatus(task.id, { status: "done", score: currentScore });
     setCompletionAverageScore(tasks.length ? Math.round(totalScore / tasks.length) : null);
     setCompletionAt(new Date().toISOString());
-    setCompletionOpen(true);
-    // 同时弹出出项问卷（必填，提交后才能查证书）
+    // 先弹出出项问卷（必填）；问卷提交后再弹"项目交付完成"卡片，避免两个 Dialog 互相盖住。
     setShowPostSurvey(true);
 
     const leaderConversation = convs.find((item) => getConversationKind(item, simCode) === "leader");
@@ -996,6 +1028,12 @@ const Workspace = () => {
     } else {
       openFeedbackForTask(activeTaskNow, "answer");
     }
+    // 兜底：如果上面的 openFeedbackForTask 因为某些原因（比如 race）没生效，
+    // 短延迟后再强制打开一次，确保用户一定能看到反馈面板
+    window.setTimeout(() => {
+      setFeedbackTask((current) => current ?? activeTaskNow);
+      setFeedbackTab(evaluation.quality === "pass" ? "self" : "answer");
+    }, 350);
 
     toast.success(
       evaluation.quality === "pass" ? "已作为正式提交送审" : "已记录本次提交，但需要补齐后重交",
@@ -2565,16 +2603,30 @@ const Workspace = () => {
                     : isReviewMode
                       ? "回看模式：可随时关闭。"
                       : selfEvalReady
-                        ? "自评已保存。关闭本窗口后，请到右侧任务列表手动点击「完成并解锁下一任务」。"
-                        : "先完成自评，再回到任务列表手动解锁下一任务。"}
+                        ? "自评已保存。点击右侧按钮完成本任务，并自动进入下一任务。"
+                        : "请先在「自我评估」tab 完成并保存自评。"}
                 </div>
-                <Button
-                  type="button"
-                  onClick={closeFeedbackModal}
-                  className="bg-gradient-gold text-primary-foreground hover:opacity-95"
-                >
-                  关闭
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={closeFeedbackModal}
+                  >
+                    关闭
+                  </Button>
+                  {!isReviewMode && feedbackStatus?.status === "feedback_pending" && (
+                    <Button
+                      type="button"
+                      disabled={!selfEvalReady}
+                      onClick={() => {
+                        if (feedbackTask) void advanceTaskById(feedbackTask.id);
+                      }}
+                      className="bg-gradient-gold text-primary-foreground hover:opacity-95 disabled:opacity-50"
+                    >
+                      {selfEvalReady ? "完成并进入下一任务" : "先保存自评"}
+                    </Button>
+                  )}
+                </div>
               </div>
             </>
           )}
@@ -2619,14 +2671,17 @@ const Workspace = () => {
         </DialogContent>
       </Dialog>
 
-      {/* 出项问卷：必填，提交后才能去看证书 */}
+      {/* 出项问卷：必填，提交后再弹出"项目交付完成"卡片 */}
       {usId && simCode && (
         <PostSimulationSurvey
           open={showPostSurvey}
           userSimulationId={usId}
           simulationCode={simCode}
           simulationTitle={simTitle}
-          onSubmitted={() => setShowPostSurvey(false)}
+          onSubmitted={() => {
+            setShowPostSurvey(false);
+            setCompletionOpen(true);
+          }}
         />
       )}
       <IncomingCallDialog

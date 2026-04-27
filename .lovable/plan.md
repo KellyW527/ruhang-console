@@ -1,85 +1,77 @@
-## 任务 1：底部添加"合作联系"
+我会先修工作台的任务状态机，而不是继续改无关 UI。
 
-### 修改 `src/components/marketing/Footer.tsx`
+## 我定位到的核心问题
 
-把当前 4 列网格改成 5 列（`md:grid-cols-5`），新增"合作联系"列，放在"法律"之前（或末尾）。
+当前 `Workspace.tsx` 里任务推进被拆成了多段状态：
 
-新增列内容：
-
-- 标题：**合作联系**
-- 一段说明（小字 muted）：面向企业、机构和有金融行业经验的前辈，开放三类合作
-- 三条要点（图标 + 一行）：
-  1. **定制化项目授权** — 与我们共建专属赛道任务
-  2. **人才数据访问权限** — 经学员授权后获取完成度优秀的学员名单，定向发送面试邀请
-  3. **人才漏斗转化** — 完成模拟任务的学生具备更强意向与基础技能，帮助企业前置筛选
-- 一个邮件 CTA 链接：
-  ```
-  邮箱：3165784931@qq.com（标题"合作联系"）
-  ```
-  使用 `<a href="mailto:3165784931@qq.com?subject=合作联系">` 形式，hover 高亮 primary 金色，与现有链接风格一致。
-
-样式沿用 footer 现有的 `text-sm text-muted-foreground hover:text-primary`，标题用 `text-sm font-semibold text-foreground font-sans`，与其他列对齐。
-
-> 移动端：5 列在窄屏会被 `grid-cols-1` 自动堆叠，无需额外处理。
-
----
-
-## 任务 2：项目完成时询问是否公开成果给发起人/公司
-
-### 2.1 数据库迁移
-
-新建 `db/migrations/2026-04-27_add_post_survey_share_consent.sql`：
-
-```sql
-ALTER TABLE public.post_simulation_surveys
-  ADD COLUMN IF NOT EXISTS share_with_partner BOOLEAN NOT NULL DEFAULT false,
-  ADD COLUMN IF NOT EXISTS share_consent_at TIMESTAMPTZ;
-
-CREATE INDEX IF NOT EXISTS idx_post_survey_share
-  ON public.post_simulation_surveys(simulation_code, share_with_partner)
-  WHERE share_with_partner = true;
+```text
+active -> 提交 -> feedback_pending -> 自评 -> 手动确认 -> done -> 下一个 active
 ```
 
-含义：
-- `share_with_partner = true` → 用户同意公开（可被发起人/合作方筛选）
-- `share_with_partner = false`（默认）→ 保密
-- `share_consent_at` 记录同意时间，便于后续合规追溯
+但现在有两个脆弱点会直接造成你看到的问题：
 
-### 2.2 前端：在出项问卷里加一道"公开同意"题
+1. **任务不开启**
+   - `ensureActiveTask()` 在找不到本地 `active` 时会尝试恢复任务，但如果数据库已有某条进度记录是非 `locked`，它直接 `return fallbackTask`，却没有把本地 `taskStatuses` 补成真实状态。
+   - 结果：数据库可能已经有 active/pending，但前端看板仍按 `locked` 渲染，表现就是“任务根本不开启”。
 
-修改 `src/components/feedback/PostSimulationSurvey.tsx`：
+2. **提交后不推进、反馈面板不出现**
+   - 提交后只靠当前 React state 立刻打开反馈弹窗；如果本地状态没同步、弹窗被关闭/刷新、或者数据库写入成功但本地没补齐，就会停在“看起来提交了，但没有反馈面板”的状态。
+   - 现在反馈弹窗的下一步按钮也不在弹窗内，而是要求用户去右侧任务列表点“完成并解锁下一任务”，这很容易被误认为“没有推进”。
 
-- 在"开放题"和提交按钮之间，新增一个卡片："是否愿意将本次项目结果公开给发起方/合作公司？"
-- 文案要点：
-  - 好处：让发起方/合作公司看到你的完成情况，有机会被联系面试、收到内推等
-  - 不公开：仅你和 RuHang 可见，不会被任何第三方查到
-- 两个互斥按钮：**愿意公开** / **保持保密**（默认未选；必须二选一才能提交，与其他必填项一致）
-- 新增 state：`shareWithPartner: boolean | null`
-- `isValid` 增加条件：`shareWithPartner !== null`
+## 修复方案
 
-### 2.3 写库链路
+### 1. 重写 `ensureActiveTask()` 的恢复逻辑
 
-修改 `src/lib/feedback.ts`：
+修改 `src/pages/Workspace.tsx`：
 
-- `PostSurveyPayload` 增加字段 `shareWithPartner: boolean`
-- `submitPostSimulationSurvey` 在 insert 时写入：
-  - `share_with_partner: payload.shareWithPartner`
-  - `share_consent_at: payload.shareWithPartner ? new Date().toISOString() : null`
+- 先从本地找 `active / feedback_pending / needs_resubmission`。
+- 如果本地没有，再按当前模拟进度从数据库读取 `user_task_progress`，并把真实状态同步回 `taskStatuses`。
+- 如果数据库也没有任何可进行任务，才创建第一个任务的 `active` 记录。
+- 不再出现“数据库有记录，但前端仍显示 locked”的状态。
 
-`PostSimulationSurvey.tsx` 提交时把 `shareWithPartner` 透传给 `submitPostSimulationSurvey`。
+### 2. 提交后强制进入反馈面板
 
-### 2.4 不影响现有完成流程
+修改 `triggerSubmission()`：
 
-- 不改 `Workspace.tsx` / `Certificate.tsx` 的入口与时序
-- 不改其他自动推进/自评相关逻辑（之前已修复，保持原样）
+- 数据库写入成功或失败后，本地都立即更新当前任务状态。
+- 对通过提交：立即把任务设为 `feedback_pending` 并打开反馈面板的“自我评估”tab。
+- 对未达标提交：立即打开反馈面板的“标准答案/反馈”tab。
+- 增加一个短延迟兜底检查：如果当前任务已经是 `feedback_pending` 但弹窗没打开，自动重新打开，避免点击后无响应。
 
----
+### 3. 把“完成并解锁下一任务”放回反馈弹窗里
 
-## 验证清单
+现在用户保存自评后要去右侧列表点按钮，容易造成“提交后没有推进”的感觉。我会在反馈弹窗底部直接加主按钮：
 
-- 底部新增"合作联系"列，邮箱 `mailto:` 可点击，标题预填"合作联系"
-- 移动端 footer 不错位
-- 出项问卷新增"是否公开"题，未选不能提交
-- 选"愿意公开"后，`post_simulation_surveys` 行 `share_with_partner=true` 且 `share_consent_at` 有时间戳
-- 选"保持保密"后，`share_with_partner=false`、`share_consent_at` 为 null
-- 用户需要在 Lovable Cloud 里执行新迁移 SQL
+- 自评未保存：按钮禁用，提示“先保存自评”。
+- 自评已保存：按钮显示“完成并进入下一任务”。
+- 点击后直接调用 `advanceTaskById()`，完成当前任务并激活下一个任务。
+- 右侧任务列表的按钮保留作为备选入口，但不再是唯一入口。
+
+### 4. 修复最后一个任务完成后的问卷/证书流程冲突
+
+当前最后一个任务完成时会同时打开“项目交付完成”弹窗和“出项问卷”弹窗，两个 Dialog 可能互相覆盖。我会改为：
+
+- 最后一个任务完成后优先打开出项问卷。
+- 出项问卷提交后，再显示项目完成弹窗/证书入口。
+- 避免用户误以为完成后没反应。
+
+### 5. 加最小必要日志与校验
+
+- 保留关键 `console.warn/error`，用于下次如果还有问题能看到是数据库写入失败、RLS 拦截、还是状态同步失败。
+- 不添加大量无关日志，不污染页面。
+
+## 涉及文件
+
+- `src/pages/Workspace.tsx`
+
+预计不需要改数据库结构，也不改刚刚新增的合作联系和公开授权字段。
+
+## 验证点
+
+修完后应满足：
+
+1. 进入工作台后，第一个任务会稳定显示为“进行中”，不会全是“未解锁”。
+2. 上传附件或邮件提交后，会立刻出现反馈/自评面板。
+3. 自评保存后，在同一个反馈弹窗里可以直接进入下一任务。
+4. 任务完成数、右侧任务状态、顶部进度同步更新。
+5. 最后一个任务完成后先问是否公开成果，提交问卷后再进入证书/完成入口。
