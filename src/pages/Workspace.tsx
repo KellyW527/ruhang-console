@@ -123,6 +123,8 @@ const Workspace = () => {
   const [composeSentFlash, setComposeSentFlash] = useState(false);
   const [selfEvalMap, setSelfEvalMap] = useState<Record<string, SelfEvalValue | null>>({});
   const [mobilePanel, setMobilePanel] = useState<"convs" | "chat" | "tasks">("chat");
+  const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const [rightCollapsed, setRightCollapsed] = useState(false);
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const [streamStarted, setStreamStarted] = useState(false);
   const [feedbackTab, setFeedbackTab] = useState<"answer" | "self">("answer");
