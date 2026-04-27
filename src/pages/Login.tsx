@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,29 +10,46 @@ import { AuthBrandPanel } from "@/components/marketing/AuthBrandPanel";
 import { Eye, EyeOff } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 
+/** 把 Supabase 英文错误映射成中文友好提示 */
+function mapLoginError(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes("invalid login credentials")) return "邮箱或密码错误，请检查后重试";
+  if (m.includes("email not confirmed")) return "请先完成邮箱验证后再登录（查收注册邮件）";
+  if (m.includes("too many requests") || m.includes("rate limit")) return "尝试次数过多，请稍后再试";
+  if (m.includes("user not found")) return "该邮箱尚未注册，请先创建账号";
+  if (m.includes("network")) return "网络异常，请检查后重试";
+  return "登录失败，请稍后重试";
+}
+
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const nav = useNavigate();
+  const [params] = useSearchParams();
+  const redirect = params.get("redirect") || "/dashboard";
   const { session } = useAuth();
 
   useEffect(() => {
     document.title = "登录 · 入行 RuHang";
-    if (session) nav("/dashboard", { replace: true });
-  }, [session, nav]);
+    if (session) nav(redirect, { replace: true });
+  }, [session, nav, redirect]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim() || !password) {
+      toast.error("请填写邮箱和密码");
+      return;
+    }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setLoading(false);
     if (error) {
-      toast.error("登录失败", { description: error.message });
+      toast.error(mapLoginError(error.message));
     } else {
       toast.success("欢迎回来 👋");
-      nav("/dashboard");
+      nav(redirect);
     }
   };
 
@@ -59,7 +76,7 @@ const Login = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="yourname@school.edu.cn"
+                placeholder="yourname@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="h-11 bg-secondary/50 border-border/50 focus:border-primary"
@@ -86,6 +103,7 @@ const Login = () => {
                   type="button"
                   onClick={() => setShowPw(!showPw)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showPw ? "隐藏密码" : "显示密码"}
                 >
                   {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -99,7 +117,7 @@ const Login = () => {
 
           <p className="text-center text-sm text-muted-foreground">
             新来这里？{" "}
-            <Link to="/register" className="text-primary hover:text-primary/80 font-medium transition-colors">
+            <Link to={`/register${redirect !== "/dashboard" ? `?redirect=${encodeURIComponent(redirect)}` : ""}`} className="text-primary hover:text-primary/80 font-medium transition-colors">
               创建账号 →
             </Link>
           </p>

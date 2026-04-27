@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,15 @@ import { useAuth } from "@/lib/auth";
 import { AuthBrandPanel } from "@/components/marketing/AuthBrandPanel";
 import { CheckCircle2, Mail } from "lucide-react";
 import logoImg from "@/assets/logo.png";
+
+function mapSignupError(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes("already registered") || m.includes("already exists")) return "该邮箱已注册，请直接登录";
+  if (m.includes("invalid email")) return "邮箱格式不正确";
+  if (m.includes("password")) return "密码不符合要求，至少 8 位";
+  if (m.includes("rate limit") || m.includes("too many")) return "操作过于频繁，请稍后再试";
+  return "注册失败，请稍后重试";
+}
 
 const Register = () => {
   const [name, setName] = useState("");
