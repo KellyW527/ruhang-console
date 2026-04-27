@@ -1187,11 +1187,15 @@ const Workspace = () => {
     setSending(false);
   };
 
+  const closeFeedbackModal = () => {
+    setFeedbackTask(null);
+  };
+
   // ---- Advance to next task from feedback modal ----
   const advance = async () => {
     if (!feedbackTask) return;
     await finalizeTaskAndUnlock(feedbackTask);
-    setFeedbackTask(null);
+    closeFeedbackModal();
   };
 
   // ---- Real uploads ----
@@ -2397,7 +2401,7 @@ const Workspace = () => {
       </div>
 
       {/* Feedback modal */}
-      <Dialog open={!!feedbackTask} onOpenChange={(o) => !o && setFeedbackTask(null)}>
+      <Dialog open={!!feedbackTask} onOpenChange={() => undefined}>
         <DialogContent
           className="glass-strong max-h-[90vh] max-w-3xl overflow-y-auto border-white/10"
           onPointerDownOutside={(e) => e.preventDefault()}
@@ -2486,7 +2490,7 @@ const Workspace = () => {
                   ) : null}
                   {!isReviewMode && (
                     <Button
-                      onClick={feedbackStatus?.submission_quality === "retry" ? () => setFeedbackTask(null) : advance}
+                      onClick={feedbackStatus?.submission_quality === "retry" ? closeFeedbackModal : advance}
                       disabled={feedbackStatus?.submission_quality !== "retry" && !selfEvalReady}
                       className="bg-gradient-gold text-primary-foreground hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
                     >
@@ -2498,7 +2502,7 @@ const Workspace = () => {
                     </Button>
                   )}
                   {isReviewMode && (
-                    <Button type="button" onClick={() => setFeedbackTask(null)} className="bg-gradient-gold text-primary-foreground hover:opacity-95">
+                    <Button type="button" onClick={closeFeedbackModal} className="bg-gradient-gold text-primary-foreground hover:opacity-95">
                       关闭回看
                     </Button>
                   )}
