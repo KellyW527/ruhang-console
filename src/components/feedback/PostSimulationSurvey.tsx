@@ -216,9 +216,47 @@ export function PostSimulationSurvey({
             </div>
           </div>
 
+          {/* 是否公开成果给发起方/合作公司 */}
+          <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+            <div className="text-sm font-medium text-foreground">
+              是否愿意将本次项目结果公开给发起方 / 合作公司？
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
+              <span className="text-foreground">愿意公开</span>：发起方或合作企业可以看到你完成本项目的情况，有机会被联系面试、收到内推或人才推荐。
+              <br />
+              <span className="text-foreground">保持保密</span>：仅你与 RuHang 可见，不会被任何第三方查询到。
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setShareWithPartner(true)}
+                className={cn(
+                  "h-11 rounded-lg border text-sm font-medium transition",
+                  shareWithPartner === true
+                    ? "border-primary bg-gradient-gold text-primary-foreground"
+                    : "border-white/10 bg-white/[0.03] text-muted-foreground hover:border-primary/40",
+                )}
+              >
+                愿意公开
+              </button>
+              <button
+                type="button"
+                onClick={() => setShareWithPartner(false)}
+                className={cn(
+                  "h-11 rounded-lg border text-sm font-medium transition",
+                  shareWithPartner === false
+                    ? "border-primary bg-gradient-gold text-primary-foreground"
+                    : "border-white/10 bg-white/[0.03] text-muted-foreground hover:border-primary/40",
+                )}
+              >
+                保持保密
+              </button>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between gap-3 border-t border-white/5 pt-5">
             <div className="text-xs text-muted-foreground">
-              {isValid ? "完成后即可领取证书" : "请把量表和打分都填完"}
+              {isValid ? "完成后即可领取证书" : "请把量表、打分和公开选项都填完"}
             </div>
             <Button
               type="button"
