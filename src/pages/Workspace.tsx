@@ -1534,7 +1534,7 @@ const Workspace = () => {
                       <button
                         type="button"
                         onClick={() => setLeftCollapsed(true)}
-                        className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-white/5 hover:text-foreground lg:inline-flex"
+                        className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary transition hover:border-primary/60 hover:bg-primary/20 lg:inline-flex"
                         title="收起面板"
                       >
                         <PanelLeftClose className="h-4 w-4" />
@@ -2187,7 +2187,7 @@ const Workspace = () => {
                         <button
                           type="button"
                           onClick={() => setRightCollapsed(true)}
-                          className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-white/5 hover:text-foreground lg:inline-flex"
+                          className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary transition hover:border-primary/60 hover:bg-primary/20 lg:inline-flex"
                           title="收起面板"
                         >
                           <PanelRightClose className="h-4 w-4" />
