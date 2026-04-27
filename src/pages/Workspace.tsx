@@ -2265,17 +2265,18 @@ const Workspace = () => {
                       const isDone = st === "done";
                       const requiresRetry = st === "needs_resubmission";
                       const materials = getTaskMaterials(simCode, t.order_index);
+                      const selfEvalSaved = Boolean(selfEvalMap[t.id]?.submitted_at);
+                      const canManuallyAdvance = st === "feedback_pending" && selfEvalSaved;
+                      const handleCardClick = () => {
+                        if (st === "feedback_pending") openFeedbackForTask(t, "self");
+                        else if (st === "needs_resubmission") openFeedbackForTask(t, "answer");
+                        else if (st === "done") openFeedbackForTask(t, "answer");
+                      };
                       return (
-                        <button
+                        <div
                           key={t.id}
-                          type="button"
-                          onClick={() => {
-                            if (st === "feedback_pending") openFeedbackForTask(t, "self");
-                            else if (st === "needs_resubmission") openFeedbackForTask(t, "answer");
-                            else if (st === "done") openFeedbackForTask(t, "answer");
-                          }}
                           className={cn(
-                            "w-full rounded-3xl border p-4 text-left transition",
+                            "w-full rounded-3xl border p-4 text-left transition cursor-pointer",
                             isActive
                               ? requiresRetry
                                 ? "border-amber-500/35 bg-amber-500/7"
@@ -2284,6 +2285,15 @@ const Workspace = () => {
                                 ? "border-emerald-500/20 bg-emerald-500/5"
                                 : "border-white/8 bg-white/[0.02]",
                           )}
+                          role="button"
+                          tabIndex={0}
+                          onClick={handleCardClick}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handleCardClick();
+                            }
+                          }}
                         >
                           <div className="flex items-start gap-3">
                             <div className={cn(
@@ -2342,6 +2352,7 @@ const Workspace = () => {
                                           key={material.id}
                                           href={material.url}
                                           download={material.filename}
+                                          onClick={(e) => e.stopPropagation()}
                                           className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-white/5"
                                         >
                                           <Paperclip className="h-3 w-3 text-primary" />
@@ -2352,9 +2363,27 @@ const Workspace = () => {
                                   )}
                                 </div>
                               )}
+                              {canManuallyAdvance && (
+                                <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setConfirmAdvanceTaskId(t.id);
+                                    }}
+                                    className="w-full bg-gradient-gold text-primary-foreground hover:opacity-95"
+                                  >
+                                    完成并解锁下一任务
+                                  </Button>
+                                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                                    自评已保存。确认后才会进入下一任务，不会自动推进。
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
 
