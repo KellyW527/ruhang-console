@@ -37,8 +37,8 @@ export function Footer() {
           <div className="space-y-4">
             <h4 className="text-sm font-semibold text-foreground font-sans">法律</h4>
             <div className="space-y-2">
-              <a href="#" className="block text-sm text-muted-foreground hover:text-primary transition-colors">隐私政策</a>
-              <a href="#" className="block text-sm text-muted-foreground hover:text-primary transition-colors">服务条款</a>
+              <Link to="/privacy" className="block text-sm text-muted-foreground hover:text-primary transition-colors">隐私政策</Link>
+              <Link to="/terms" className="block text-sm text-muted-foreground hover:text-primary transition-colors">服务条款</Link>
             </div>
           </div>
         </div>
