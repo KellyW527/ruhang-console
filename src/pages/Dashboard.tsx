@@ -876,12 +876,30 @@ function SimCard({ row, to, plan }: { row: SimRow; to: string; plan: string }) {
               <div className="text-[10px] uppercase tracking-wider text-primary">待接收</div>
               <div className="text-xs text-foreground">Offer Letter 已送达</div>
             </div>
-            <Link
-              to={to}
-              className="inline-flex items-center gap-1 rounded-full bg-gradient-gold px-3.5 py-2 text-xs font-medium text-primary-foreground transition group-hover:shadow-glow-gold"
-            >
-              查看 <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={async (e) => {
+                  e.preventDefault();
+                  if (!confirm("放弃这份 Offer？项目卡片会从控制台移除（你随时可以从「项目库」重新开始）。")) return;
+                  const { error } = await supabase.from("user_simulations").delete().eq("id", row.id);
+                  if (error) {
+                    console.error("[Dashboard] discard offer error:", error);
+                    return;
+                  }
+                  window.location.reload();
+                }}
+                className="text-[11px] text-muted-foreground hover:text-foreground"
+              >
+                放弃
+              </button>
+              <Link
+                to={to}
+                className="inline-flex items-center gap-1 rounded-full bg-gradient-gold px-3.5 py-2 text-xs font-medium text-primary-foreground transition group-hover:shadow-glow-gold"
+              >
+                查看 <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
           </div>
         ) : (
           <>
