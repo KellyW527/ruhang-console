@@ -401,6 +401,30 @@ const Pricing = () => {
               <li>• 如需退款，请在购买后 7 天内联系客服</li>
             </ul>
           </div>
+
+          {/* FAQ */}
+          <div className="mx-auto max-w-3xl space-y-6">
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary border border-border text-xs text-muted-foreground">
+                <HelpCircle className="h-3 w-3" />
+                常见问题
+              </div>
+              <h2 className="text-2xl font-display font-semibold text-foreground">还有疑问？</h2>
+              <p className="text-sm text-muted-foreground">最常被问到的 7 个问题，先看这里。</p>
+            </div>
+            <Accordion type="single" collapsible className="rounded-2xl border border-border/60 bg-secondary/20 px-5">
+              {FAQS.map((item, i) => (
+                <AccordionItem key={i} value={`item-${i}`} className={i === FAQS.length - 1 ? "border-b-0" : ""}>
+                  <AccordionTrigger className="text-left text-sm font-medium text-foreground hover:no-underline">
+                    {item.q}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm text-muted-foreground leading-relaxed">
+                    {item.a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
         </div>
       </main>
       <Footer />
