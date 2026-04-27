@@ -119,7 +119,7 @@ const OfferLetter = () => {
     }
 
     // Seed conversations + first messages + first task + initial email — only once
-    const { data: existing } = await supabase.from("conversations").select("id").eq("user_simulation_id", usId).limit(1);
+    const { data: existing } = await supabase.from("conversations").select("id").eq("user_simulation_id", currentUsId).limit(1);
     if (!existing || existing.length === 0) {
       // First task
       const { data: firstTask } = await supabase
@@ -148,7 +148,7 @@ const OfferLetter = () => {
         .from("conversations")
         .insert(seed.conversations.map((conversation) => ({
           ...conversation,
-          user_simulation_id: usId,
+          user_simulation_id: currentUsId,
         })))
         .select();
       const bossConv = convs?.find((c) => c.name === seed.conversationNames.boss);
@@ -158,7 +158,7 @@ const OfferLetter = () => {
       // Mark first task active
       if (firstTask) {
         await supabase.from("user_task_progress").insert({
-          user_simulation_id: usId,
+          user_simulation_id: currentUsId,
           task_id: firstTask.id,
           status: "active",
         });
@@ -195,7 +195,7 @@ const OfferLetter = () => {
       await supabase.from("emails").insert(
         seed.initialEmails.map((email) => ({
           ...email,
-          user_simulation_id: usId,
+          user_simulation_id: currentUsId,
         })),
       );
     }
