@@ -34,7 +34,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+import { cn, safeDate } from "@/lib/utils";
 import { useUserAccess } from "@/hooks/useUserAccess";
 import {
   DEFAULT_PROFILE_NOTIFICATIONS,
@@ -677,7 +677,7 @@ export default function Settings() {
                             <span className="text-muted-foreground"> / {subscription.quotaTotal} 个项目</span>
                           </div>
                           <div>
-                            本周期到期：{new Date(subscription.currentPeriodEnd).toLocaleDateString("zh-CN")}
+                            本周期到期：{safeDate(subscription.currentPeriodEnd)}
                             {subscription.cancelAtPeriodEnd && <span className="ml-2 text-amber-300">（到期后不再续订）</span>}
                           </div>
                           <div>已解锁项目：{entitlements.filter((e) => !e.simulation_code.startsWith("__")).length} 个</div>
@@ -702,11 +702,13 @@ export default function Settings() {
                   {rows.map((row) => {
                     const unlocked =
                       row.simulation.code === "ibd-ipo" ||
-                      entitlements.some(
-                        (e) =>
-                          e.simulation_code === row.simulation.code &&
-                          (!e.expires_at || new Date(e.expires_at).getTime() > Date.now()),
-                      );
+                      entitlements.some((e) => {
+                        if (e.simulation_code !== row.simulation.code) return false;
+                        if (!e.expires_at) return true; // 单买永久
+                        const exp = new Date(e.expires_at).getTime();
+                        if (Number.isNaN(exp)) return false; // 脏数据当作未解锁
+                        return exp > Date.now();
+                      });
                     return (
                       <div key={row.id} className="rounded-2xl border border-white/8 bg-white/[0.02] p-4">
                         <div className="flex items-center justify-between gap-3">

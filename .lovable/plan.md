@@ -1,125 +1,119 @@
-# 第一批修复方案（🟢 全部为简单改动）
+# 最后一批（🔴 高难度）方案
 
-按 Hermes 报告里的 P0 项整理。所有改动都是文案 / 元信息 / 单文件级，不动数据流、不动支付、不动聊天对齐。
+Hermes 报告里剩下三件硬骨头：
 
----
+1. **游客 Demo / 公开预览**（最影响转化）
+2. **Stripe webhook 的 `Invalid time value` bug**（最影响付费用户）
+3. **首页用真实产品截图替换 mock UI**（最影响可信度）
 
-## 1. SEO & 浏览器标题（`index.html`）
-
-**问题**：title / description / og 还是 `Lovable App / Lovable Generated Project`，`html lang="en"`。
-
-**改动**：
-- `<html lang="en">` → `<html lang="zh-CN">`
-- `<title>` → `入行 RuHang｜金融岗位真实任务模拟平台`
-- `<meta name="description">` → `通过真实岗位任务、资料包和成果交付，模拟投行、PE、研究、并购等金融职业工作流，帮助学生提前积累实战经验与作品集。`
-- `<meta name="author">` → `RuHang`
-- `og:title` / `og:description` 同步更新
-- 新增 `<link rel="canonical" href="https://ruhang-console.vercel.app/" />`
-- og:image 暂时保留现有 lovable 默认图（没有自有图就先不动，避免 404）
+下面分别给可执行方案。
 
 ---
 
-## 2. 首页"赛道"锚点失效（`src/pages/Landing.tsx`）
+## 1. 游客 Demo / 公开 Workspace 预览
 
-**问题**：Navbar 的 `<a href="#tracks">` 指向不存在的 id。
+**目标**：未登录用户也能在 `/demo` 看到一段真实工作台体验，强化"这不是宣传"的可信度。
 
-**改动**：在 Landing.tsx 第 160 行 `<section className="relative py-20">` 上加 `id="tracks"`。
+**方案**：做一个**只读的、本地状态驱动的演示版 Workspace**，不接 Supabase。
 
----
+### 范围
 
-## 3. 页脚法律链接（`src/components/marketing/Footer.tsx` + 新建两个页面）
+| 功能 | 演示版做什么 |
+|---|---|
+| 进入 | 落地页加 `查看产品 Demo` 按钮 → `/demo` |
+| 角色 | 默认演示账号"小李"，固定为兴通投行 IPO 项目 Day 1 |
+| 聊天 | 预置 6–8 条 VP 对话脚本，按 setTimeout 顺序自动出现（含 typing dots） |
+| 任务面板 | 显示真实任务名 + starter kit 链接（指向 `public/starter-kits/ibd/...`，本就是公开的） |
+| 邮件 | 预置 1 封"任务派发"邮件，可点击展开 |
+| 上传/提交 | 按钮显示但点击弹出 `注册后即可解锁` 提示，CTA 跳 `/register` |
+| AI 反馈 | 预置一段标准答案 + 评分截图区，纯展示 |
+| 导航条 | 沿用 marketing Navbar，不显示 Dashboard 按钮 |
 
-**问题**：`隐私政策` / `服务条款` 都是 `href="#"`；`/privacy` `/terms` 直接 404。
+### 文件改动
 
-**改动**：
-- 新建 `src/pages/Privacy.tsx` —— 静态中文隐私政策（占位但完整：信息收集、使用、Cookie、第三方 Stripe/Supabase、用户权利、联系方式、生效日期），用 Navbar + Footer 包壳，沿用深色金融风。
-- 新建 `src/pages/Terms.tsx` —— 静态中文服务条款（账号规则、付费与退款、内容版权、AI 生成内容免责、模拟性质免责、禁止行为、终止、生效日期）。
-- `src/App.tsx` 注册两条 public 路由：`/privacy` `/terms`。
-- `Footer.tsx` 把两个 `<a href="#">` 换成 `<Link to="/privacy">` `<Link to="/terms">`。
+- 新建 `src/pages/Demo.tsx`：复用 `Workspace.tsx` 的视觉布局，但数据全部用本地常量（`src/data/demo-script.ts`）
+- 新建 `src/data/demo-script.ts`：聊天/任务/邮件的 mock 数据
+- `src/App.tsx`：注册公开路由 `/demo`（不在 ProtectedRoute 内）
+- `src/components/marketing/Navbar.tsx`：未登录时多一个 `产品 Demo` 链接
+- `src/pages/Landing.tsx`：Hero 第二个按钮 `查看运作方式` 旁加 `查看 Demo`
 
----
+### 风险
 
-## 4. 注册页协议变成可点击链接（`src/pages/Register.tsx`）
-
-**问题**：`创建账号即代表你同意《用户协议》与《隐私政策》` 是纯文本。
-
-**改动**：把那段提示拆成带 `<Link to="/terms">《用户协议》</Link>` 和 `<Link to="/privacy">《隐私政策》</Link>` 的 inline 链接，加 `text-primary hover:underline`。
-
-> 注：是否加显式勾选框属于 P1，本批不做。
-
----
-
-## 5. 登录失败错误提示中文化（`src/pages/Login.tsx`）
-
-**问题**：失败时 `toast.error("登录失败", { description: error.message })` 把 Supabase 英文原文直接吐出来；空字段没字段级提示。
-
-**改动**：
-- 加一个 `mapAuthError(error.message)` 函数，把常见 Supabase 错误映射成中文：
-  - `Invalid login credentials` → "邮箱或密码错误，请检查后重试"
-  - `Email not confirmed` → "请先完成邮箱验证后再登录"
-  - `Too many requests` → "尝试次数过多，请稍后再试"
-  - 其它 → "登录失败，请稍后重试"
-- 提交前若 `email` / `password` 为空 → `toast.error("请填写邮箱和密码")` 并 return。
-- 按钮 loading 文案保留 `登录中...`（已有）。
-
-同样的映射逻辑顺带也用在 `Register.tsx` 的 `signUp` 错误上（常见：`User already registered` → "该邮箱已注册，请直接登录"）。
+- Workspace.tsx 当前耦合 useAuth / Supabase 较深，**不复用 Workspace 组件**，而是写一个简化版镜像组件。代码会有部分冗余，但安全、可控、不影响主流程。
+- 工作量约：1 个新页面 + 1 个数据文件 + 2 处导航小改。
 
 ---
 
-## 6. 忘记密码错误中文化（`src/pages/ResetPassword.tsx`）
+## 2. Stripe Webhook `Invalid time value` 调试
 
-**问题**：空邮箱时 Supabase 返回 `Password recovery requires an email`。
+**现状**：webhook 已经做了三层时间戳防御（`isValidUnixTimestamp` → `coerceStripeTimestamp` → `unixTimestampToIso` 兜底），理论上不会再抛 `Invalid time value`。但用户仍报错，说明：
 
-**改动**：
-- 提交前若 `email` 为空 → `toast.error("请输入注册邮箱")` 并 return。
-- `error` 时也走中文映射（`For security purposes...` → "操作过于频繁，请稍后再试"）。
-- placeholder `yourname@school.edu.cn` → `yourname@example.com`（避免误导必须用校园邮箱）。
+- 要么是**老的、错误时间戳已经写进了 DB**（脏数据），后续读出来时 `new Date()` 失败
+- 要么是某个**新代码路径**（升级 / 单买 / past_due）在写 `expires_at` / `paid_at` 时被传入了错误值
+- 要么是**前端**读 `current_period_end` 后做 `new Date()` 时失败，跟 webhook 无关
 
----
+### 方案：分两步
 
-## 7. 404 页面中文化 + 品牌化（`src/pages/NotFound.tsx`）
+**Step A — 取证**（先于改代码）
+1. 在 Supabase Edge Function 日志面板里搜 `Invalid time value` 或 `[webhook]`，把最近 5 次的完整堆栈和时间戳值贴出来
+2. 跑一段诊断 SQL（创建 read-only migration 或用 psql）：
+   ```sql
+   select id, stripe_subscription_id, current_period_start, current_period_end, status, created_at
+   from public.subscriptions
+   where current_period_start is null
+      or current_period_end is null
+      or current_period_start > current_period_end
+   order by created_at desc limit 50;
+   ```
+3. 检查 `user_entitlements.expires_at` 是否有 `1970-01-01` 或 `null` 异常值
 
-**问题**：英文默认 + 无品牌 + 无导航。
+**Step B — 根据取证结果修**
+- 如果是 DB 脏数据：写一个一次性 migration 把 `current_period_end` 异常的行重置为 `created_at + 30 days`，并把 `status` 标 `requires_review`
+- 如果是新增代码路径：在 `assertDb` 之前加一道 `validateRow()`，所有写入前过一遍 `isValidUnixTimestamp` / `Date.parse` 校验
+- 如果是前端：在 `useUserAccess` / Settings 等读取处包 `try-catch`，遇到无效日期显示 `—`
 
-**改动**：整页重写：
-- 套 Navbar + Footer
-- 居中大字 `404`（用 `text-gradient-gold` + `font-display`）
-- 副标题：`页面未找到`
-- 描述：`抱歉，你访问的页面不存在、已被移动或链接有误。`
-- 三个按钮：
-  - `返回首页` → `/`
-  - `进入控制台` → `/dashboard`（未登录会被 ProtectedRoute 自动拦到 login，行为合理）
-  - `查看赛道` → `/#tracks`
-- 保留 `console.error` 调试日志。
+### 工作量
 
----
+- Step A：纯查询 + 看日志，0 代码改动
+- Step B：取决于 A 结果，1–3 个文件
 
-## 8. 定价页 toast 改进（`src/pages/Pricing.tsx`，小改）
-
-**问题**：报告说"未登录点付费按钮无反馈"。读代码发现其实**已经**有 `toast.info("请先登录") + navigate("/login?redirect=/pricing")`，只是 toast 时间太短可能没看见，且 `?redirect=` 当前并没有被 Login 页处理。
-
-**改动**：
-- `toast.info` 加 `duration: 4000`，提示文案改成 `请先登录或注册后再选择套餐`。
-- `Login.tsx` 登录成功后读取 `useSearchParams().get("redirect")`，如果有就跳到该路径，否则跳 `/dashboard`。Register 同样处理。
-
----
-
-## 不在本批内的事项（明确列出避免遗漏）
-
-下列 Hermes 指出的项 **本次不动**，等下一批：
-- 首页首屏加产品截图 / 改 slogan / 增加"你会产出什么"模块（🟡 内容工作）
-- 定价页对比表 + FAQ Accordion（🟡）
-- 注册页显式勾选框（🟡）
-- Stripe webhook 的 `Invalid time value`（🔴 需另查 payload）
-- 公开 Demo / 游客预览（🔴）
-- 中英文术语规范、对比度全面 audit（🟢 但量大，单独排一批）
+**不能闭眼改**——会反复打地鼠。**建议你先去 Edge Function 日志面板抓一次完整报错堆栈**贴给我。
 
 ---
 
-## 影响范围与风险
+## 3. 首页真实产品截图替换
 
-- 涉及文件：`index.html`、`src/App.tsx`、`src/pages/Landing.tsx`、`src/pages/Login.tsx`、`src/pages/Register.tsx`、`src/pages/ResetPassword.tsx`、`src/pages/NotFound.tsx`、`src/pages/Pricing.tsx`、`src/components/marketing/Footer.tsx`，新增 `src/pages/Privacy.tsx`、`src/pages/Terms.tsx`。
-- 不动：聊天/工作台、Supabase schema、Edge Functions、支付逻辑、Auth Provider。
-- 风险：极低。最大的"新增"是两个静态法律页，纯渲染没副作用。
+**现状**：你之前选的是"用 mock UI 强化"，所以这条本可以跳过。但如果想再上一个台阶，可以做**半自动方案**：
 
-确认后我就开始实施这一批。
+### 推荐方案：从 Demo 页截图
+
+等 #1 的 `/demo` 做好后：
+1. 用 `browser--screenshot` 工具去 `/demo` 截一张工作台全景
+2. 用 `product-shot` skill 套一层 macOS 窗口框 + 渐变背景，输出 PNG
+3. 把这张图替换 Landing 里现在的"工作台 mock 区块"，作为静态 hero 图
+4. mock 区块降级成"运作方式"section 的小图
+
+**优点**：截图就是真实产品（因为 Demo 用真实 Workspace 视觉），不需要美工
+**缺点**：截图静态，不再有 hover/动画
+
+### 备选
+
+- 不改首页 hero，仅在 `/demo` 页做交互式预览，首页只加"查看 Demo"入口
+
+---
+
+## 推荐执行顺序
+
+```
+┌─ 1. Stripe webhook：先抓日志（你来做，不改代码）
+│
+├─ 2. /demo 游客预览（独立模块，不影响其他）
+│
+└─ 3. 用 demo 截图替换首页 hero（依赖 #2 完成）
+```
+
+## 需要你确认的事
+
+1. **Demo 页**要不要现在就做？还是先观望
+2. **Stripe webhook**：你能不能去 Supabase Edge Functions 日志里把最近一次的 `Invalid time value` 完整报错堆栈贴出来
+3. **首页截图替换**：是否做，还是维持现在的 mock UI

@@ -74,7 +74,7 @@ const Landing = () => {
                 variant="ghost"
                 className="text-foreground hover:bg-white/5 px-6 h-12"
               >
-                <a href="#how">查看运作方式</a>
+                <Link to="/demo">查看产品 Demo</Link>
               </Button>
             </div>
             <div className="mt-10 flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground sm:gap-8">

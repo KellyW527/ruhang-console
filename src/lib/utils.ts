@@ -20,6 +20,40 @@ export function formatDeadline(value: string | Date | number | null | undefined)
   });
 }
 
+/**
+ * 安全格式化日期。Stripe webhook 偶发会写入 null / 非法时间戳，
+ * 直接 `new Date(x).toLocaleDateString()` 会抛 RangeError: Invalid time value
+ * 让整页崩。统一通过本函数渲染。
+ */
+export function safeDate(
+  value: string | Date | number | null | undefined,
+  fallback = "—",
+): string {
+  if (value === null || value === undefined || value === "") return fallback;
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return fallback;
+  try {
+    return d.toLocaleDateString("zh-CN");
+  } catch {
+    return fallback;
+  }
+}
+
+/** 同 safeDate 但带时间。 */
+export function safeDateTime(
+  value: string | Date | number | null | undefined,
+  fallback = "—",
+): string {
+  if (value === null || value === undefined || value === "") return fallback;
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return fallback;
+  try {
+    return d.toLocaleString("zh-CN");
+  } catch {
+    return fallback;
+  }
+}
+
 export function greeting(): string {
   const hour = new Date().getHours();
   if (hour < 6) return "夜深了";
