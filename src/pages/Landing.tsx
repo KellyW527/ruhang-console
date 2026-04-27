@@ -625,11 +625,6 @@ const Landing = () => {
                   免费开始模拟 <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Link>
               </Button>
-              <div className="mt-5 flex items-center justify-center gap-4 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-primary" /> 永久免费体验</span>
-                <span className="text-border">·</span>
-                <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-primary" /> 无需信用卡</span>
-              </div>
             </div>
           </div>
         </div>
