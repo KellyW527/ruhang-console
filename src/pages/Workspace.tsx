@@ -569,17 +569,46 @@ const Workspace = () => {
   const ensureActiveTask = async () => {
     if (!usId || !tasks.length || simulationStatus === "completed" || !progressLoaded) return null;
 
-    // 1) 已有正在进行/等待自评/需重交的任务 → 直接返回，绝不写库、不切换 current_task_index、不激活下一任务。
-    //    这能阻止 feedback_pending 在重渲染时被当作"缺失 active"而触发 fallback，导致表面上"自动开启下一任务"。
+    // 1) 已有正在进行/等待自评/需重交的任务 → 直接返回。
     const currentActive = tasks.find((task) => {
       const status = taskStatuses[task.id]?.status;
       return status === "active" || status === "feedback_pending" || status === "needs_resubmission";
     });
     if (currentActive) return currentActive;
 
-    // 2) 真正没有 active/pending/retry 时，才考虑恢复。fallback 只允许：
-    //    - 第一个任务（order_index === 0），或
-    //    - 前一个任务已经 done 的紧邻任务
+    // 2) 本地没有 active/pending/retry → 先去数据库重新拉一次真实状态，避免"DB 已有 active 但本地仍 locked"。
+    const { data: dbProgress } = await supabase
+      .from("user_task_progress")
+      .select("task_id, status, score, self_eval, submission_type, submission_quality")
+      .eq("user_simulation_id", usId);
+
+    if (dbProgress && dbProgress.length) {
+      const map: Record<string, TaskStatusEntry> = {};
+      const seMap: Record<string, SelfEvalValue | null> = {};
+      dbProgress.forEach((p: any) => {
+        map[p.task_id] = {
+          status: p.status,
+          score: p.score ?? undefined,
+          submission_type: p.submission_type ?? null,
+          submission_quality: p.submission_quality ?? null,
+        };
+        seMap[p.task_id] = p.self_eval ?? null;
+      });
+      // 合并而不是覆盖，避免把刚刚本地 upsert 的覆盖掉
+      setTaskStatuses((current) => ({ ...current, ...map }));
+      setSelfEvalMap((current) => ({ ...current, ...seMap }));
+
+      const recovered = tasks.find((task) => {
+        const status = map[task.id]?.status;
+        return status === "active" || status === "feedback_pending" || status === "needs_resubmission";
+      });
+      if (recovered) {
+        console.log("[ensureActiveTask] recovered from DB:", recovered.id, map[recovered.id]?.status);
+        return recovered;
+      }
+    }
+
+    // 3) DB 也没有可进行的任务 → fallback 只允许第一个任务或前一个已 done 的紧邻任务。
     const sorted = [...tasks].sort((a, b) => a.order_index - b.order_index);
     const fallbackTask = sorted.find((task) => {
       if (taskStatuses[task.id]?.status === "done") return false;
@@ -597,22 +626,25 @@ const Workspace = () => {
       .eq("task_id", fallbackTask.id)
       .maybeSingle();
 
-    // 已有非 locked 状态（如 feedback_pending / needs_resubmission / done）就不再覆盖
     if (existingProgress && existingProgress.status && existingProgress.status !== "locked") {
+      // DB 已有非 locked 状态：同步回前端
+      upsertTaskStatus(fallbackTask.id, { status: existingProgress.status });
       return fallbackTask;
     }
 
     if (!existingProgress) {
-      await supabase.from("user_task_progress").insert({
+      const { error: insErr } = await supabase.from("user_task_progress").insert({
         user_simulation_id: usId,
         task_id: fallbackTask.id,
         status: "active",
       });
+      if (insErr) console.error("[ensureActiveTask] insert active failed:", insErr);
     } else {
-      await supabase
+      const { error: updErr } = await supabase
         .from("user_task_progress")
         .update({ status: "active" })
         .eq("id", existingProgress.id);
+      if (updErr) console.error("[ensureActiveTask] update active failed:", updErr);
     }
 
     if (currentTaskIndex !== fallbackTask.order_index) {
@@ -624,6 +656,7 @@ const Workspace = () => {
     }
 
     upsertTaskStatus(fallbackTask.id, { status: "active" });
+    console.log("[ensureActiveTask] activated fallback:", fallbackTask.id);
     return fallbackTask;
   };
 
