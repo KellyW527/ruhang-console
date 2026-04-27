@@ -1029,6 +1029,12 @@ const Workspace = () => {
     } else {
       openFeedbackForTask(activeTaskNow, "answer");
     }
+    // 兜底：如果上面的 openFeedbackForTask 因为某些原因（比如 race）没生效，
+    // 短延迟后再强制打开一次，确保用户一定能看到反馈面板
+    window.setTimeout(() => {
+      setFeedbackTask((current) => current ?? activeTaskNow);
+      setFeedbackTab(evaluation.quality === "pass" ? "self" : "answer");
+    }, 350);
 
     toast.success(
       evaluation.quality === "pass" ? "已作为正式提交送审" : "已记录本次提交，但需要补齐后重交",
