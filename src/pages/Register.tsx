@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,15 @@ import { AuthBrandPanel } from "@/components/marketing/AuthBrandPanel";
 import { CheckCircle2, Mail } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 
+function mapSignupError(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes("already registered") || m.includes("already exists")) return "该邮箱已注册，请直接登录";
+  if (m.includes("invalid email")) return "邮箱格式不正确";
+  if (m.includes("password")) return "密码不符合要求，至少 8 位";
+  if (m.includes("rate limit") || m.includes("too many")) return "操作过于频繁，请稍后再试";
+  return "注册失败，请稍后重试";
+}
+
 const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -18,44 +27,48 @@ const Register = () => {
   /** 注册成功（邮件已发出）后展示验证提示界面，禁止直接进入 Dashboard */
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const nav = useNavigate();
+  const [params] = useSearchParams();
+  const redirect = params.get("redirect") || "/dashboard";
   const { session } = useAuth();
 
   useEffect(() => {
     document.title = "注册 · 入行 RuHang";
-    if (session) nav("/dashboard", { replace: true });
-  }, [session, nav]);
+    if (session) nav(redirect, { replace: true });
+  }, [session, nav, redirect]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim()) {
+      toast.error("请填写邮箱");
+      return;
+    }
     if (password.length < 8) {
       toast.error("密码至少需要 8 位");
       return;
     }
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password,
       options: {
-        // 邮箱验证完成后回到 dashboard
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        // 邮箱验证完成后回到 redirect 目标
+        emailRedirectTo: `${window.location.origin}${redirect}`,
         data: { name },
       },
     });
     setLoading(false);
 
     if (error) {
-      toast.error("注册失败", { description: error.message });
+      toast.error(mapSignupError(error.message));
       return;
     }
 
     // Supabase 行为：开启邮箱验证后，data.session 会是 null，data.user 仍存在
-    // 不再直接 nav("/dashboard")，强制走邮件验证
     if (data.session) {
-      // 没开邮箱验证时（不应该是上线状态）兜底：直接进 dashboard
       toast.success("欢迎加入入行 🎉");
-      nav("/dashboard");
+      nav(redirect);
     } else {
-      setPendingEmail(email);
+      setPendingEmail(email.trim());
     }
   };
 
@@ -176,8 +189,12 @@ const Register = () => {
             </Link>
           </p>
 
-          <p className="text-xs text-muted-foreground text-center">
-            创建账号即代表你同意《用户协议》与《隐私政策》。注册后需要完成邮箱验证才能开始使用。
+          <p className="text-xs text-muted-foreground text-center leading-relaxed">
+            创建账号即代表你同意{" "}
+            <Link to="/terms" className="text-primary hover:underline">《用户协议》</Link>
+            {" 与 "}
+            <Link to="/privacy" className="text-primary hover:underline">《隐私政策》</Link>
+            。注册后需要完成邮箱验证才能开始使用。
           </p>
         </div>
       </div>

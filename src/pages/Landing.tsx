@@ -157,7 +157,7 @@ const Landing = () => {
       </section>
 
       {/* ========================= Tracks ========================= */}
-      <section className="relative py-20">
+      <section id="tracks" className="relative py-20 scroll-mt-24">
         <div className="container mx-auto px-6">
           <div className="mb-14 text-center">
             <div className="eyebrow">四大核心赛道</div>
