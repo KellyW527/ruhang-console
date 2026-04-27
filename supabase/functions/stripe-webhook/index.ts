@@ -5,27 +5,28 @@
  *
  * 必须配的事件(在 Stripe Dashboard → Developers → Webhooks):
  *   - checkout.session.completed       新订阅 / 单买首次完成
+ *   - customer.subscription.created    订阅首次创建
  *   - customer.subscription.updated    续费成功 / 状态变更
  *   - customer.subscription.deleted    取消订阅
  *   - invoice.payment_failed           续费失败
  *
  * 设计要点:
  *   - 不验证 JWT,改用 stripe-signature 头校验
+ *   - 不引入 stripe-node SDK: Supabase Edge 的 Deno 环境会触发
+ *     Deno.core.runMicrotasks() 兼容错误,导致订阅事件 500
  *   - 用 SERVICE_ROLE 写库,绕过 RLS
  *   - 单买 (mode=payment) 创建固定额度,**不**自动绑项目;由 redeem-quota 后续兑换
  *   - 订阅 (mode=subscription) 同理:发"配额池",用户后选项目
- *   - 升级 upgrade_diff:把当前 basic 订阅的 quota_total 直接调成 11、tier 改 premium
+ *   - 升级 upgrade_diff:把当前 basic 订阅的 quota_total 直接调成 10、tier 改 premium
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import Stripe from "https://esm.sh/stripe@17.3.1?target=deno";
 
-const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
-  apiVersion: "2024-10-28.acacia",
-});
+const STRIPE_API_VERSION = "2024-10-28.acacia";
+const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY")!;
 const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET")!;
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 
 Deno.serve(async (req) => {
@@ -33,9 +34,10 @@ Deno.serve(async (req) => {
   if (!signature) return new Response("Missing signature", { status: 400 });
 
   const rawBody = await req.text();
-  let event: Stripe.Event;
+  let event: StripeEvent;
   try {
-    event = await stripe.webhooks.constructEventAsync(rawBody, signature, webhookSecret);
+    await verifyStripeSignature(rawBody, signature, webhookSecret);
+    event = JSON.parse(rawBody) as StripeEvent;
   } catch (err) {
     console.error("[webhook] signature verification failed:", err);
     return new Response("Invalid signature", { status: 400 });
@@ -44,17 +46,17 @@ Deno.serve(async (req) => {
   try {
     switch (event.type) {
       case "checkout.session.completed":
-        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        await handleCheckoutCompleted(event.data.object as StripeCheckoutSession);
         break;
       case "customer.subscription.updated":
       case "customer.subscription.created":
-        await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
+        await handleSubscriptionUpdated(event.data.object as StripeSubscription);
         break;
       case "customer.subscription.deleted":
-        await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+        await handleSubscriptionDeleted(event.data.object as StripeSubscription);
         break;
       case "invoice.payment_failed":
-        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+        await handleInvoicePaymentFailed(event.data.object as StripeInvoice);
         break;
       default:
         console.log("[webhook] ignored event:", event.type);
@@ -70,7 +72,7 @@ Deno.serve(async (req) => {
 
 // ---------- handlers ----------
 
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+async function handleCheckoutCompleted(session: StripeCheckoutSession) {
   const userId = session.metadata?.user_id;
   const productType = session.metadata?.product_type;
   if (!userId || !productType) {
@@ -79,14 +81,17 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   // 1) 标记 order paid
-  await supabase
-    .from("orders")
-    .update({
-      status: "paid",
-      paid_at: new Date().toISOString(),
-      stripe_payment_intent_id: (session.payment_intent as string) ?? null,
-    })
-    .eq("stripe_session_id", session.id);
+  await assertDb(
+    supabase
+      .from("orders")
+      .update({
+        status: "paid",
+        paid_at: new Date().toISOString(),
+        stripe_payment_intent_id: getStripeId(session.payment_intent),
+      })
+      .eq("stripe_session_id", session.id),
+    "mark order paid",
+  );
 
   // 2) 单买类(mode=payment 且非升级)→ 直接发"无主"配额条目
   //    我们用一种"配额条目"约定:simulation_code = `__quota:single`,redeem 时再换成具体项目
@@ -102,13 +107,13 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       source: "single_purchase" as const,
       expires_at: null, // 永久
     }));
-    await supabase.from("user_entitlements").insert(rows);
+    await assertDb(supabase.from("user_entitlements").insert(rows), "grant single-purchase quota");
     return;
   }
 
   // 3) 升级补差价 → 把当前 active basic 订阅升成 premium
   if (productType === "upgrade_diff") {
-    const { data: sub } = await supabase
+    const { data: sub, error } = await supabase
       .from("subscriptions")
       .select("id, quota_used")
       .eq("user_id", userId)
@@ -117,31 +122,35 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (error) throw new Error(`[db] load basic subscription: ${error.message}`);
+
     if (sub) {
-      // 高级总额 11(免费 1 + 自选 10),已用的项目数继承,所以直接把 total 改成 11
-      // 注:免费固定项目 ibd-ipo 不占 quota,所以 quota_total = 10。这里做的是"自选"额度。
       // basic 自选 quota_total=3,升级后改为 10。已用照旧。
-      await supabase
-        .from("subscriptions")
-        .update({ tier: "premium", quota_total: 10 })
-        .eq("id", sub.id);
+      await assertDb(
+        supabase
+          .from("subscriptions")
+          .update({ tier: "premium", quota_total: 10 })
+          .eq("id", sub.id),
+        "upgrade subscription",
+      );
     }
     return;
   }
 
   // 4) 订阅类(basic / premium):checkout 成功时立即补写 subscription。
   // 不只依赖 customer.subscription.created/updated，避免订阅事件延迟或失败时前端仍显示免费版。
+  const subscriptionId = getStripeId(session.subscription);
   if (
     (productType === "subscription_basic" || productType === "subscription_premium") &&
-    session.subscription
+    subscriptionId
   ) {
-    const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+    const subscription = await retrieveSubscription(subscriptionId);
     await handleSubscriptionUpdated(subscription, { userId, productType });
   }
 }
 
 async function handleSubscriptionUpdated(
-  subscription: Stripe.Subscription,
+  subscription: StripeSubscription,
   fallback?: { userId?: string; productType?: string },
 ) {
   const userId = subscription.metadata?.user_id ?? fallback?.userId;
@@ -158,14 +167,13 @@ async function handleSubscriptionUpdated(
 
   const { rawStart, rawEnd } = getSubscriptionPeriod(subscription);
 
-  // 新版 Stripe API (2026-04-22.dahlia) 在 customer.subscription.created/updated 事件中
-  // 可能完全不返回 current_period_start/end。此时降级:
+  // 新版 Stripe API 在 customer.subscription.created/updated 事件中
+  // 可能不返回 current_period_start/end。此时降级:
   // - periodStart 用 subscription.start_date 或当前时间
   // - periodEnd 用 +30 天兜底(后续 invoice.* 事件会校正)
   // 绝不能因为缺 period 就 return,否则订阅永远写不进库,前端永远显示免费版。
   const nowSec = Math.floor(Date.now() / 1000);
-  const fallbackStart =
-    normalizeUnixTimestamp((subscription as unknown as { start_date?: unknown }).start_date) ?? nowSec;
+  const fallbackStart = normalizeUnixTimestamp(subscription.start_date) ?? nowSec;
   const fallbackEnd = fallbackStart + 30 * 24 * 60 * 60;
 
   const effectiveStart = isValidUnixTimestamp(rawStart) ? rawStart : fallbackStart;
@@ -183,59 +191,61 @@ async function handleSubscriptionUpdated(
 
   const periodEnd = new Date(effectiveEnd * 1000).toISOString();
   const periodStart = new Date(effectiveStart * 1000).toISOString();
+  const stripeCustomerId = getStripeId(subscription.customer);
 
   // upsert by stripe_subscription_id
-  const { data: existing } = await supabase
+  const { data: existing, error } = await supabase
     .from("subscriptions")
     .select("id, quota_used, current_period_start")
     .eq("stripe_subscription_id", subscription.id)
     .maybeSingle();
+  if (error) throw new Error(`[db] load subscription: ${error.message}`);
 
   if (existing) {
     // 续费/状态变更 → 周期重置,quota_used 归零(进入新周期)
     const isNewPeriod = periodStart !== existing.current_period_start;
-    await supabase
-      .from("subscriptions")
-      .update({
-        status: subscription.status,
-        current_period_start: periodStart,
-        current_period_end: periodEnd,
-        cancel_at_period_end: subscription.cancel_at_period_end,
-        ...(isNewPeriod ? { quota_used: 0, quota_total: quotaTotal, tier } : { tier, quota_total: quotaTotal }),
-      })
-      .eq("id", existing.id);
+    await assertDb(
+      supabase
+        .from("subscriptions")
+        .update({
+          status: subscription.status,
+          current_period_start: periodStart,
+          current_period_end: periodEnd,
+          cancel_at_period_end: subscription.cancel_at_period_end ?? false,
+          ...(isNewPeriod ? { quota_used: 0, quota_total: quotaTotal, tier } : { tier, quota_total: quotaTotal }),
+        })
+        .eq("id", existing.id),
+      "update subscription",
+    );
   } else {
     // 首次创建
-    await supabase.from("subscriptions").insert({
-      user_id: userId,
-      tier,
-      stripe_subscription_id: subscription.id,
-      stripe_customer_id: subscription.customer as string,
-      status: subscription.status,
-      quota_total: quotaTotal,
-      quota_used: 0,
-      current_period_start: periodStart,
-      current_period_end: periodEnd,
-      cancel_at_period_end: subscription.cancel_at_period_end,
-    });
+    await assertDb(
+      supabase.from("subscriptions").insert({
+        user_id: userId,
+        tier,
+        stripe_subscription_id: subscription.id,
+        stripe_customer_id: stripeCustomerId,
+        status: subscription.status,
+        quota_total: quotaTotal,
+        quota_used: 0,
+        current_period_start: periodStart,
+        current_period_end: periodEnd,
+        cancel_at_period_end: subscription.cancel_at_period_end ?? false,
+      }),
+      "insert subscription",
+    );
   }
 }
 
-function getSubscriptionPeriod(subscription: Stripe.Subscription): { rawStart: number | undefined; rawEnd: number | undefined } {
-  const legacySubscription = subscription as unknown as {
-    current_period_start?: unknown;
-    current_period_end?: unknown;
-  };
-  const items = (subscription.items?.data ?? []) as Stripe.SubscriptionItem[];
-  const itemWithPeriod = items.find((item: Stripe.SubscriptionItem) => {
-    const periodItem = item as unknown as { current_period_start?: unknown; current_period_end?: unknown };
-    return isValidUnixTimestamp(periodItem.current_period_start) && isValidUnixTimestamp(periodItem.current_period_end);
+function getSubscriptionPeriod(subscription: StripeSubscription): { rawStart: number | undefined; rawEnd: number | undefined } {
+  const items = subscription.items?.data ?? [];
+  const itemWithPeriod = items.find((item) => {
+    return isValidUnixTimestamp(item.current_period_start) && isValidUnixTimestamp(item.current_period_end);
   });
-  const periodItem = itemWithPeriod as unknown as { current_period_start?: unknown; current_period_end?: unknown } | undefined;
 
   return {
-    rawStart: normalizeUnixTimestamp(legacySubscription.current_period_start ?? periodItem?.current_period_start),
-    rawEnd: normalizeUnixTimestamp(legacySubscription.current_period_end ?? periodItem?.current_period_end),
+    rawStart: normalizeUnixTimestamp(subscription.current_period_start ?? itemWithPeriod?.current_period_start),
+    rawEnd: normalizeUnixTimestamp(subscription.current_period_end ?? itemWithPeriod?.current_period_end),
   };
 }
 
@@ -248,18 +258,146 @@ function isValidUnixTimestamp(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
-async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
-  await supabase
-    .from("subscriptions")
-    .update({ status: "canceled" })
-    .eq("stripe_subscription_id", subscription.id);
+async function handleSubscriptionDeleted(subscription: StripeSubscription) {
+  await assertDb(
+    supabase
+      .from("subscriptions")
+      .update({ status: "canceled" })
+      .eq("stripe_subscription_id", subscription.id),
+    "cancel subscription",
+  );
   // 当前周期内的 entitlements 保持有效,直到 expires_at 过期(用 cleanup job 清理)
 }
 
-async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
-  if (!invoice.subscription) return;
-  await supabase
-    .from("subscriptions")
-    .update({ status: "past_due" })
-    .eq("stripe_subscription_id", invoice.subscription as string);
+async function handleInvoicePaymentFailed(invoice: StripeInvoice) {
+  const subscriptionId = getStripeId(invoice.subscription);
+  if (!subscriptionId) return;
+  await assertDb(
+    supabase
+      .from("subscriptions")
+      .update({ status: "past_due" })
+      .eq("stripe_subscription_id", subscriptionId),
+    "mark subscription past_due",
+  );
 }
+
+// ---------- Stripe helpers ----------
+
+async function retrieveSubscription(subscriptionId: string): Promise<StripeSubscription> {
+  const res = await fetch(`https://api.stripe.com/v1/subscriptions/${encodeURIComponent(subscriptionId)}`, {
+    headers: {
+      Authorization: `Bearer ${stripeSecretKey}`,
+      "Stripe-Version": STRIPE_API_VERSION,
+    },
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`[stripe] retrieve subscription failed ${res.status}: ${body}`);
+  }
+
+  return await res.json() as StripeSubscription;
+}
+
+let hmacKeyPromise: Promise<CryptoKey> | null = null;
+
+async function verifyStripeSignature(payload: string, signatureHeader: string, secret: string) {
+  const fields = signatureHeader.split(",").map((part) => {
+    const [key, ...valueParts] = part.split("=");
+    return [key, valueParts.join("=")] as const;
+  });
+  const timestamp = fields.find(([key]) => key === "t")?.[1];
+  const signatures = fields.filter(([key]) => key === "v1").map(([, value]) => value);
+
+  const timestampSec = Number(timestamp);
+  if (!Number.isFinite(timestampSec) || signatures.length === 0) {
+    throw new Error("Malformed Stripe signature header");
+  }
+
+  const ageSec = Math.floor(Date.now() / 1000) - timestampSec;
+  if (Math.abs(ageSec) > 300) {
+    throw new Error(`Stripe signature timestamp outside tolerance: ${ageSec}s`);
+  }
+
+  const expected = await hmacSha256Hex(`${timestamp}.${payload}`, secret);
+  const verified = signatures.some((candidate) => timingSafeEqual(candidate, expected));
+  if (!verified) throw new Error("No matching Stripe webhook signature");
+}
+
+async function hmacSha256Hex(message: string, secret: string) {
+  const encoder = new TextEncoder();
+  hmacKeyPromise ??= crypto.subtle.importKey(
+    "raw",
+    encoder.encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", await hmacKeyPromise, encoder.encode(message));
+  return [...new Uint8Array(signature)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function timingSafeEqual(a: string, b: string) {
+  const encoder = new TextEncoder();
+  const aBytes = encoder.encode(a);
+  const bBytes = encoder.encode(b);
+  const maxLength = Math.max(aBytes.length, bBytes.length);
+  let diff = aBytes.length ^ bBytes.length;
+  for (let i = 0; i < maxLength; i += 1) {
+    diff |= (aBytes[i] ?? 0) ^ (bBytes[i] ?? 0);
+  }
+  return diff === 0;
+}
+
+function getStripeId(value: StripeExpandableId | null | undefined) {
+  if (!value) return null;
+  return typeof value === "string" ? value : value.id ?? null;
+}
+
+async function assertDb<T>(query: PromiseLike<{ data: T; error: DbError | null }>, label: string) {
+  const { error } = await query;
+  if (error) throw new Error(`[db] ${label}: ${error.message}`);
+}
+
+// ---------- minimal Stripe/API types ----------
+
+type StripeEvent = {
+  type: string;
+  data: { object: unknown };
+};
+
+type StripeExpandableId = string | { id?: string };
+
+type StripeMetadata = Record<string, string | undefined>;
+
+type StripeCheckoutSession = {
+  id: string;
+  metadata?: StripeMetadata | null;
+  payment_intent?: StripeExpandableId | null;
+  subscription?: StripeExpandableId | null;
+};
+
+type StripeSubscriptionItem = {
+  current_period_start?: number | string | null;
+  current_period_end?: number | string | null;
+};
+
+type StripeSubscription = {
+  id: string;
+  metadata?: StripeMetadata | null;
+  status: string;
+  customer?: StripeExpandableId | null;
+  cancel_at_period_end?: boolean | null;
+  current_period_start?: number | string | null;
+  current_period_end?: number | string | null;
+  start_date?: number | string | null;
+  items?: { data?: StripeSubscriptionItem[] } | null;
+};
+
+type StripeInvoice = {
+  subscription?: StripeExpandableId | null;
+};
+
+type DbError = {
+  message: string;
+};
