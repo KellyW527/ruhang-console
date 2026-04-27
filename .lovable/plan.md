@@ -1,37 +1,93 @@
-## 问题定位
+## 自查结论
 
-从截图里的 toast 可以确认：`下一个任务：财务数据整理与初步分析` 只会由 `Workspace.tsx` 的 `finalizeTaskAndUnlock()` 发出。因此问题不是普通弹窗关闭，而是仍然有机会触发“完成当前任务并激活下一任务”。
+这次问题不是按钮误触，也不是 `TaskFeedbackBar` 导致推进。
 
-当前最可疑的根因有两个：
+真正可疑点在 `Workspace.tsx` 的“状态恢复”逻辑：
 
-1. `TaskFeedbackBar` 选择“很棒”时会立即提交体验问卷，随后把 `feedbackCanAdvance` 设为 true。
-2. 底部推进按钮一直存在，只是 disabled 状态变化；在 React 重新渲染/移动端点击事件序列里，用户点击问卷选项后，原点击位置可能刚好落到变为可点击的“进入下一个任务”按钮，从而误触 `advance()`。
+```text
+ensureActiveTask()
+  把 active / feedback_pending / needs_resubmission 都当作 currentActive
+
+syncProgressState()
+  检测到 feedback_pending 会自动打开自评弹窗
+```
+
+之前为了防止“没有当前任务”而写的 `ensureActiveTask()`，会在某些加载/重渲染/数据库状态不同步场景下，把第一个非 done 任务当成 fallback，并写成 `active`。如果当前任务已经是 `feedback_pending`，而 `current_task_index` 或本地 `taskStatuses` 短暂不同步，就可能出现：
+
+```text
+提交任务成功 -> 当前任务 feedback_pending -> 保存自评
+-> 状态同步 effect 再跑
+-> ensureActiveTask 认为需要恢复当前任务
+-> fallback 选到下一个未完成任务
+-> 写入 active / current_task_index
+-> UI 看起来像“自动开启下一个任务”
+```
+
+所以之前只移除推进按钮，方向不够彻底；自动开启不是来自按钮，而是来自“自动恢复 active task”的副作用。
 
 ## 修复方案
 
-1. **彻底移除反馈弹窗内的自动推进按钮**
-   - 自评保存后不再在同一个弹窗底部显示“进入下一个任务”。
-   - 体验问卷提交后也不再启用任何推进按钮。
-   - 只显示明确提示：`自评/体验问卷已保存。请回到任务列表，手动点击下一任务。`
+### 1. 停止把 `feedback_pending` 当成可恢复 active 状态
 
-2. **删除 `feedbackCanAdvance` 状态和 `TaskFeedbackBar.onSubmitted` 推进联动**
-   - `TaskFeedbackBar` 仍可提交体验反馈，但提交成功只显示感谢，不再改变“可推进”状态。
-   - 这样点击“很棒”不会让任何下一任务按钮瞬间启用。
+调整 `ensureActiveTask()`：
 
-3. **把 `advance()` / `finalizeTaskAndUnlock()` 从弹窗保存流程中断开**
-   - 保留函数本身，后续可用于真正的手动入口。
-   - 当前自评弹窗不会调用它。
+- `feedback_pending` 表示任务已经提交，正在等待自评/手动确认，不允许自动恢复或自动跳转。
+- 如果存在任意 `feedback_pending`，直接返回这个 pending task，不写数据库，不更新 `current_task_index`，不激活下一任务。
+- 只有在完全没有 `active`、没有 `feedback_pending`、没有 `needs_resubmission`，且确实是项目初始化/异常缺行时，才创建或恢复第一个任务为 `active`。
 
-4. **新增一个明确的手动推进入口**
-   - 在右侧任务列表中，对 `feedback_pending + 已保存自评` 的任务显示一个独立按钮，例如：`完成并解锁下一任务`。
-   - 用户必须离开自评弹窗/回到任务列表，主动点击这个按钮，才会调用 `finalizeTaskAndUnlock()`。
-   - 这比弹窗内按钮更不容易被保存/问卷点击误触。
+### 2. `current_task_index` 不再驱动自动开启下一任务
 
-5. **加防误触保护**
-   - 给手动推进入口加 `type="button"`。
-   - 可选地加二次确认文案：`确认完成当前任务并开启下一任务？`
+在 `ensureActiveTask()` 的 fallback 里增加保护：
 
-6. **验证**
-   - 检查所有 `finalizeTaskAndUnlock()` 调用点，确保只剩右侧任务列表手动入口。
-   - 运行 TypeScript 检查。
-   - 重点验证流程：提交任务 -> 保存自评 -> 弹窗不关闭 -> 不出现“下一个任务”toast -> 提交体验问卷 -> 仍不推进 -> 只有点击任务列表手动入口才推进。
+- 如果数据库或本地存在 `feedback_pending`，绝不根据 `current_task_index` 去找下一个任务并激活。
+- 如果 `current_task_index` 指向一个 locked/未创建的后续任务，也不自动把它改成 active，除非前序任务已经是 `done`。
+
+### 3. 加前序任务完成校验，阻断越级激活
+
+新增一个小函数，例如 `canActivateTask(task)`：
+
+- 第一个任务可以在初始化时 active。
+- 第 N 个任务只有当第 N-1 个任务状态为 `done` 时才允许被自动或手动激活。
+- `feedback_pending` 不等于 `done`。
+
+这样即使本地状态短暂错乱，也不会把下一任务自动打开。
+
+### 4. 保留手动解锁，但加防重复/防自动调用保护
+
+`finalizeTaskAndUnlock(task)` 仍保留，但加硬条件：
+
+- 当前任务必须是 `feedback_pending`。
+- 当前任务必须已有 `self_eval.submitted_at`。
+- 函数只由确认弹窗调用。
+- 如果不满足条件，直接 toast 提示并 return，不写入下一任务。
+
+### 5. 修正误导性注释和弹窗关闭入口
+
+- 更新旧注释中“在反馈弹窗里点击进入下一个任务”的描述，避免后续维护继续按错误思路改。
+- 可选：把自评弹窗右上角 X 隐藏或接入同一个 `closeFeedbackModal`，避免用户以为“关闭弹窗”等同“进入下一任务”。
+
+### 6. 验证
+
+实现后检查：
+
+- 全局只剩 `finalizeTaskAndUnlock` 一个真正写入下一任务 active 的函数。
+- 保存自评只更新 `self_eval`，不更新 `status` / `current_task_index`。
+- `ensureActiveTask` 遇到 `feedback_pending` 不做任何数据库写入。
+- TypeScript 编译通过。
+
+重点手测流程：
+
+```text
+提交任务通过
+-> 自评弹窗打开
+-> 保存自评
+-> 弹窗不关闭
+-> 不出现“下一个任务”toast
+-> 关闭/刷新页面后仍停留在当前任务 feedback_pending
+-> 只有点击右侧“完成并解锁下一任务”并二次确认后，才进入下一任务
+```
+
+<lov-actions>
+<lov-open-history>View History</lov-open-history>
+<lov-link url="https://docs.lovable.dev/tips-tricks/troubleshooting">Troubleshooting docs</lov-link>
+</lov-actions>
