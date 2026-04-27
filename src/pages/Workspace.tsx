@@ -2485,37 +2485,23 @@ const Workspace = () => {
                   </div>
                 )}
 
-              <div className="flex justify-end border-t border-white/5 pt-4">
-                <div className="flex flex-col items-end gap-2">
-                  {feedbackStatus?.submission_quality === "retry" ? (
-                    <div className="text-xs text-amber-200">当前提交已记录，但需要重新提交后才能进入下一任务。</div>
-                  ) : !selfEvalReady && !isReviewMode ? (
-                    <div className="text-xs text-muted-foreground">先完成自评，才能进入下一个任务。</div>
-                  ) : selfEvalReady && !feedbackCanAdvance && !isReviewMode ? (
-                    <div className="text-xs text-muted-foreground">自评已保存，请先完成上方任务体验问卷。</div>
-                  ) : null}
-                  {!isReviewMode && (
-                    <Button
-                      type="button"
-                      onClick={feedbackStatus?.submission_quality === "retry" ? closeFeedbackModal : advance}
-                      disabled={feedbackStatus?.submission_quality !== "retry" && (!selfEvalReady || !feedbackCanAdvance)}
-                      className="bg-gradient-gold text-primary-foreground hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {feedbackStatus?.submission_quality === "retry"
-                        ? "关闭反馈"
-                        : selfEvalReady && feedbackCanAdvance
-                          ? "进入下一个任务 →"
-                          : selfEvalReady
-                            ? "请先完成体验问卷"
-                            : "请先完成自评"}
-                    </Button>
-                  )}
-                  {isReviewMode && (
-                    <Button type="button" onClick={closeFeedbackModal} className="bg-gradient-gold text-primary-foreground hover:opacity-95">
-                      关闭回看
-                    </Button>
-                  )}
+              <div className="flex flex-col gap-3 border-t border-white/5 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-xs text-muted-foreground">
+                  {feedbackStatus?.submission_quality === "retry"
+                    ? "当前提交未达标准，请按反馈要求重新提交。"
+                    : isReviewMode
+                      ? "回看模式：可随时关闭。"
+                      : selfEvalReady
+                        ? "自评已保存。关闭本窗口后，请到右侧任务列表手动点击「完成并解锁下一任务」。"
+                        : "先完成自评，再回到任务列表手动解锁下一任务。"}
                 </div>
+                <Button
+                  type="button"
+                  onClick={closeFeedbackModal}
+                  className="bg-gradient-gold text-primary-foreground hover:opacity-95"
+                >
+                  关闭
+                </Button>
               </div>
             </>
           )}
