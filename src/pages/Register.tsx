@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AuthBrandPanel } from "@/components/marketing/AuthBrandPanel";
@@ -23,6 +24,7 @@ const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   /** 注册成功（邮件已发出）后展示验证提示界面，禁止直接进入 Dashboard */
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
@@ -44,6 +46,10 @@ const Register = () => {
     }
     if (password.length < 8) {
       toast.error("密码至少需要 8 位");
+      return;
+    }
+    if (!agreed) {
+      toast.error("请先阅读并同意《用户协议》与《隐私政策》");
       return;
     }
     setLoading(true);
