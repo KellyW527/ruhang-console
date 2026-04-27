@@ -136,6 +136,7 @@ const Workspace = () => {
   const [doneCollapsed, setDoneCollapsed] = useState(true);
   const [showPostSurvey, setShowPostSurvey] = useState(false);
   const [draftSaving, setDraftSaving] = useState(false);
+  const [feedbackCanAdvance, setFeedbackCanAdvance] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const composeFileInputRef = useRef<HTMLInputElement>(null);
@@ -404,6 +405,7 @@ const Workspace = () => {
   };
 
   const openFeedbackForTask = (task: Task, defaultTab: "answer" | "self" = "answer") => {
+    setFeedbackCanAdvance(false);
     setFeedbackTab(defaultTab);
     setFeedbackTask(task);
     window.setTimeout(() => {
@@ -1188,6 +1190,7 @@ const Workspace = () => {
   };
 
   const closeFeedbackModal = () => {
+    setFeedbackCanAdvance(false);
     setFeedbackTask(null);
   };
 
