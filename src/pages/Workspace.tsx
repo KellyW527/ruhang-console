@@ -569,19 +569,24 @@ const Workspace = () => {
   const ensureActiveTask = async () => {
     if (!usId || !tasks.length || simulationStatus === "completed" || !progressLoaded) return null;
 
+    // 1) 已有正在进行/等待自评/需重交的任务 → 直接返回，绝不写库、不切换 current_task_index、不激活下一任务。
+    //    这能阻止 feedback_pending 在重渲染时被当作"缺失 active"而触发 fallback，导致表面上"自动开启下一任务"。
     const currentActive = tasks.find((task) => {
       const status = taskStatuses[task.id]?.status;
       return status === "active" || status === "feedback_pending" || status === "needs_resubmission";
     });
     if (currentActive) return currentActive;
 
-    const unfinishedTasks = tasks
-      .filter((task) => taskStatuses[task.id]?.status !== "done")
-      .sort((a, b) => a.order_index - b.order_index);
-    const fallbackTask =
-      (currentTaskIndex != null
-        ? tasks.find((task) => task.order_index === currentTaskIndex && taskStatuses[task.id]?.status !== "done")
-        : null) ?? unfinishedTasks[0];
+    // 2) 真正没有 active/pending/retry 时，才考虑恢复。fallback 只允许：
+    //    - 第一个任务（order_index === 0），或
+    //    - 前一个任务已经 done 的紧邻任务
+    const sorted = [...tasks].sort((a, b) => a.order_index - b.order_index);
+    const fallbackTask = sorted.find((task) => {
+      if (taskStatuses[task.id]?.status === "done") return false;
+      if (task.order_index === 0) return true;
+      const prev = sorted.find((t) => t.order_index === task.order_index - 1);
+      return prev ? taskStatuses[prev.id]?.status === "done" : false;
+    });
 
     if (!fallbackTask) return null;
 
@@ -592,13 +597,18 @@ const Workspace = () => {
       .eq("task_id", fallbackTask.id)
       .maybeSingle();
 
+    // 已有非 locked 状态（如 feedback_pending / needs_resubmission / done）就不再覆盖
+    if (existingProgress && existingProgress.status && existingProgress.status !== "locked") {
+      return fallbackTask;
+    }
+
     if (!existingProgress) {
       await supabase.from("user_task_progress").insert({
         user_simulation_id: usId,
         task_id: fallbackTask.id,
         status: "active",
       });
-    } else if (existingProgress.status === "locked" || existingProgress.status == null) {
+    } else {
       await supabase
         .from("user_task_progress")
         .update({ status: "active" })
@@ -614,9 +624,6 @@ const Workspace = () => {
     }
 
     upsertTaskStatus(fallbackTask.id, { status: "active" });
-    toast.success("已恢复当前任务", {
-      description: "接下来会按正式提交流程进入反馈。",
-    });
     return fallbackTask;
   };
 
