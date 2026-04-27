@@ -189,8 +189,8 @@ async function handleSubscriptionUpdated(
     });
   }
 
-  const periodEnd = new Date(effectiveEnd * 1000).toISOString();
-  const periodStart = new Date(effectiveStart * 1000).toISOString();
+  const periodStart = unixTimestampToIso(effectiveStart, fallbackStart, "current_period_start");
+  const periodEnd = unixTimestampToIso(effectiveEnd, fallbackEnd, "current_period_end");
   const stripeCustomerId = getStripeId(subscription.customer);
 
   // upsert by stripe_subscription_id
@@ -256,6 +256,21 @@ function normalizeUnixTimestamp(value: unknown): number | undefined {
 
 function isValidUnixTimestamp(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value > 0;
+}
+
+function unixTimestampToIso(value: unknown, fallbackSec: number, label: string) {
+  const timestamp = normalizeUnixTimestamp(value) ?? fallbackSec;
+  const date = new Date(timestamp * 1000);
+  if (Number.isNaN(date.getTime())) {
+    const fallbackDate = new Date(fallbackSec * 1000);
+    console.warn("[webhook] invalid subscription timestamp, using fallback", {
+      label,
+      value,
+      fallbackSec,
+    });
+    return fallbackDate.toISOString();
+  }
+  return date.toISOString();
 }
 
 async function handleSubscriptionDeleted(subscription: StripeSubscription) {
