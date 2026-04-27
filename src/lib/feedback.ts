@@ -51,6 +51,7 @@ export type PostSurveyPayload = {
   overallRating: number; // 1-5
   mostValuable?: string | null;
   improvement?: string | null;
+  shareWithPartner: boolean; // 是否同意把项目结果公开给发起人/合作公司
 };
 
 async function getUserId(): Promise<string> {
