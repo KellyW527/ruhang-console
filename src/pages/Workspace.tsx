@@ -2482,7 +2482,6 @@ const Workspace = () => {
                       taskId={feedbackTask.id}
                       simulationCode={simCode}
                       taskOrderIndex={feedbackTask.order_index}
-                      onSubmitted={() => setFeedbackCanAdvance(true)}
                     />
                   </div>
                 )}
