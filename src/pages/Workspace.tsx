@@ -2197,6 +2197,30 @@ const Workspace = () => {
                     <div className="mt-2 text-xs text-muted-foreground">{completedCount} / {tasks.length} 已完成</div>
                   </div>
 
+      <AlertDialog
+        open={!!confirmAdvanceTaskId}
+        onOpenChange={(open) => !open && setConfirmAdvanceTaskId(null)}
+      >
+        <AlertDialogContent className="glass-strong border-white/10">
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认完成当前任务？</AlertDialogTitle>
+            <AlertDialogDescription>
+              确认后将解锁下一任务，且无法回退当前任务的进行状态。请确认你已完成自评和（可选的）任务体验问卷。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>再想想</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmAdvanceTaskId) void advanceTaskById(confirmAdvanceTaskId);
+              }}
+              className="bg-gradient-gold text-primary-foreground hover:opacity-95"
+            >
+              确认完成并解锁
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
               <ScrollArea className="flex-1">
                 <div className="space-y-4 px-5 py-4">
