@@ -2671,14 +2671,17 @@ const Workspace = () => {
         </DialogContent>
       </Dialog>
 
-      {/* 出项问卷：必填，提交后才能去看证书 */}
+      {/* 出项问卷：必填，提交后再弹出"项目交付完成"卡片 */}
       {usId && simCode && (
         <PostSimulationSurvey
           open={showPostSurvey}
           userSimulationId={usId}
           simulationCode={simCode}
           simulationTitle={simTitle}
-          onSubmitted={() => setShowPostSurvey(false)}
+          onSubmitted={() => {
+            setShowPostSurvey(false);
+            setCompletionOpen(true);
+          }}
         />
       )}
       <IncomingCallDialog
