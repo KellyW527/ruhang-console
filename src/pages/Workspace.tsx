@@ -871,21 +871,9 @@ const Workspace = () => {
     const pendingTask = tasks.find((task) => taskStatuses[task.id]?.status === "feedback_pending");
     if (!pendingTask) return;
 
-    const readyToUnlock = Boolean(selfEvalMap[pendingTask.id]?.submitted_at);
-
-    if (readyToUnlock) {
-      // Self-eval already done — finalize and unlock next task
-      syncingProgressRef.current = true;
-      try {
-        await finalizeTaskAndUnlock(pendingTask);
-        setFeedbackTask(null);
-      } finally {
-        syncingProgressRef.current = false;
-      }
-      return;
-    }
-
-    // Self-eval not done yet — open feedback modal on self-eval tab
+    // 不再自动 finalize 推进到下一任务——必须由用户在反馈弹窗里
+    // 主动点击「进入下一个任务 →」按钮（advance()）才推进。
+    // 这里只负责：如果当前有反馈待处理任务、且弹窗没开，就把弹窗打开到自评 tab。
     if (!feedbackTask) {
       openFeedbackForTask(pendingTask, "self");
     }
