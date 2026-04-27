@@ -27,44 +27,48 @@ const Register = () => {
   /** 注册成功（邮件已发出）后展示验证提示界面，禁止直接进入 Dashboard */
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const nav = useNavigate();
+  const [params] = useSearchParams();
+  const redirect = params.get("redirect") || "/dashboard";
   const { session } = useAuth();
 
   useEffect(() => {
     document.title = "注册 · 入行 RuHang";
-    if (session) nav("/dashboard", { replace: true });
-  }, [session, nav]);
+    if (session) nav(redirect, { replace: true });
+  }, [session, nav, redirect]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email.trim()) {
+      toast.error("请填写邮箱");
+      return;
+    }
     if (password.length < 8) {
       toast.error("密码至少需要 8 位");
       return;
     }
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password,
       options: {
-        // 邮箱验证完成后回到 dashboard
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        // 邮箱验证完成后回到 redirect 目标
+        emailRedirectTo: `${window.location.origin}${redirect}`,
         data: { name },
       },
     });
     setLoading(false);
 
     if (error) {
-      toast.error("注册失败", { description: error.message });
+      toast.error(mapSignupError(error.message));
       return;
     }
 
     // Supabase 行为：开启邮箱验证后，data.session 会是 null，data.user 仍存在
-    // 不再直接 nav("/dashboard")，强制走邮件验证
     if (data.session) {
-      // 没开邮箱验证时（不应该是上线状态）兜底：直接进 dashboard
       toast.success("欢迎加入入行 🎉");
-      nav("/dashboard");
+      nav(redirect);
     } else {
-      setPendingEmail(email);
+      setPendingEmail(email.trim());
     }
   };
 
