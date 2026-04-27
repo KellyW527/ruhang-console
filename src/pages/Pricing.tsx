@@ -104,7 +104,7 @@ const Pricing = () => {
 
   const handleCheckout = async (planKey: string) => {
     if (!user) {
-      toast.info("请先登录", { description: "登录后即可购买套餐" });
+      toast.info("请先登录或注册后再选择套餐", { duration: 4000 });
       navigate("/login?redirect=/pricing");
       return;
     }

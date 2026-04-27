@@ -189,8 +189,12 @@ const Register = () => {
             </Link>
           </p>
 
-          <p className="text-xs text-muted-foreground text-center">
-            创建账号即代表你同意《用户协议》与《隐私政策》。注册后需要完成邮箱验证才能开始使用。
+          <p className="text-xs text-muted-foreground text-center leading-relaxed">
+            创建账号即代表你同意{" "}
+            <Link to="/terms" className="text-primary hover:underline">《用户协议》</Link>
+            {" 与 "}
+            <Link to="/privacy" className="text-primary hover:underline">《隐私政策》</Link>
+            。注册后需要完成邮箱验证才能开始使用。
           </p>
         </div>
       </div>
