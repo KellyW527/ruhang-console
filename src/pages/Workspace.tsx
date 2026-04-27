@@ -2398,7 +2398,12 @@ const Workspace = () => {
 
       {/* Feedback modal */}
       <Dialog open={!!feedbackTask} onOpenChange={(o) => !o && setFeedbackTask(null)}>
-        <DialogContent className="glass-strong max-h-[90vh] max-w-3xl overflow-y-auto border-white/10">
+        <DialogContent
+          className="glass-strong max-h-[90vh] max-w-3xl overflow-y-auto border-white/10"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
           {feedbackTask && (
             <>
               <DialogHeader>
@@ -2455,12 +2460,12 @@ const Workspace = () => {
                 </ATabsContent>
               </ATabs>
 
-              {/* Forage 风格的"这个任务体验如何" — 任务通过且不是重交时显示 */}
+              {/* Forage 风格的"这个任务体验如何" — 自评保存后立即显示，不必等 done */}
               {usId &&
                 feedbackTask &&
                 simCode &&
-                feedbackStatus?.status === "done" &&
-                feedbackStatus?.submission_quality !== "retry" && (
+                feedbackStatus?.submission_quality !== "retry" &&
+                (selfEvalReady || feedbackStatus?.status === "done") && (
                   <div className="mt-4">
                     <TaskFeedbackBar
                       key={`fb-${feedbackTask.id}`}
