@@ -112,6 +112,52 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* ========================= Real task strip (just under hero) ========================= */}
+      <section className="relative -mt-10 pb-6">
+        <div className="container mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mx-auto max-w-5xl"
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <div className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">真实任务样例 · 取自现役项目</div>
+              <Link to="/pricing" className="hidden text-xs text-primary hover:underline sm:inline-flex items-center gap-1">
+                查看全部赛道 <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            <div className="grid gap-3 md:grid-cols-4">
+              {[
+                { tag: "投行 IBD", title: "撰写 SaaS 行业研究框架", deliv: "PPT", time: "24h" },
+                { tag: "并购 M&A", title: "京北数码五年利润表预测", deliv: "Excel", time: "36h" },
+                { tag: "PE/VC", title: "云岚科技投委会 Memo", deliv: "Word", time: "48h" },
+                { tag: "卖方研究", title: "锂电链条公司深度报告", deliv: "PDF", time: "30h" },
+              ].map((t) => (
+                <div
+                  key={t.title}
+                  className="glass group relative overflow-hidden rounded-xl p-4 transition hover:border-primary/30"
+                >
+                  <div className="flex items-center justify-between text-[10px]">
+                    <span className="rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-primary">
+                      {t.tag}
+                    </span>
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <Clock className="h-3 w-3" /> {t.time}
+                    </span>
+                  </div>
+                  <div className="mt-3 text-sm font-medium leading-snug text-foreground">{t.title}</div>
+                  <div className="mt-3 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                    <FileText className="h-3 w-3" />
+                    交付物 · {t.deliv}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* ========================= Why real ========================= */}
       <section className="relative py-24">
         <div className="container mx-auto px-6">
