@@ -87,11 +87,36 @@ const OfferLetter = () => {
   }, [user, id, nav, accessLoading, hasAccess]);
 
   const accept = async () => {
-    if (!usId || !id) return;
+    if (!id || !user) return;
     setAccepting(true);
 
-    // Mark accepted
-    await supabase.from("user_simulations").update({ offer_accepted: true, status: "in_progress" }).eq("id", usId);
+    // 如果还没有 user_simulations 行，先创建（用户首次接受 Offer）
+    let currentUsId = usId;
+    if (!currentUsId) {
+      const { data: created, error: createErr } = await supabase
+        .from("user_simulations")
+        .insert({
+          user_id: user.id,
+          simulation_id: id,
+          status: "in_progress",
+          offer_accepted: true,
+          progress: 0,
+          current_task_index: 0,
+        })
+        .select("id")
+        .single();
+      if (createErr || !created) {
+        console.error("[OfferLetter] create user_simulations error:", createErr);
+        toast.error("启动项目失败，请稍后重试。");
+        setAccepting(false);
+        return;
+      }
+      currentUsId = created.id;
+      setUsId(currentUsId);
+    } else {
+      // Mark accepted
+      await supabase.from("user_simulations").update({ offer_accepted: true, status: "in_progress" }).eq("id", currentUsId);
+    }
 
     // Seed conversations + first messages + first task + initial email — only once
     const { data: existing } = await supabase.from("conversations").select("id").eq("user_simulation_id", usId).limit(1);
