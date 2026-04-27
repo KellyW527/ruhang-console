@@ -2401,6 +2401,8 @@ const Workspace = () => {
                   </section>
                 </div>
               </ScrollArea>
+                </>
+              )}
             </aside>
           </div>
         </div>
