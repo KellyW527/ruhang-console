@@ -2480,6 +2480,7 @@ const Workspace = () => {
                       taskId={feedbackTask.id}
                       simulationCode={simCode}
                       taskOrderIndex={feedbackTask.order_index}
+                      onSubmitted={() => setFeedbackCanAdvance(true)}
                     />
                   </div>
                 )}
@@ -2490,18 +2491,23 @@ const Workspace = () => {
                     <div className="text-xs text-amber-200">当前提交已记录，但需要重新提交后才能进入下一任务。</div>
                   ) : !selfEvalReady && !isReviewMode ? (
                     <div className="text-xs text-muted-foreground">先完成自评，才能进入下一个任务。</div>
+                  ) : selfEvalReady && !feedbackCanAdvance && !isReviewMode ? (
+                    <div className="text-xs text-muted-foreground">自评已保存，请先完成上方任务体验问卷。</div>
                   ) : null}
                   {!isReviewMode && (
                     <Button
+                      type="button"
                       onClick={feedbackStatus?.submission_quality === "retry" ? closeFeedbackModal : advance}
-                      disabled={feedbackStatus?.submission_quality !== "retry" && !selfEvalReady}
+                      disabled={feedbackStatus?.submission_quality !== "retry" && (!selfEvalReady || !feedbackCanAdvance)}
                       className="bg-gradient-gold text-primary-foreground hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {feedbackStatus?.submission_quality === "retry"
                         ? "关闭反馈"
-                        : selfEvalReady
+                        : selfEvalReady && feedbackCanAdvance
                           ? "进入下一个任务 →"
-                          : "请先完成自评"}
+                          : selfEvalReady
+                            ? "请先完成体验问卷"
+                            : "请先完成自评"}
                     </Button>
                   )}
                   {isReviewMode && (
