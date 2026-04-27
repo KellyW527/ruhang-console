@@ -102,7 +102,9 @@ export function useUserAccess() {
       return entitlements.some((e) => {
         if (e.simulation_code !== simulationCode) return false;
         if (!e.expires_at) return true; // 单买永久
-        return new Date(e.expires_at).getTime() > now;
+        const exp = new Date(e.expires_at).getTime();
+        if (Number.isNaN(exp)) return false; // 脏数据当作未授权,避免误判
+        return exp > now;
       });
     };
   }, [user, entitlements]);

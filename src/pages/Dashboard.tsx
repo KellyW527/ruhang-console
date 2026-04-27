@@ -20,7 +20,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useUserAccess } from "@/hooks/useUserAccess";
-import { cn } from "@/lib/utils";
+import { cn, safeDate } from "@/lib/utils";
 import { getPreferredDisplayName } from "@/lib/settings";
 import { buildAchievementStates, type AchievementProgressRow, type AchievementState } from "@/data/achievements";
 import { getRecommendedProjects, type CatalogEntry } from "@/data/simulation-catalog";
@@ -623,7 +623,7 @@ export default function Dashboard() {
                         <div className="text-right text-[11px] text-muted-foreground">
                           <div>本周期截止</div>
                           <div className="text-foreground font-mono">
-                            {new Date(subscription.currentPeriodEnd).toLocaleDateString("zh-CN")}
+                            {safeDate(subscription.currentPeriodEnd)}
                           </div>
                         </div>
                         <Link
