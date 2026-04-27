@@ -1534,7 +1534,7 @@ const Workspace = () => {
                       <button
                         type="button"
                         onClick={() => setLeftCollapsed(true)}
-                        className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-white/5 hover:text-foreground lg:inline-flex"
+                        className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary transition hover:border-primary/60 hover:bg-primary/20 lg:inline-flex"
                         title="收起面板"
                       >
                         <PanelLeftClose className="h-4 w-4" />
@@ -2187,7 +2187,7 @@ const Workspace = () => {
                         <button
                           type="button"
                           onClick={() => setRightCollapsed(true)}
-                          className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-white/5 hover:text-foreground lg:inline-flex"
+                          className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary transition hover:border-primary/60 hover:bg-primary/20 lg:inline-flex"
                           title="收起面板"
                         >
                           <PanelRightClose className="h-4 w-4" />
@@ -2647,8 +2647,8 @@ function MessageBubble({
 
   if (msg.message_type === "image" && msg.file_url) {
     return (
-      <div className={cn("flex max-w-[85%]", isUser ? "ml-auto justify-end" : "mr-auto justify-start")}>
-        <a href={msg.file_url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-2xl border border-white/10">
+      <div className={cn("flex w-full", isUser ? "justify-end" : "justify-start")}>
+        <a href={msg.file_url} target="_blank" rel="noreferrer" className="block max-w-[85%] overflow-hidden rounded-2xl border border-white/10">
           <img src={msg.file_url} alt={msg.file_name ?? "image"} className="max-h-[18rem] w-auto max-w-full object-cover lg:max-h-[20rem]" />
         </a>
       </div>
@@ -2684,17 +2684,20 @@ function MessageBubble({
       </div>
     );
     return (
-      <div className={cn("flex max-w-[85%]", isUser ? "ml-auto justify-end" : "mr-auto justify-start")}>
-        {msg.file_url ? (
-          <a href={msg.file_url} target="_blank" rel="noreferrer" className="hover:opacity-90">{inner}</a>
-        ) : inner}
+      <div className={cn("flex w-full max-w-full", isUser ? "justify-end" : "justify-start")}>
+        <div className="max-w-[85%]">
+          {msg.file_url ? (
+            <a href={msg.file_url} target="_blank" rel="noreferrer" className="block hover:opacity-90">{inner}</a>
+          ) : inner}
+        </div>
       </div>
     );
   }
 
   if (msg.message_type === "audio") {
     return (
-      <div className={cn("flex max-w-[60%]", isUser ? "ml-auto justify-end" : "mr-auto justify-start")}>
+      <div className={cn("flex w-full", isUser ? "justify-end" : "justify-start")}>
+        <div className={cn("max-w-[60%]")}>
         <div className={cn("rounded-2xl px-4 py-3", isUser ? "bg-gradient-gold text-primary-foreground" : "bg-white/5")}>
           <div className="flex items-center gap-3">
             <button type="button" className="flex h-8 w-8 items-center justify-center rounded-full bg-background/40">
@@ -2724,14 +2727,15 @@ function MessageBubble({
             </a>
           )}
         </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className={cn("flex max-w-[85%]", isUser ? "ml-auto justify-end" : "mr-auto justify-start")}>
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className={cn("flex w-full", isUser ? "justify-end" : "justify-start")}>
       <div className={cn(
-        "whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+        "max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
         isUser ? "rounded-tr-sm bg-gradient-gold text-primary-foreground" : "rounded-tl-sm bg-white/5 text-foreground",
       )}>
         {streaming && !msg.content ? (
