@@ -1,93 +1,85 @@
-## 自查结论
+## 任务 1：底部添加"合作联系"
 
-这次问题不是按钮误触，也不是 `TaskFeedbackBar` 导致推进。
+### 修改 `src/components/marketing/Footer.tsx`
 
-真正可疑点在 `Workspace.tsx` 的“状态恢复”逻辑：
+把当前 4 列网格改成 5 列（`md:grid-cols-5`），新增"合作联系"列，放在"法律"之前（或末尾）。
 
-```text
-ensureActiveTask()
-  把 active / feedback_pending / needs_resubmission 都当作 currentActive
+新增列内容：
 
-syncProgressState()
-  检测到 feedback_pending 会自动打开自评弹窗
+- 标题：**合作联系**
+- 一段说明（小字 muted）：面向企业、机构和有金融行业经验的前辈，开放三类合作
+- 三条要点（图标 + 一行）：
+  1. **定制化项目授权** — 与我们共建专属赛道任务
+  2. **人才数据访问权限** — 经学员授权后获取完成度优秀的学员名单，定向发送面试邀请
+  3. **人才漏斗转化** — 完成模拟任务的学生具备更强意向与基础技能，帮助企业前置筛选
+- 一个邮件 CTA 链接：
+  ```
+  邮箱：3165784931@qq.com（标题"合作联系"）
+  ```
+  使用 `<a href="mailto:3165784931@qq.com?subject=合作联系">` 形式，hover 高亮 primary 金色，与现有链接风格一致。
+
+样式沿用 footer 现有的 `text-sm text-muted-foreground hover:text-primary`，标题用 `text-sm font-semibold text-foreground font-sans`，与其他列对齐。
+
+> 移动端：5 列在窄屏会被 `grid-cols-1` 自动堆叠，无需额外处理。
+
+---
+
+## 任务 2：项目完成时询问是否公开成果给发起人/公司
+
+### 2.1 数据库迁移
+
+新建 `db/migrations/2026-04-27_add_post_survey_share_consent.sql`：
+
+```sql
+ALTER TABLE public.post_simulation_surveys
+  ADD COLUMN IF NOT EXISTS share_with_partner BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS share_consent_at TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS idx_post_survey_share
+  ON public.post_simulation_surveys(simulation_code, share_with_partner)
+  WHERE share_with_partner = true;
 ```
 
-之前为了防止“没有当前任务”而写的 `ensureActiveTask()`，会在某些加载/重渲染/数据库状态不同步场景下，把第一个非 done 任务当成 fallback，并写成 `active`。如果当前任务已经是 `feedback_pending`，而 `current_task_index` 或本地 `taskStatuses` 短暂不同步，就可能出现：
+含义：
+- `share_with_partner = true` → 用户同意公开（可被发起人/合作方筛选）
+- `share_with_partner = false`（默认）→ 保密
+- `share_consent_at` 记录同意时间，便于后续合规追溯
 
-```text
-提交任务成功 -> 当前任务 feedback_pending -> 保存自评
--> 状态同步 effect 再跑
--> ensureActiveTask 认为需要恢复当前任务
--> fallback 选到下一个未完成任务
--> 写入 active / current_task_index
--> UI 看起来像“自动开启下一个任务”
-```
+### 2.2 前端：在出项问卷里加一道"公开同意"题
 
-所以之前只移除推进按钮，方向不够彻底；自动开启不是来自按钮，而是来自“自动恢复 active task”的副作用。
+修改 `src/components/feedback/PostSimulationSurvey.tsx`：
 
-## 修复方案
+- 在"开放题"和提交按钮之间，新增一个卡片："是否愿意将本次项目结果公开给发起方/合作公司？"
+- 文案要点：
+  - 好处：让发起方/合作公司看到你的完成情况，有机会被联系面试、收到内推等
+  - 不公开：仅你和 RuHang 可见，不会被任何第三方查到
+- 两个互斥按钮：**愿意公开** / **保持保密**（默认未选；必须二选一才能提交，与其他必填项一致）
+- 新增 state：`shareWithPartner: boolean | null`
+- `isValid` 增加条件：`shareWithPartner !== null`
 
-### 1. 停止把 `feedback_pending` 当成可恢复 active 状态
+### 2.3 写库链路
 
-调整 `ensureActiveTask()`：
+修改 `src/lib/feedback.ts`：
 
-- `feedback_pending` 表示任务已经提交，正在等待自评/手动确认，不允许自动恢复或自动跳转。
-- 如果存在任意 `feedback_pending`，直接返回这个 pending task，不写数据库，不更新 `current_task_index`，不激活下一任务。
-- 只有在完全没有 `active`、没有 `feedback_pending`、没有 `needs_resubmission`，且确实是项目初始化/异常缺行时，才创建或恢复第一个任务为 `active`。
+- `PostSurveyPayload` 增加字段 `shareWithPartner: boolean`
+- `submitPostSimulationSurvey` 在 insert 时写入：
+  - `share_with_partner: payload.shareWithPartner`
+  - `share_consent_at: payload.shareWithPartner ? new Date().toISOString() : null`
 
-### 2. `current_task_index` 不再驱动自动开启下一任务
+`PostSimulationSurvey.tsx` 提交时把 `shareWithPartner` 透传给 `submitPostSimulationSurvey`。
 
-在 `ensureActiveTask()` 的 fallback 里增加保护：
+### 2.4 不影响现有完成流程
 
-- 如果数据库或本地存在 `feedback_pending`，绝不根据 `current_task_index` 去找下一个任务并激活。
-- 如果 `current_task_index` 指向一个 locked/未创建的后续任务，也不自动把它改成 active，除非前序任务已经是 `done`。
+- 不改 `Workspace.tsx` / `Certificate.tsx` 的入口与时序
+- 不改其他自动推进/自评相关逻辑（之前已修复，保持原样）
 
-### 3. 加前序任务完成校验，阻断越级激活
+---
 
-新增一个小函数，例如 `canActivateTask(task)`：
+## 验证清单
 
-- 第一个任务可以在初始化时 active。
-- 第 N 个任务只有当第 N-1 个任务状态为 `done` 时才允许被自动或手动激活。
-- `feedback_pending` 不等于 `done`。
-
-这样即使本地状态短暂错乱，也不会把下一任务自动打开。
-
-### 4. 保留手动解锁，但加防重复/防自动调用保护
-
-`finalizeTaskAndUnlock(task)` 仍保留，但加硬条件：
-
-- 当前任务必须是 `feedback_pending`。
-- 当前任务必须已有 `self_eval.submitted_at`。
-- 函数只由确认弹窗调用。
-- 如果不满足条件，直接 toast 提示并 return，不写入下一任务。
-
-### 5. 修正误导性注释和弹窗关闭入口
-
-- 更新旧注释中“在反馈弹窗里点击进入下一个任务”的描述，避免后续维护继续按错误思路改。
-- 可选：把自评弹窗右上角 X 隐藏或接入同一个 `closeFeedbackModal`，避免用户以为“关闭弹窗”等同“进入下一任务”。
-
-### 6. 验证
-
-实现后检查：
-
-- 全局只剩 `finalizeTaskAndUnlock` 一个真正写入下一任务 active 的函数。
-- 保存自评只更新 `self_eval`，不更新 `status` / `current_task_index`。
-- `ensureActiveTask` 遇到 `feedback_pending` 不做任何数据库写入。
-- TypeScript 编译通过。
-
-重点手测流程：
-
-```text
-提交任务通过
--> 自评弹窗打开
--> 保存自评
--> 弹窗不关闭
--> 不出现“下一个任务”toast
--> 关闭/刷新页面后仍停留在当前任务 feedback_pending
--> 只有点击右侧“完成并解锁下一任务”并二次确认后，才进入下一任务
-```
-
-<lov-actions>
-<lov-open-history>View History</lov-open-history>
-<lov-link url="https://docs.lovable.dev/tips-tricks/troubleshooting">Troubleshooting docs</lov-link>
-</lov-actions>
+- 底部新增"合作联系"列，邮箱 `mailto:` 可点击，标题预填"合作联系"
+- 移动端 footer 不错位
+- 出项问卷新增"是否公开"题，未选不能提交
+- 选"愿意公开"后，`post_simulation_surveys` 行 `share_with_partner=true` 且 `share_consent_at` 有时间戳
+- 选"保持保密"后，`share_with_partner=false`、`share_consent_at` 为 null
+- 用户需要在 Lovable Cloud 里执行新迁移 SQL
