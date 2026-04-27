@@ -136,7 +136,7 @@ const Workspace = () => {
   const [doneCollapsed, setDoneCollapsed] = useState(true);
   const [showPostSurvey, setShowPostSurvey] = useState(false);
   const [draftSaving, setDraftSaving] = useState(false);
-  const [feedbackCanAdvance, setFeedbackCanAdvance] = useState(false);
+  const [confirmAdvanceTaskId, setConfirmAdvanceTaskId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const composeFileInputRef = useRef<HTMLInputElement>(null);
@@ -405,7 +405,6 @@ const Workspace = () => {
   };
 
   const openFeedbackForTask = (task: Task, defaultTab: "answer" | "self" = "answer") => {
-    setFeedbackCanAdvance(false);
     setFeedbackTab(defaultTab);
     setFeedbackTask(task);
     window.setTimeout(() => {
@@ -1190,15 +1189,18 @@ const Workspace = () => {
   };
 
   const closeFeedbackModal = () => {
-    setFeedbackCanAdvance(false);
     setFeedbackTask(null);
   };
 
-  // ---- Advance to next task from feedback modal ----
-  const advance = async () => {
-    if (!feedbackTask) return;
-    await finalizeTaskAndUnlock(feedbackTask);
-    closeFeedbackModal();
+  // ---- Advance to next task: now only triggered by manual button in task list ----
+  const advanceTaskById = async (taskId: string) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    await finalizeTaskAndUnlock(task);
+    setConfirmAdvanceTaskId(null);
+    if (feedbackTask?.id === taskId) {
+      setFeedbackTask(null);
+    }
   };
 
   // ---- Real uploads ----
@@ -2195,6 +2197,30 @@ const Workspace = () => {
                     <div className="mt-2 text-xs text-muted-foreground">{completedCount} / {tasks.length} 已完成</div>
                   </div>
 
+      <AlertDialog
+        open={!!confirmAdvanceTaskId}
+        onOpenChange={(open) => !open && setConfirmAdvanceTaskId(null)}
+      >
+        <AlertDialogContent className="glass-strong border-white/10">
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认完成当前任务？</AlertDialogTitle>
+            <AlertDialogDescription>
+              确认后将解锁下一任务，且无法回退当前任务的进行状态。请确认你已完成自评和（可选的）任务体验问卷。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>再想想</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (confirmAdvanceTaskId) void advanceTaskById(confirmAdvanceTaskId);
+              }}
+              className="bg-gradient-gold text-primary-foreground hover:opacity-95"
+            >
+              确认完成并解锁
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
               <ScrollArea className="flex-1">
                 <div className="space-y-4 px-5 py-4">
@@ -2263,17 +2289,18 @@ const Workspace = () => {
                       const isDone = st === "done";
                       const requiresRetry = st === "needs_resubmission";
                       const materials = getTaskMaterials(simCode, t.order_index);
+                      const selfEvalSaved = Boolean(selfEvalMap[t.id]?.submitted_at);
+                      const canManuallyAdvance = st === "feedback_pending" && selfEvalSaved;
+                      const handleCardClick = () => {
+                        if (st === "feedback_pending") openFeedbackForTask(t, "self");
+                        else if (st === "needs_resubmission") openFeedbackForTask(t, "answer");
+                        else if (st === "done") openFeedbackForTask(t, "answer");
+                      };
                       return (
-                        <button
+                        <div
                           key={t.id}
-                          type="button"
-                          onClick={() => {
-                            if (st === "feedback_pending") openFeedbackForTask(t, "self");
-                            else if (st === "needs_resubmission") openFeedbackForTask(t, "answer");
-                            else if (st === "done") openFeedbackForTask(t, "answer");
-                          }}
                           className={cn(
-                            "w-full rounded-3xl border p-4 text-left transition",
+                            "w-full rounded-3xl border p-4 text-left transition cursor-pointer",
                             isActive
                               ? requiresRetry
                                 ? "border-amber-500/35 bg-amber-500/7"
@@ -2282,6 +2309,15 @@ const Workspace = () => {
                                 ? "border-emerald-500/20 bg-emerald-500/5"
                                 : "border-white/8 bg-white/[0.02]",
                           )}
+                          role="button"
+                          tabIndex={0}
+                          onClick={handleCardClick}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              handleCardClick();
+                            }
+                          }}
                         >
                           <div className="flex items-start gap-3">
                             <div className={cn(
@@ -2340,6 +2376,7 @@ const Workspace = () => {
                                           key={material.id}
                                           href={material.url}
                                           download={material.filename}
+                                          onClick={(e) => e.stopPropagation()}
                                           className="flex items-center gap-2 rounded-xl px-2 py-1.5 transition hover:bg-white/5"
                                         >
                                           <Paperclip className="h-3 w-3 text-primary" />
@@ -2350,9 +2387,27 @@ const Workspace = () => {
                                   )}
                                 </div>
                               )}
+                              {canManuallyAdvance && (
+                                <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setConfirmAdvanceTaskId(t.id);
+                                    }}
+                                    className="w-full bg-gradient-gold text-primary-foreground hover:opacity-95"
+                                  >
+                                    完成并解锁下一任务
+                                  </Button>
+                                  <p className="mt-1.5 text-[11px] text-muted-foreground">
+                                    自评已保存。确认后才会进入下一任务，不会自动推进。
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        </button>
+                        </div>
                       );
                     })}
 
@@ -2480,42 +2535,27 @@ const Workspace = () => {
                       taskId={feedbackTask.id}
                       simulationCode={simCode}
                       taskOrderIndex={feedbackTask.order_index}
-                      onSubmitted={() => setFeedbackCanAdvance(true)}
                     />
                   </div>
                 )}
 
-              <div className="flex justify-end border-t border-white/5 pt-4">
-                <div className="flex flex-col items-end gap-2">
-                  {feedbackStatus?.submission_quality === "retry" ? (
-                    <div className="text-xs text-amber-200">当前提交已记录，但需要重新提交后才能进入下一任务。</div>
-                  ) : !selfEvalReady && !isReviewMode ? (
-                    <div className="text-xs text-muted-foreground">先完成自评，才能进入下一个任务。</div>
-                  ) : selfEvalReady && !feedbackCanAdvance && !isReviewMode ? (
-                    <div className="text-xs text-muted-foreground">自评已保存，请先完成上方任务体验问卷。</div>
-                  ) : null}
-                  {!isReviewMode && (
-                    <Button
-                      type="button"
-                      onClick={feedbackStatus?.submission_quality === "retry" ? closeFeedbackModal : advance}
-                      disabled={feedbackStatus?.submission_quality !== "retry" && (!selfEvalReady || !feedbackCanAdvance)}
-                      className="bg-gradient-gold text-primary-foreground hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {feedbackStatus?.submission_quality === "retry"
-                        ? "关闭反馈"
-                        : selfEvalReady && feedbackCanAdvance
-                          ? "进入下一个任务 →"
-                          : selfEvalReady
-                            ? "请先完成体验问卷"
-                            : "请先完成自评"}
-                    </Button>
-                  )}
-                  {isReviewMode && (
-                    <Button type="button" onClick={closeFeedbackModal} className="bg-gradient-gold text-primary-foreground hover:opacity-95">
-                      关闭回看
-                    </Button>
-                  )}
+              <div className="flex flex-col gap-3 border-t border-white/5 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-xs text-muted-foreground">
+                  {feedbackStatus?.submission_quality === "retry"
+                    ? "当前提交未达标准，请按反馈要求重新提交。"
+                    : isReviewMode
+                      ? "回看模式：可随时关闭。"
+                      : selfEvalReady
+                        ? "自评已保存。关闭本窗口后，请到右侧任务列表手动点击「完成并解锁下一任务」。"
+                        : "先完成自评，再回到任务列表手动解锁下一任务。"}
                 </div>
+                <Button
+                  type="button"
+                  onClick={closeFeedbackModal}
+                  className="bg-gradient-gold text-primary-foreground hover:opacity-95"
+                >
+                  关闭
+                </Button>
               </div>
             </>
           )}
