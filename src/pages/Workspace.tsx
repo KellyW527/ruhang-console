@@ -881,8 +881,7 @@ const Workspace = () => {
     upsertTaskStatus(task.id, { status: "done", score: currentScore });
     setCompletionAverageScore(tasks.length ? Math.round(totalScore / tasks.length) : null);
     setCompletionAt(new Date().toISOString());
-    setCompletionOpen(true);
-    // 同时弹出出项问卷（必填，提交后才能查证书）
+    // 先弹出出项问卷（必填）；问卷提交后再弹"项目交付完成"卡片，避免两个 Dialog 互相盖住。
     setShowPostSurvey(true);
 
     const leaderConversation = convs.find((item) => getConversationKind(item, simCode) === "leader");
