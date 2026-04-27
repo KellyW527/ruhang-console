@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AuthBrandPanel } from "@/components/marketing/AuthBrandPanel";
@@ -23,6 +24,7 @@ const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
   /** 注册成功（邮件已发出）后展示验证提示界面，禁止直接进入 Dashboard */
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
@@ -44,6 +46,10 @@ const Register = () => {
     }
     if (password.length < 8) {
       toast.error("密码至少需要 8 位");
+      return;
+    }
+    if (!agreed) {
+      toast.error("请先阅读并同意《用户协议》与《隐私政策》");
       return;
     }
     setLoading(true);
@@ -177,7 +183,23 @@ const Register = () => {
               <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 bg-secondary/50 border-border/50 focus:border-primary" placeholder="至少 8 位，建议含字母与数字" minLength={8} />
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full gradient-gold text-primary-foreground border-0 hover:opacity-90 h-11">
+            <div className="flex items-start gap-2.5 rounded-lg border border-border/40 bg-secondary/20 p-3">
+              <Checkbox
+                id="agree"
+                checked={agreed}
+                onCheckedChange={(v) => setAgreed(v === true)}
+                className="mt-0.5"
+              />
+              <Label htmlFor="agree" className="text-xs leading-relaxed text-muted-foreground font-normal cursor-pointer">
+                我已阅读并同意{" "}
+                <Link to="/terms" target="_blank" className="text-primary hover:underline">《用户协议》</Link>
+                {" 与 "}
+                <Link to="/privacy" target="_blank" className="text-primary hover:underline">《隐私政策》</Link>
+                ，同意接收账号相关邮件通知。
+              </Label>
+            </div>
+
+            <Button type="submit" disabled={loading || !agreed} className="w-full gradient-gold text-primary-foreground border-0 hover:opacity-90 h-11 disabled:opacity-50">
               {loading ? "创建账号中..." : "创建账号"}
             </Button>
           </form>
@@ -190,11 +212,7 @@ const Register = () => {
           </p>
 
           <p className="text-xs text-muted-foreground text-center leading-relaxed">
-            创建账号即代表你同意{" "}
-            <Link to="/terms" className="text-primary hover:underline">《用户协议》</Link>
-            {" 与 "}
-            <Link to="/privacy" className="text-primary hover:underline">《隐私政策》</Link>
-            。注册后需要完成邮箱验证才能开始使用。
+            注册后需要完成邮箱验证才能开始使用。
           </p>
         </div>
       </div>

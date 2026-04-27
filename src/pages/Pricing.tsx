@@ -4,7 +4,13 @@ import { Navbar } from "@/components/marketing/Navbar";
 import { Footer } from "@/components/marketing/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, ArrowRight, Sparkles, Crown, Zap, Package } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { CheckCircle, ArrowRight, Sparkles, Crown, Zap, Package, X, HelpCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -85,6 +91,49 @@ const SINGLE_PURCHASES = [
   { key: "single_1", count: 1, price: "¥22", desc: "单个项目额度" },
   { key: "single_2", count: 2, price: "¥44", desc: "两个项目额度" },
   { key: "single_3", count: 3, price: "¥66", desc: "三个项目额度" },
+];
+
+type Cell = boolean | string;
+const COMPARISON: { feature: string; free: Cell; basic: Cell; premium: Cell }[] = [
+  { feature: "可解锁项目数", free: "1（兴通投行 IPO）", basic: "1 + 自选 3 个 Pro", premium: "1 + 自选 10 个 Pro" },
+  { feature: "覆盖赛道", free: "投行 IBD", basic: "可跨 4 大赛道", premium: "全部 4 大赛道" },
+  { feature: "完整任务流程 + AI 反馈", free: true, basic: true, premium: true },
+  { feature: "结业证书 + 能力报告", free: true, basic: true, premium: true },
+  { feature: "项目库新项目优先解锁", free: false, basic: false, premium: true },
+  { feature: "优先客服支持", free: false, basic: false, premium: true },
+  { feature: "支持升级补差价", free: false, basic: "升级到高级 ¥139", premium: "—" },
+  { feature: "有效期", free: "永久", basic: "30 天周期", premium: "30 天周期" },
+];
+
+const FAQS = [
+  {
+    q: "免费体验和付费会员的核心区别是什么？",
+    a: "免费体验固定只能做「兴通投行 IPO」一个项目，但流程、AI 反馈、证书、能力报告完全相同。付费会员的差异在于：可以解锁更多 Pro 项目、跨赛道学习、获得新项目优先体验权。",
+  },
+  {
+    q: "月度会员到期后会自动续费吗？可以取消吗？",
+    a: "会自动续费。订阅会按下单日的次月同一日扣款，你可以在「设置 → 订阅管理」里随时取消，取消后当前周期内仍可正常使用，到期后停止续费，不再扣款。",
+  },
+  {
+    q: "基础会员能升级到高级会员吗？",
+    a: "可以。升级只需补差价 ¥139（198 - 59）。升级后总额度按 11 个项目计算（1 免费 + 10 Pro），已使用项目数自动继承，剩余额度 = 11 - 已用项目数。",
+  },
+  {
+    q: "单买项目和会员的区别？哪个更划算？",
+    a: "单买项目是永久解锁，不会过期，适合只想完成 1–3 个特定项目的同学。会员是 30 天周期套餐，适合想多体验、跨赛道学习的同学。如果你只想做 1–2 个项目，单买更省钱；3 个以上建议直接订阅基础会员。",
+  },
+  {
+    q: "退款政策是什么？",
+    a: "购买后 7 天内、且尚未开始任何 Pro 项目的，可联系客服全额退款。已开始的项目按已消耗的项目额度比例扣减后退款。免费体验项目不影响退款。",
+  },
+  {
+    q: "支付安全吗？发票怎么开？",
+    a: "支付全程通过 Stripe 处理，符合 PCI-DSS 国际安全标准，我们的服务器从不接触你的信用卡信息。如需开具电子发票，请在购买后联系客服，提供订单号与抬头信息即可。",
+  },
+  {
+    q: "完成项目后我会得到什么？",
+    a: "每完成一个项目你会得到：① 一份带 5 维评分的能力报告；② 一张可下载的结业证书；③ 全部交付物（PPT / Excel / Memo）作为作品集留存；④ 对应的能力勋章解锁到你的档案。",
+  },
 ];
 
 const Pricing = () => {
@@ -209,6 +258,83 @@ const Pricing = () => {
             ))}
           </div>
 
+          {/* 套餐对比表 */}
+          <div className="space-y-6">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-display font-semibold text-foreground">详细功能对比</h2>
+              <p className="text-sm text-muted-foreground">把三档套餐放在一起，看清楚再决定。</p>
+            </div>
+            <div className="overflow-hidden rounded-2xl border border-border/60 bg-secondary/20">
+              {/* 桌面端表格 */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/60 bg-background/40">
+                      <th className="px-5 py-4 text-left font-medium text-muted-foreground w-[34%]">功能</th>
+                      <th className="px-5 py-4 text-center font-display font-semibold text-foreground">免费体验</th>
+                      <th className="px-5 py-4 text-center font-display font-semibold text-foreground">基础月度</th>
+                      <th className="px-5 py-4 text-center font-display font-semibold text-primary">
+                        高级月度
+                        <Badge className="ml-2 bg-primary/20 text-primary border-primary/30 border text-[10px]">推荐</Badge>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {COMPARISON.map((row, i) => (
+                      <tr key={row.feature} className={i % 2 === 0 ? "bg-background/20" : ""}>
+                        <td className="px-5 py-3.5 text-foreground/90">{row.feature}</td>
+                        {(["free", "basic", "premium"] as const).map((col) => {
+                          const v = row[col];
+                          return (
+                            <td key={col} className="px-5 py-3.5 text-center">
+                              {typeof v === "boolean" ? (
+                                v ? (
+                                  <CheckCircle className="inline h-4 w-4 text-primary" />
+                                ) : (
+                                  <X className="inline h-4 w-4 text-muted-foreground/40" />
+                                )
+                              ) : (
+                                <span className="text-xs text-foreground/80">{v}</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {/* 移动端：分块卡片 */}
+              <div className="md:hidden divide-y divide-border/40">
+                {COMPARISON.map((row) => (
+                  <div key={row.feature} className="p-4 space-y-2">
+                    <div className="text-sm font-medium text-foreground">{row.feature}</div>
+                    <div className="grid grid-cols-3 gap-2 text-xs">
+                      {(["free", "basic", "premium"] as const).map((col) => {
+                        const v = row[col];
+                        const labels = { free: "免费", basic: "基础", premium: "高级" };
+                        return (
+                          <div key={col} className="rounded-lg border border-border/40 bg-background/30 px-2 py-2 text-center">
+                            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{labels[col]}</div>
+                            {typeof v === "boolean" ? (
+                              v ? (
+                                <CheckCircle className="inline h-3.5 w-3.5 text-primary" />
+                              ) : (
+                                <X className="inline h-3.5 w-3.5 text-muted-foreground/40" />
+                              )
+                            ) : (
+                              <span className="text-foreground/80 text-[11px] leading-tight">{v}</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
           {/* 升级补差价说明 */}
           <div className="mx-auto max-w-3xl rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center space-y-2">
             <div className="text-sm font-medium text-foreground">已是基础会员？升级到高级仅需补差价 ¥139</div>
@@ -274,6 +400,30 @@ const Pricing = () => {
               <li>• 单买的项目额度永久有效，订阅会员的项目解锁额度跟随订阅周期</li>
               <li>• 如需退款，请在购买后 7 天内联系客服</li>
             </ul>
+          </div>
+
+          {/* FAQ */}
+          <div className="mx-auto max-w-3xl space-y-6">
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary border border-border text-xs text-muted-foreground">
+                <HelpCircle className="h-3 w-3" />
+                常见问题
+              </div>
+              <h2 className="text-2xl font-display font-semibold text-foreground">还有疑问？</h2>
+              <p className="text-sm text-muted-foreground">最常被问到的 7 个问题，先看这里。</p>
+            </div>
+            <Accordion type="single" collapsible className="rounded-2xl border border-border/60 bg-secondary/20 px-5">
+              {FAQS.map((item, i) => (
+                <AccordionItem key={i} value={`item-${i}`} className={i === FAQS.length - 1 ? "border-b-0" : ""}>
+                  <AccordionTrigger className="text-left text-sm font-medium text-foreground hover:no-underline">
+                    {item.q}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm text-muted-foreground leading-relaxed">
+                    {item.a}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </div>
         </div>
       </main>
