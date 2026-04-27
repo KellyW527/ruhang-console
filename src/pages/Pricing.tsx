@@ -136,6 +136,7 @@ const FAQS = [
   },
 ];
 
+const Pricing = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loadingKey, setLoadingKey] = useState<string | null>(null);
