@@ -124,6 +124,8 @@ export async function submitPostSimulationSurvey(payload: PostSurveyPayload) {
     overall_rating: payload.overallRating,
     most_valuable: payload.mostValuable ?? null,
     improvement: payload.improvement ?? null,
+    share_with_partner: payload.shareWithPartner,
+    share_consent_at: payload.shareWithPartner ? new Date().toISOString() : null,
   });
   if (error) throw error;
 }

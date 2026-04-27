@@ -76,15 +76,17 @@ export function PostSimulationSurvey({
   const [overallRating, setOverallRating] = useState(0);
   const [mostValuable, setMostValuable] = useState("");
   const [improvement, setImprovement] = useState("");
+  const [shareWithPartner, setShareWithPartner] = useState<boolean | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const isValid =
     Object.values(scaleValues).every((v) => v >= 1) &&
     nps !== null &&
-    overallRating >= 1;
+    overallRating >= 1 &&
+    shareWithPartner !== null;
 
   const handleSubmit = async () => {
-    if (!isValid || nps === null) return;
+    if (!isValid || nps === null || shareWithPartner === null) return;
     setSubmitting(true);
     try {
       await submitPostSimulationSurvey({
@@ -98,6 +100,7 @@ export function PostSimulationSurvey({
         overallRating,
         mostValuable: mostValuable.trim() || null,
         improvement: improvement.trim() || null,
+        shareWithPartner,
       });
       onSubmitted();
     } catch (error: any) {
