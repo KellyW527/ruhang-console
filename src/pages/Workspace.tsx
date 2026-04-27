@@ -2128,26 +2128,78 @@ const Workspace = () => {
 
             <aside
               className={cn(
-                "glass-deep w-full shrink-0 overflow-hidden rounded-[28px] lg:flex lg:w-[340px] lg:flex-col",
+                "glass-deep w-full shrink-0 overflow-hidden rounded-[28px] transition-[width] duration-200 ease-out lg:flex lg:flex-col",
+                rightCollapsed ? "lg:w-[60px]" : "lg:w-[340px]",
                 mobilePanel === "tasks" ? "flex flex-1 flex-col" : "hidden",
               )}
             >
-              <div className="border-b border-white/5 px-5 py-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="eyebrow">Execution</div>
-                    <h3 className="mt-2 font-display text-xl font-semibold">任务推进</h3>
-                  </div>
-                  <div className="rounded-2xl border border-primary/20 bg-primary/10 px-3 py-2 text-right">
-                    <div className="text-[10px] uppercase tracking-[0.18em] text-primary">Progress</div>
-                    <div className="mt-1 font-mono text-lg text-primary">{overall}%</div>
-                  </div>
+              {rightCollapsed && (
+                <div className="hidden h-full flex-col items-center gap-3 px-2 py-4 lg:flex">
+                  <button
+                    type="button"
+                    onClick={() => setRightCollapsed(false)}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-muted-foreground transition hover:border-primary/30 hover:bg-primary/10 hover:text-primary"
+                    title="展开任务面板"
+                  >
+                    <PanelRightOpen className="h-4 w-4" />
+                  </button>
+                  <div className="my-1 h-px w-6 bg-white/10" />
+                  <button
+                    type="button"
+                    onClick={() => setRightCollapsed(false)}
+                    className="flex h-9 w-9 flex-col items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"
+                    title={`进度 ${overall}%`}
+                  >
+                    <span className="font-mono text-[10px] leading-none">{overall}%</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRightCollapsed(false)}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-muted-foreground transition hover:border-white/20 hover:text-foreground"
+                    title="任务看板"
+                  >
+                    <ListTodo className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRightCollapsed(false)}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-muted-foreground transition hover:border-white/20 hover:text-foreground"
+                    title="语音任务"
+                  >
+                    <Phone className="h-4 w-4" />
+                  </button>
                 </div>
-                <div className="mt-4 h-2 w-full rounded-full bg-white/5">
-                  <div className="h-full rounded-full bg-gradient-gold transition-all" style={{ width: `${overall}%` }} />
-                </div>
-                <div className="mt-2 text-xs text-muted-foreground">{completedCount} / {tasks.length} 已完成</div>
-              </div>
+              )}
+
+              {!rightCollapsed && (
+                <>
+                  <div className="border-b border-white/5 px-5 py-5">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="eyebrow">Execution</div>
+                        <h3 className="mt-2 font-display text-xl font-semibold">任务推进</h3>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="rounded-2xl border border-primary/20 bg-primary/10 px-3 py-2 text-right">
+                          <div className="text-[10px] uppercase tracking-[0.18em] text-primary">Progress</div>
+                          <div className="mt-1 font-mono text-lg text-primary">{overall}%</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setRightCollapsed(true)}
+                          className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-white/5 hover:text-foreground lg:inline-flex"
+                          title="收起面板"
+                        >
+                          <PanelRightClose className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-4 h-2 w-full rounded-full bg-white/5">
+                      <div className="h-full rounded-full bg-gradient-gold transition-all" style={{ width: `${overall}%` }} />
+                    </div>
+                    <div className="mt-2 text-xs text-muted-foreground">{completedCount} / {tasks.length} 已完成</div>
+                  </div>
+
 
               <ScrollArea className="flex-1">
                 <div className="space-y-4 px-5 py-4">
