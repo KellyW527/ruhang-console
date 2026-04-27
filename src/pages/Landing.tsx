@@ -453,6 +453,105 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* ========================= What you will produce ========================= */}
+      <section className="relative py-24">
+        <div className="container mx-auto px-6">
+          <div className="mx-auto mb-14 max-w-2xl text-center">
+            <div className="eyebrow">作品集级别交付物</div>
+            <h2 className="mt-3 font-display text-4xl font-bold">
+              你会真正<span className="text-gradient-gold">产出</span>这些东西
+            </h2>
+            <p className="mt-4 text-muted-foreground">
+              不是练习册、不是打卡，是一份份能直接放进实习简历、被 HR 拿来当谈资的真实交付物。
+            </p>
+          </div>
+
+          <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              {
+                icon: Presentation,
+                tag: "PPT · 投行",
+                title: "行业研究框架",
+                desc: "20+ 页的行业 mapping、竞争格局、关键指标，附 Leader 批注。",
+                meta: ["20+ 页", "中英对照", "招股书可复用"],
+              },
+              {
+                icon: FileSpreadsheet,
+                tag: "Excel · 并购",
+                title: "五年利润表预测模型",
+                desc: "完整的收入/成本/费用/税/净利模型，含敏感性分析与 Comps 表。",
+                meta: ["6 个 sheet", "公式驱动", "可拷贝"],
+              },
+              {
+                icon: FileSignature,
+                tag: "Word · PE",
+                title: "投委会 Memo",
+                desc: "Deal Thesis、市场、商业模式、估值、风险一份打通的投委会备忘录。",
+                meta: ["8–12 页", "标准结构", "PE 风格"],
+              },
+              {
+                icon: ScrollText,
+                tag: "PDF · 卖方研究",
+                title: "公司深度报告",
+                desc: "覆盖行业、公司、盈利模型、估值与目标价，按券商研究所标准模板撰写。",
+                meta: ["30+ 页", "含盈利模型", "目标价拆解"],
+              },
+            ].map((p, i) => (
+              <motion.div
+                key={p.title}
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.06 }}
+                className="glass group relative flex flex-col overflow-hidden rounded-2xl p-6 transition hover:border-primary/30"
+              >
+                {/* 模拟"文档预览"上半区 */}
+                <div className="relative mb-5 h-28 overflow-hidden rounded-xl border border-primary/15 bg-gradient-to-br from-primary/10 via-surface-1/60 to-transparent">
+                  <div className="absolute inset-0 p-3">
+                    <div className="mb-2 h-1 w-1/3 rounded bg-primary/40" />
+                    <div className="space-y-1">
+                      <div className="h-1 w-full rounded bg-white/10" />
+                      <div className="h-1 w-[90%] rounded bg-white/10" />
+                      <div className="h-1 w-[75%] rounded bg-white/10" />
+                      <div className="h-1 w-[85%] rounded bg-white/10" />
+                      <div className="h-1 w-[60%] rounded bg-white/10" />
+                    </div>
+                    <div className="mt-3 flex gap-1.5">
+                      <div className="h-6 w-10 rounded bg-primary/20" />
+                      <div className="h-6 w-10 rounded bg-white/5" />
+                      <div className="h-6 w-10 rounded bg-white/5" />
+                    </div>
+                  </div>
+                  <div className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-gold text-primary-foreground shadow-glow-gold">
+                    <p.icon className="h-3.5 w-3.5" />
+                  </div>
+                </div>
+
+                <div className="text-[10px] uppercase tracking-[0.18em] text-primary">{p.tag}</div>
+                <h3 className="mt-2 font-display text-base font-semibold">{p.title}</h3>
+                <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{p.desc}</p>
+
+                <div className="mt-4 flex flex-wrap gap-1.5">
+                  {p.meta.map((m) => (
+                    <span
+                      key={m}
+                      className="rounded-full border border-border bg-secondary/40 px-2 py-0.5 text-[10px] text-muted-foreground"
+                    >
+                      {m}
+                    </span>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="mx-auto mt-10 flex max-w-3xl items-center justify-center gap-3 text-xs text-muted-foreground">
+            <CheckCircle2 className="h-3.5 w-3.5 text-primary" />
+            所有交付物完成后自动归档到你的「作品集」，可一键导出 PDF 发给 HR。
+          </div>
+        </div>
+      </section>
+
       {/* ========================= Testimonials ========================= */}
       <section className="py-24">
         <div className="container mx-auto px-6">
