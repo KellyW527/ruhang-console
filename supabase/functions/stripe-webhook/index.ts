@@ -176,8 +176,8 @@ async function handleSubscriptionUpdated(
   const fallbackStart = normalizeUnixTimestamp(subscription.start_date) ?? nowSec;
   const fallbackEnd = fallbackStart + 30 * 24 * 60 * 60;
 
-  const effectiveStart = isValidUnixTimestamp(rawStart) ? rawStart : fallbackStart;
-  const effectiveEnd = isValidUnixTimestamp(rawEnd) ? rawEnd : fallbackEnd;
+  const effectiveStart = coerceStripeTimestamp(rawStart, fallbackStart);
+  const effectiveEnd = coerceStripeTimestamp(rawEnd, fallbackEnd);
 
   if (!isValidUnixTimestamp(rawStart) || !isValidUnixTimestamp(rawEnd)) {
     console.warn("[webhook] subscription missing period fields, using fallback", {
@@ -250,8 +250,13 @@ function getSubscriptionPeriod(subscription: StripeSubscription): { rawStart: nu
 }
 
 function normalizeUnixTimestamp(value: unknown): number | undefined {
+  return coerceStripeTimestamp(value);
+}
+
+function coerceStripeTimestamp(value: unknown, fallback?: number): number | undefined {
   const timestamp = typeof value === "string" ? Number(value) : value;
-  return isValidUnixTimestamp(timestamp) ? timestamp : undefined;
+  if (isValidUnixTimestamp(timestamp)) return timestamp;
+  return isValidUnixTimestamp(fallback) ? fallback : undefined;
 }
 
 function isValidUnixTimestamp(value: unknown): value is number {
@@ -259,14 +264,15 @@ function isValidUnixTimestamp(value: unknown): value is number {
 }
 
 function unixTimestampToIso(value: unknown, fallbackSec: number, label: string) {
-  const timestamp = normalizeUnixTimestamp(value) ?? fallbackSec;
+  const timestamp = coerceStripeTimestamp(value, fallbackSec) ?? Math.floor(Date.now() / 1000);
   const date = new Date(timestamp * 1000);
   if (Number.isNaN(date.getTime())) {
-    const fallbackDate = new Date(fallbackSec * 1000);
+    const safeFallback = coerceStripeTimestamp(fallbackSec, Math.floor(Date.now() / 1000))!;
+    const fallbackDate = new Date(safeFallback * 1000);
     console.warn("[webhook] invalid subscription timestamp, using fallback", {
       label,
       value,
-      fallbackSec,
+      fallbackSec: safeFallback,
     });
     return fallbackDate.toISOString();
   }
