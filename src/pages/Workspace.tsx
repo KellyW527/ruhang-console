@@ -2458,8 +2458,8 @@ const Workspace = () => {
                       userSimulationId={usId}
                       onSaved={(v) => {
                         setSelfEvalMap((m) => ({ ...m, [feedbackTask.id]: v }));
-                        // Auto-advance: finalize current task and unlock next
-                        void advance();
+                        // 不再自动 advance，留时间给用户填"任务体验问卷"，
+                        // 用户主动点底部「进入下一个任务」按钮才推进
                       }}
                       readOnly={isReviewMode}
                     />
