@@ -148,7 +148,9 @@ const Workspace = () => {
   const preferredDisplayName = getPreferredDisplayName(profile ?? null, user?.email);
   const starterKitAssets = getStarterKitAssets(simCode);
   const phoneScript = getPhoneScript(simCode);
-  const completedCount = Object.values(taskStatuses).filter((s) => s.status === "done").length;
+  const completedCount = progressLoaded
+  ? Object.values(taskStatuses).filter((s) => s.status === "done").length
+  : 0;
   const overall = tasks.length ? Math.round((completedCount / tasks.length) * 100) : 0;
   const activeTask = tasks.find((t) => {
     const status = taskStatuses[t.id]?.status;
