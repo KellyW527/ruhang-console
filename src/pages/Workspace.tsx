@@ -610,14 +610,24 @@ const Workspace = () => {
       }
     }
 
-    // 3) DB 也没有可进行的任务 → fallback 只允许第一个任务或前一个已 done 的紧邻任务。
-    const sorted = [...tasks].sort((a, b) => a.order_index - b.order_index);
-    const fallbackTask = sorted.find((task) => {
-      if (taskStatuses[task.id]?.status === "done") return false;
-      if (task.order_index === 0) return true;
-      const prev = sorted.find((t) => t.order_index === task.order_index - 1);
-      return prev ? taskStatuses[prev.id]?.status === "done" : false;
-    });
+    // 3) DB 也没有可进行的任务 → fallback 只允许前一个已 done 的紧邻任务激活。
+//    注意：Task 1（order_index === 0）必须也满足"前一任务已 done"的条件才能激活，
+//    否则刷新时会把已推进到后面的任务重置回 Task 1。
+const sorted = [...tasks].sort((a, b) => a.order_index - b.order_index);
+
+// 只有完全没有任何进度记录时，才允许激活 Task 1
+const hasAnyProgress = Object.keys(map).length > 0 || Object.keys(taskStatuses).length > 0;
+
+const fallbackTask = sorted.find((task) => {
+  if (taskStatuses[task.id]?.status === "done") return false;
+  if (map[task.id]?.status === "done") return false;
+  if (task.order_index === 0) return !hasAnyProgress;
+  const prev = sorted.find((t) => t.order_index === task.order_index - 1);
+  const prevDone =
+    taskStatuses[prev?.id ?? ""]?.status === "done" ||
+    map[prev?.id ?? ""]?.status === "done";
+  return prevDone;
+});
 
     if (!fallbackTask) return null;
 
