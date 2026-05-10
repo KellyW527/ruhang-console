@@ -1,77 +1,142 @@
-我会先修工作台的任务状态机，而不是继续改无关 UI。
+## 目标
 
-## 我定位到的核心问题
+把"AI 能力"第一次接入到入行 RuHang，统一走你自部署的 MiMo（OpenAI 兼容）服务。两个落地场景：
+1. **Workspace 对话回复**：NPC 同事/上级对学员发出的消息做实时回复，替代当前 `workspace-runtime.ts` 里硬编码的剧本回复。
+2. **结业能力总结**：项目完成时，根据该用户在该项目里的全部任务、自评、提交内容，由 MiMo 生成一段中文能力画像，写入数据库并展示在证书/能力档案页。
 
-当前 `Workspace.tsx` 里任务推进被拆成了多段状态：
+不接入：任务自动评分、Pre/Post 问卷分析（保持现状）。
+
+## 架构总览
 
 ```text
-active -> 提交 -> feedback_pending -> 自评 -> 手动确认 -> done -> 下一个 active
+前端 (React)
+  │  ① 用户在 Workspace 发消息 / 点 "生成能力总结"
+  ▼
+Supabase Edge Function: ai-proxy
+  │  - 校验 JWT（用户必须登录）
+  │  - 拼 system prompt + 上下文
+  │  - 调 MiMo: ${MIMO_BASE_URL}/v1/chat/completions
+  │  - 流式 SSE 透传给前端（对话场景）
+  │  - 一次性 JSON（总结场景）
+  ▼
+你自部署的 MiMo (vLLM / SGLang / Ollama)
 ```
 
-但现在有两个脆弱点会直接造成你看到的问题：
+为什么走 edge function 而不是前端直连：
+- MiMo 的 API Key / Base URL 不能暴露到浏览器
+- 统一加 prompt 模板和敏感词兜底
+- 方便后面替换成别的模型
 
-1. **任务不开启**
-   - `ensureActiveTask()` 在找不到本地 `active` 时会尝试恢复任务，但如果数据库已有某条进度记录是非 `locked`，它直接 `return fallbackTask`，却没有把本地 `taskStatuses` 补成真实状态。
-   - 结果：数据库可能已经有 active/pending，但前端看板仍按 `locked` 渲染，表现就是“任务根本不开启”。
+## 需要的 Secrets（Lovable Cloud）
 
-2. **提交后不推进、反馈面板不出现**
-   - 提交后只靠当前 React state 立刻打开反馈弹窗；如果本地状态没同步、弹窗被关闭/刷新、或者数据库写入成功但本地没补齐，就会停在“看起来提交了，但没有反馈面板”的状态。
-   - 现在反馈弹窗的下一步按钮也不在弹窗内，而是要求用户去右侧任务列表点“完成并解锁下一任务”，这很容易被误认为“没有推进”。
+```
+MIMO_BASE_URL          例如 https://mimo.your-domain.com   （不带 /v1）
+MIMO_API_KEY           你部署时设置的 bearer token；没鉴权可填 "none"
+MIMO_MODEL             例如 XiaomiMiMo/MiMo-7B-RL
+```
 
-## 修复方案
+部署完后再填 URL 也行——edge function 启动时只读 env，不写死。
 
-### 1. 重写 `ensureActiveTask()` 的恢复逻辑
+## 实施方案
 
-修改 `src/pages/Workspace.tsx`：
+### 1. 新增 edge function `supabase/functions/ai-proxy/index.ts`
 
-- 先从本地找 `active / feedback_pending / needs_resubmission`。
-- 如果本地没有，再按当前模拟进度从数据库读取 `user_task_progress`，并把真实状态同步回 `taskStatuses`。
-- 如果数据库也没有任何可进行任务，才创建第一个任务的 `active` 记录。
-- 不再出现“数据库有记录，但前端仍显示 locked”的状态。
+两个 action（用 query 参数 `?mode=chat` / `?mode=summary` 区分）：
 
-### 2. 提交后强制进入反馈面板
+**mode=chat**（流式 NPC 回复）
+- 入参：`{ userSimulationId, taskId?, conversationId, history: [{role, content}], userMessage }`
+- 拉一次 `tasks.title/description` + `simulations.company/track` 拼上下文
+- system prompt 模板（中文）：
+  > 你正在扮演 {company} 的 {role}，与一名实习生在办公 IM 上沟通…
+- 透传 MiMo `stream:true` SSE 给前端
+- 错误码：401 未登录 / 429 限流 / 502 上游错误，全部带 CORS
 
-修改 `triggerSubmission()`：
+**mode=summary**（一次性能力画像）
+- 入参：`{ userSimulationId }`
+- 服务端聚合：`tasks` + `user_task_progress`（含 `self_eval`、`score`）+ `messages`（按 task 抓最近若干条用户文本）
+- 给 MiMo 一段结构化 prompt，要求返回 JSON：
+  ```json
+  {
+    "headline": "一句话能力定位",
+    "strengths": ["…","…","…"],
+    "improvements": ["…","…"],
+    "skill_scores": [{"dim":"建模严谨度","score":85}, …],
+    "summary_paragraph": "300 字以内的 narrative"
+  }
+  ```
+- 用 `response_format: { type: "json_object" }` + 在 prompt 里强约束
+- 写库：upsert 到新表 `simulation_ai_summaries`
 
-- 数据库写入成功或失败后，本地都立即更新当前任务状态。
-- 对通过提交：立即把任务设为 `feedback_pending` 并打开反馈面板的“自我评估”tab。
-- 对未达标提交：立即打开反馈面板的“标准答案/反馈”tab。
-- 增加一个短延迟兜底检查：如果当前任务已经是 `feedback_pending` 但弹窗没打开，自动重新打开，避免点击后无响应。
+### 2. 数据库迁移 `db/migrations/2026-04-28_add_ai_summary.sql`
 
-### 3. 把“完成并解锁下一任务”放回反馈弹窗里
+```sql
+create table public.simulation_ai_summaries (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null,
+  user_simulation_id uuid references public.user_simulations(id) on delete cascade not null unique,
+  model text not null,
+  payload jsonb not null,
+  created_at timestamptz not null default now()
+);
+alter table public.simulation_ai_summaries enable row level security;
+create policy "own ai summary" on public.simulation_ai_summaries
+  for select using (auth.uid() = user_id);
+create policy "own ai summary insert" on public.simulation_ai_summaries
+  for insert with check (auth.uid() = user_id);
+```
 
-现在用户保存自评后要去右侧列表点按钮，容易造成“提交后没有推进”的感觉。我会在反馈弹窗底部直接加主按钮：
+写入由 edge function 用 service role 完成，但读取用 RLS 直接给前端。
 
-- 自评未保存：按钮禁用，提示“先保存自评”。
-- 自评已保存：按钮显示“完成并进入下一任务”。
-- 点击后直接调用 `advanceTaskById()`，完成当前任务并激活下一个任务。
-- 右侧任务列表的按钮保留作为备选入口，但不再是唯一入口。
+### 3. 前端改动
 
-### 4. 修复最后一个任务完成后的问卷/证书流程冲突
+**a) Workspace 对话**（`src/pages/Workspace.tsx`）
+- 在用户发出 message 后，触发 `streamChat()` 调 `ai-proxy?mode=chat`
+- 边收 token 边把 NPC 消息 append 到 `messages`，UI 展示打字效果
+- 新建 helper `src/lib/ai.ts` 封装 SSE 解析（按 Lovable AI Gateway 的健壮解析模板）
+- 保留 `workspace-runtime.ts` 的剧本作为 fallback：MiMo 报错时退回硬编码回复，保证 demo 不崩
 
-当前最后一个任务完成时会同时打开“项目交付完成”弹窗和“出项问卷”弹窗，两个 Dialog 可能互相覆盖。我会改为：
+**b) 结业能力总结**
+- 在 `Certificate.tsx`（或上一轮要做的能力档案页）加载时：
+  - 先 `select * from simulation_ai_summaries where user_simulation_id=…`
+  - 没有就调 `ai-proxy?mode=summary` 触发生成（loading 态）
+  - 生成完渲染：headline 大字 + strengths/improvements 双栏 + skill_scores 雷达 + 总结段落
+- 提供 "重新生成" 按钮（限频：每 24h 一次，前端按 `created_at` 判定）
 
-- 最后一个任务完成后优先打开出项问卷。
-- 出项问卷提交后，再显示项目完成弹窗/证书入口。
-- 避免用户误以为完成后没反应。
+### 4. 配置
 
-### 5. 加最小必要日志与校验
+`supabase/config.toml` 加：
 
-- 保留关键 `console.warn/error`，用于下次如果还有问题能看到是数据库写入失败、RLS 拦截、还是状态同步失败。
-- 不添加大量无关日志，不污染页面。
+```toml
+[functions.ai-proxy]
+verify_jwt = true
+```
+
+### 5. 文档
+
+更新 `supabase/functions/README.md`，在底部追加 ai-proxy 部署 + secret 说明。
+
+## 不在本次范围
+
+- 不接 Lovable AI Gateway，全程走你自己的 MiMo
+- 不做提示词运营后台（system prompt 先写死在代码，方便后续 PR 调）
+- 不替换 Pre/Post 问卷的统计逻辑
+- 不做对话历史向量化/RAG，对话上下文用最近 N 条原文
+
+## 风险与对策
+
+| 风险 | 对策 |
+|------|------|
+| MiMo 服务挂掉 → 用户对话卡住 | 5s 超时 + fallback 到 `workspace-runtime.ts` 剧本 |
+| MiMo 输出非 JSON 导致总结解析失败 | summary 模式重试 1 次；仍失败则把原始文本存到 `payload.raw` 并显示降级 UI |
+| MiMo 自部署带宽有限 | edge function 加简单内存级 IP 限流（每用户 1 req/3s） |
+| 中文质量 | system prompt 显式要求"用大陆中文金融术语" |
 
 ## 涉及文件
 
-- `src/pages/Workspace.tsx`
-
-预计不需要改数据库结构，也不改刚刚新增的合作联系和公开授权字段。
-
-## 验证点
-
-修完后应满足：
-
-1. 进入工作台后，第一个任务会稳定显示为“进行中”，不会全是“未解锁”。
-2. 上传附件或邮件提交后，会立刻出现反馈/自评面板。
-3. 自评保存后，在同一个反馈弹窗里可以直接进入下一任务。
-4. 任务完成数、右侧任务状态、顶部进度同步更新。
-5. 最后一个任务完成后先问是否公开成果，提交问卷后再进入证书/完成入口。
+- 新增：`supabase/functions/ai-proxy/index.ts`
+- 新增：`db/migrations/2026-04-28_add_ai_summary.sql`
+- 新增：`src/lib/ai.ts`（SSE 解析 + summary 调用封装）
+- 修改：`src/pages/Workspace.tsx`（对话回复改成 MiMo 流式）
+- 修改：`src/pages/Certificate.tsx`（加载 / 生成 AI 总结块）
+- 修改：`supabase/config.toml`、`supabase/functions/README.md`
+- 之后通过 add_secret 让你录入 `MIMO_BASE_URL` / `MIMO_API_KEY` / `MIMO_MODEL`
