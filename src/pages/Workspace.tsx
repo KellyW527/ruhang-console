@@ -956,9 +956,9 @@ const Workspace = () => {
   ) => {
     const leaderConversation = convs.find((conversation) => getConversationKind(conversation, simCode) === "leader");
     const activeTaskNow = tasks.find((t) => {
-      const status = taskStatuses[t.id]?.status;
-      return status === "active" || status === "needs_resubmission";
-    });
+  const status = taskStatuses[t.id]?.status;
+  return status === "active" || status === "needs_resubmission" || status === "feedback_pending";
+});
 
     if (!activeTaskNow) {
       const pendingTask = tasks.find((t) => taskStatuses[t.id]?.status === "feedback_pending");
