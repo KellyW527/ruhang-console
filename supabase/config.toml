@@ -11,3 +11,11 @@ verify_jwt = false
 # redeem-quota 用户从配额选项目,需要登录态
 [functions.redeem-quota]
 verify_jwt = true
+
+# boss-reply: NPC 回复，调 MiMo，需要登录态
+[functions.boss-reply]
+verify_jwt = true
+
+# ai-summary: 项目结业能力画像，调 MiMo，需要登录态
+[functions.ai-summary]
+verify_jwt = true
