@@ -260,7 +260,7 @@ const Workspace = () => {
       setWsLoading(false);
     };
     load();
-  }, [user, id, nav, profile?.plan]);
+  }, [user?.id, id, nav, profile?.plan]);
 
   // ---- Load messages for active conv ----
   useEffect(() => {
