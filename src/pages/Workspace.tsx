@@ -584,9 +584,10 @@ const Workspace = () => {
       .select("task_id, status, score, self_eval, submission_type, submission_quality")
       .eq("user_simulation_id", usId);
 
+    const map: Record<string, TaskStatusEntry> = {};
+    const seMap: Record<string, SelfEvalValue | null> = {};
+
     if (dbProgress && dbProgress.length) {
-      const map: Record<string, TaskStatusEntry> = {};
-      const seMap: Record<string, SelfEvalValue | null> = {};
       dbProgress.forEach((p: any) => {
         map[p.task_id] = {
           status: p.status,
@@ -611,23 +612,18 @@ const Workspace = () => {
     }
 
     // 3) DB 也没有可进行的任务 → fallback 只允许前一个已 done 的紧邻任务激活。
-//    注意：Task 1（order_index === 0）必须也满足"前一任务已 done"的条件才能激活，
-//    否则刷新时会把已推进到后面的任务重置回 Task 1。
-const sorted = [...tasks].sort((a, b) => a.order_index - b.order_index);
-
-// 只有完全没有任何进度记录时，才允许激活 Task 1
-const hasAnyProgress = Object.keys(map).length > 0 || Object.keys(taskStatuses).length > 0;
-
-const fallbackTask = sorted.find((task) => {
-  if (taskStatuses[task.id]?.status === "done") return false;
-  if (map[task.id]?.status === "done") return false;
-  if (task.order_index === 0) return !hasAnyProgress;
-  const prev = sorted.find((t) => t.order_index === task.order_index - 1);
-  const prevDone =
-    taskStatuses[prev?.id ?? ""]?.status === "done" ||
-    map[prev?.id ?? ""]?.status === "done";
-  return prevDone;
-});
+    const sorted = [...tasks].sort((a, b) => a.order_index - b.order_index);
+    const hasAnyProgress = Object.keys(map).length > 0 || Object.keys(taskStatuses).length > 0;
+    const fallbackTask = sorted.find((task) => {
+      if (taskStatuses[task.id]?.status === "done") return false;
+      if (map[task.id]?.status === "done") return false;
+      if (task.order_index === 0) return !hasAnyProgress;
+      const prev = sorted.find((t) => t.order_index === task.order_index - 1);
+      const prevDone =
+        taskStatuses[prev?.id ?? ""]?.status === "done" ||
+        map[prev?.id ?? ""]?.status === "done";
+      return prevDone;
+    });
 
     if (!fallbackTask) return null;
 
@@ -966,9 +962,9 @@ const fallbackTask = sorted.find((task) => {
   ) => {
     const leaderConversation = convs.find((conversation) => getConversationKind(conversation, simCode) === "leader");
     const activeTaskNow = tasks.find((t) => {
-  const status = taskStatuses[t.id]?.status;
-  return status === "active" || status === "needs_resubmission" || status === "feedback_pending";
-});
+      const status = taskStatuses[t.id]?.status;
+      return status === "active" || status === "needs_resubmission" || status === "feedback_pending";
+    });
 
     if (!activeTaskNow) {
       const pendingTask = tasks.find((t) => taskStatuses[t.id]?.status === "feedback_pending");
