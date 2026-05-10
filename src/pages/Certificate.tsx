@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { getCatalogEntryByCode } from "@/data/simulation-catalog";
 import { getPostSimulationSurvey } from "@/lib/feedback";
 import { PostSimulationSurvey } from "@/components/feedback/PostSimulationSurvey";
+import { AbilitySummaryCard } from "@/components/certificate/AbilitySummaryCard";
 import { getPreferredDisplayName } from "@/lib/settings";
 import { toast } from "sonner";
 
@@ -463,6 +464,14 @@ export default function Certificate() {
             </div>
             <div>支持 LinkedIn / 简历 / 朋友圈分享</div>
           </div>
+
+          {/* AI 能力画像（结业后由 MiMo 生成） */}
+          {!needsPostSurvey && (
+            <AbilitySummaryCard
+              userSimulationId={data.userSimulationId}
+              simulationTitle={data.simulationTitle}
+            />
+          )}
         </div>
       </div>
 
