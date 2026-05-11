@@ -142,6 +142,7 @@ const Workspace = () => {
   const composeFileInputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const syncingProgressRef = useRef(false);
+  const ensuringActiveTaskRef = useRef(false);
   const composeBusy = composeSending || composeSentFlash || draftSaving;
   const runtime = getSimulationRuntime(simCode);
   const profilePreferences = normalizePreferences(profile?.preferences);
@@ -599,7 +600,17 @@ const Workspace = () => {
 
   const ensureActiveTask = async () => {
     if (!usId || !tasks.length || simulationStatus === "completed" || !progressLoaded) return null;
+    // 并发保护：同一时间只允许一次 ensureActiveTask 运行，防止多次并发调用互相覆盖状态。
+    if (ensuringActiveTaskRef.current) return null;
+    ensuringActiveTaskRef.current = true;
+    try {
+      return await _ensureActiveTaskInner();
+    } finally {
+      ensuringActiveTaskRef.current = false;
+    }
+  };
 
+  const _ensureActiveTaskInner = async () => {
     // 1) 已有正在进行/等待自评/需重交的任务 → 直接返回。
     const currentActive = tasks.find((task) => {
       const status = taskStatuses[task.id]?.status;
@@ -626,8 +637,18 @@ const Workspace = () => {
         };
         seMap[p.task_id] = p.self_eval ?? null;
       });
-      // 合并而不是覆盖，避免把刚刚本地 upsert 的覆盖掉
-      setTaskStatuses((current) => ({ ...current, ...map }));
+      // 安全合并：不允许把本地已是 active/feedback_pending/needs_resubmission 的状态
+      // 降级为 DB 里的旧 "locked" 值（可能是并发读取到的过期数据）。
+      const ACTIVE_STATUSES = new Set(["active", "feedback_pending", "needs_resubmission"]);
+      setTaskStatuses((current) => {
+        const safeMap: Record<string, TaskStatusEntry> = {};
+        for (const [taskId, entry] of Object.entries(map)) {
+          if (!ACTIVE_STATUSES.has(current[taskId]?.status ?? "")) {
+            safeMap[taskId] = entry;
+          }
+        }
+        return { ...current, ...safeMap };
+      });
       setSelfEvalMap((current) => ({ ...current, ...seMap }));
 
       const recovered = tasks.find((task) => {
@@ -669,19 +690,34 @@ const Workspace = () => {
       return fallbackTask;
     }
 
+    // 写入 DB，只有写入成功才更新本地状态，避免 DB 失败时本地假 "active"（刷新后回退）。
+    let dbWriteOk = false;
     if (!existingProgress) {
       const { error: insErr } = await supabase.from("user_task_progress").insert({
         user_simulation_id: usId,
         task_id: fallbackTask.id,
         status: "active",
       });
-      if (insErr) console.error("[ensureActiveTask] insert active failed:", insErr);
+      if (insErr) {
+        console.error("[ensureActiveTask] insert active failed:", insErr);
+      } else {
+        dbWriteOk = true;
+      }
     } else {
       const { error: updErr } = await supabase
         .from("user_task_progress")
         .update({ status: "active" })
         .eq("id", existingProgress.id);
-      if (updErr) console.error("[ensureActiveTask] update active failed:", updErr);
+      if (updErr) {
+        console.error("[ensureActiveTask] update active failed:", updErr);
+      } else {
+        dbWriteOk = true;
+      }
+    }
+
+    if (!dbWriteOk) {
+      console.error("[ensureActiveTask] DB write failed, not updating local state to avoid stale active on refresh");
+      return null;
     }
 
     if (currentTaskIndex !== fallbackTask.order_index) {
