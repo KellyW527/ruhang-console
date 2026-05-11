@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { supabase } from "../integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -57,6 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  // Track last fetched userId to avoid redundant profile fetches
+  const lastProfileUserId = useRef<string | null>(null);
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
@@ -65,21 +67,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq("id", userId)
       .single();
     setProfile((data as Profile | null) ?? null);
+    lastProfileUserId.current = userId;
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Use onAuthStateChange as the single source of truth.
+    // It fires immediately with INITIAL_SESSION on subscribe (Supabase JS v2),
+    // so we don't need a separate getSession() call which would cause double state updates.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
-      setLoading(false);
-    });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) fetchProfile(session.user.id);
-      else setProfile(null);
+      // Only clear user on explicit sign-out, never during token refresh.
+      // This prevents ProtectedRoute from briefly seeing user=null and redirecting to /login.
+      if (event === "SIGNED_OUT") {
+        setUser(null);
+        setProfile(null);
+        lastProfileUserId.current = null;
+      } else if (session?.user) {
+        setUser(session.user);
+        // Avoid redundant profile fetches on every TOKEN_REFRESHED if user hasn't changed.
+        if (lastProfileUserId.current !== session.user.id) {
+          void fetchProfile(session.user.id);
+        }
+      }
+
       setLoading(false);
     });
 

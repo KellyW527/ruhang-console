@@ -181,9 +181,20 @@ const Workspace = () => {
     document.title = "工作台 · 入行 RuHang";
   }, []);
 
+  // Guard ref: prevents re-running the full workspace load when auth state refreshes
+  // (e.g. Supabase TOKEN_REFRESHED fires on window focus). The load should only
+  // re-run if the user/simulation actually changes, not on every profile re-fetch.
+  const loadedForRef = useRef<string | null>(null);
+
   useEffect(() => {
     const load = async () => {
       if (!user || !id) return;
+      // Skip if we already loaded data for this exact user+simulation combination.
+      // This prevents the workspace from resetting when Supabase refreshes the auth
+      // token in the background (onAuthStateChange → profile re-fetch → re-render).
+      const loadKey = `${user.id}:${id}`;
+      if (loadedForRef.current === loadKey) return;
+
       setWsLoading(true);
       setProgressLoaded(false);
       const { data: us } = await supabase
@@ -258,9 +269,28 @@ const Workspace = () => {
       const { data: em } = await supabase.from("emails").select("*").eq("user_simulation_id", us.id).order("received_at", { ascending: false });
       if (em) setEmails(em as Email[]);
       setWsLoading(false);
+
+      // Mark as loaded — subsequent re-renders (auth token refresh, profile update)
+      // will skip the full load and preserve all in-progress state.
+      loadedForRef.current = loadKey;
     };
     load();
-  }, [user?.id, id, nav, profile?.plan]);
+  }, [user?.id, id, nav]);
+
+  // ---- Membership re-check on plan change (lightweight, no state reset) ----
+  // Only runs after initial load is done, so it never interrupts in-progress work.
+  useEffect(() => {
+    if (!profile?.plan || !simCode || !user?.id || !loadedForRef.current) return;
+    supabase
+      .rpc("has_simulation_access", { _user_id: user.id, _simulation_code: simCode })
+      .then(({ data: ok }) => {
+        if (ok === false) {
+          toast.info("这个模拟需要升级会员后才能进入");
+          nav("/pricing", { replace: true });
+        }
+      })
+      .catch(() => {});
+  }, [profile?.plan, simCode, user?.id, nav]);
 
   // ---- Load messages for active conv ----
   useEffect(() => {
