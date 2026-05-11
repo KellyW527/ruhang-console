@@ -194,6 +194,9 @@ const Workspace = () => {
       // token in the background (onAuthStateChange → profile re-fetch → re-render).
       const loadKey = `${user.id}:${id}`;
       if (loadedForRef.current === loadKey) return;
+      // Set immediately so concurrent invocations (e.g. SIGNED_IN fired on every
+      // window focus by Supabase) are blocked before any async work begins.
+      loadedForRef.current = loadKey;
 
       setWsLoading(true);
       setProgressLoaded(false);
@@ -269,10 +272,6 @@ const Workspace = () => {
       const { data: em } = await supabase.from("emails").select("*").eq("user_simulation_id", us.id).order("received_at", { ascending: false });
       if (em) setEmails(em as Email[]);
       setWsLoading(false);
-
-      // Mark as loaded — subsequent re-renders (auth token refresh, profile update)
-      // will skip the full load and preserve all in-progress state.
-      loadedForRef.current = loadKey;
     };
     load();
   }, [user?.id, id, nav]);

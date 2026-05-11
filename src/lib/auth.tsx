@@ -57,7 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  // Track last fetched userId to avoid redundant profile fetches
   const lastProfileUserId = useRef<string | null>(null);
 
   const fetchProfile = async (userId: string) => {
@@ -71,24 +70,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Use onAuthStateChange as the single source of truth.
-    // It fires immediately with INITIAL_SESSION on subscribe (Supabase JS v2),
-    // so we don't need a separate getSession() call which would cause double state updates.
+    // Supabase v2 fires onAuthStateChange immediately with INITIAL_SESSION on subscribe,
+    // and fires SIGNED_IN on EVERY window focus (via visibilitychange → _recoverAndRefresh).
+    // We must avoid unnecessary state updates to prevent React re-renders that could
+    // reset child component state.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-
-      // Only clear user on explicit sign-out, never during token refresh.
-      // This prevents ProtectedRoute from briefly seeing user=null and redirecting to /login.
       if (event === "SIGNED_OUT") {
+        // Explicit sign-out: clear everything
+        setSession(null);
         setUser(null);
         setProfile(null);
         lastProfileUserId.current = null;
-      } else if (session?.user) {
-        setUser(session.user);
-        // Avoid redundant profile fetches on every TOKEN_REFRESHED if user hasn't changed.
-        if (lastProfileUserId.current !== session.user.id) {
-          void fetchProfile(session.user.id);
-        }
+        setLoading(false);
+        return;
+      }
+
+      if (!session?.user) {
+        setLoading(false);
+        return;
+      }
+
+      // Only update session state if the access token actually changed.
+      // Supabase fires SIGNED_IN on every window focus even when nothing changed —
+      // setting a new object reference on every focus would cause unnecessary re-renders.
+      setSession(prev =>
+        prev?.access_token === session.access_token ? prev : session
+      );
+
+      // Same for user: only update if the user ID changed (i.e. a different user logged in).
+      // TOKEN_REFRESHED / SIGNED_IN on focus produces a new user object with the same id —
+      // we keep the previous reference to avoid triggering downstream effects.
+      setUser(prev =>
+        prev?.id === session.user.id ? prev : session.user
+      );
+
+      // Only fetch profile once per unique user
+      if (lastProfileUserId.current !== session.user.id) {
+        void fetchProfile(session.user.id);
       }
 
       setLoading(false);
