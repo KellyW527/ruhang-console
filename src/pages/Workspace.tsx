@@ -1675,6 +1675,7 @@ const Workspace = () => {
                                 key={c.id}
                                 onClick={() => {
                                   setActiveConvId(c.id);
+                                  setTab("chat");
                                   setMobilePanel("chat");
                                 }}
                                 className={cn(
