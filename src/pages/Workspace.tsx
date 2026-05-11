@@ -962,9 +962,9 @@ const Workspace = () => {
 
     // 不再自动 finalize 推进到下一任务——必须由用户在反馈弹窗里
     // 主动点击「进入下一个任务 →」按钮（advance()）才推进。
-    // 这里只负责：如果当前有反馈待处理任务、且弹窗没开，就把弹窗打开到自评 tab。
+    // 这里只负责：如果当前有反馈待处理任务、且弹窗没开，就把弹窗打开到标准答案 tab。
     if (!feedbackTask) {
-      openFeedbackForTask(pendingTask, "self");
+      openFeedbackForTask(pendingTask, "answer");
     }
   };
 
@@ -998,7 +998,7 @@ const Workspace = () => {
     if (!activeTaskNow) {
       const pendingTask = tasks.find((t) => taskStatuses[t.id]?.status === "feedback_pending");
       if (pendingTask) {
-        openFeedbackForTask(pendingTask, "self");
+        openFeedbackForTask(pendingTask, "answer");
         toast.info("你已经提交过了，请先完成反馈与自评", {
           description: "完成自评后才能解锁下一个任务。",
         });
@@ -1061,7 +1061,7 @@ const Workspace = () => {
     });
 
     if (evaluation.quality === "pass") {
-      openFeedbackForTask(activeTaskNow, "self");
+      openFeedbackForTask(activeTaskNow, "answer");
     } else {
       openFeedbackForTask(activeTaskNow, "answer");
     }
@@ -1069,7 +1069,7 @@ const Workspace = () => {
     // 短延迟后再强制打开一次，确保用户一定能看到反馈面板
     window.setTimeout(() => {
       setFeedbackTask((current) => current ?? activeTaskNow);
-      setFeedbackTab(evaluation.quality === "pass" ? "self" : "answer");
+      setFeedbackTab("answer");
     }, 350);
 
     toast.success(
@@ -2386,7 +2386,7 @@ const Workspace = () => {
                       const selfEvalSaved = Boolean(selfEvalMap[t.id]?.submitted_at);
                       const canManuallyAdvance = st === "feedback_pending" && selfEvalSaved;
                       const handleCardClick = () => {
-                        if (st === "feedback_pending") openFeedbackForTask(t, "self");
+                        if (st === "feedback_pending") openFeedbackForTask(t, "answer");
                         else if (st === "needs_resubmission") openFeedbackForTask(t, "answer");
                         else if (st === "done") openFeedbackForTask(t, "answer");
                       };
