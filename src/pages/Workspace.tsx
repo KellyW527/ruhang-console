@@ -266,6 +266,59 @@ const Workspace = () => {
         };
         seMap[p.task_id] = p.self_eval ?? null;
       });
+
+      // ---- 修复器：load 阶段直接保证 current_task_index 指向的任务是 active ----
+      // ensureActiveTask 是事后副作用，DB 写失败时没有后备；
+      // 在 setTaskStatuses 前修复 map，首次渲染就已正确，不依赖副作用。
+      const cti = (us as any)?.current_task_index;
+      const taskList = (t ?? []) as any[];
+      if (typeof cti === "number" && taskList.length) {
+        const currentTaskForRepair = taskList.find((task: any) => task.order_index === cti);
+        if (currentTaskForRepair) {
+          const existingStatus = map[currentTaskForRepair.id]?.status;
+          // 只在 locked/缺失 时修复，不覆盖 feedback_pending / needs_resubmission / done
+          if (!existingStatus || existingStatus === "locked") {
+            console.log("[load] repair needed: task", currentTaskForRepair.id, "at index", cti, "status=", existingStatus ?? "missing");
+            const { data: repairRow } = await supabase
+              .from("user_task_progress")
+              .select("id, status")
+              .eq("user_simulation_id", us.id)
+              .eq("task_id", currentTaskForRepair.id)
+              .maybeSingle();
+            let repairOk = false;
+            if (!repairRow) {
+              const { error } = await supabase.from("user_task_progress").insert({
+                user_simulation_id: us.id,
+                task_id: currentTaskForRepair.id,
+                status: "active",
+              });
+              repairOk = !error;
+              if (error) console.error("[load] repair insert failed:", error);
+            } else if (repairRow.status === "locked") {
+              const { error } = await supabase
+                .from("user_task_progress")
+                .update({ status: "active" })
+                .eq("id", repairRow.id);
+              repairOk = !error;
+              if (error) console.error("[load] repair update failed:", error);
+            } else {
+              // DB 里已有非 locked 状态，直接同步到 map
+              map[currentTaskForRepair.id] = {
+                status: repairRow.status,
+                score: undefined,
+                submission_type: null,
+                submission_quality: null,
+              };
+              repairOk = true;
+            }
+            if (repairOk && (!repairRow || repairRow.status === "locked")) {
+              map[currentTaskForRepair.id] = { status: "active", score: undefined, submission_type: null, submission_quality: null };
+              console.log("[load] repaired task", currentTaskForRepair.id, "→ active");
+            }
+          }
+        }
+      }
+
       setTaskStatuses(map);
       setSelfEvalMap(seMap);
       setProgressLoaded(true);
