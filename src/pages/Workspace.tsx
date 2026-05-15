@@ -48,11 +48,22 @@ type Msg = { id: string; conversation_id: string; sender: string; content: strin
 type Task = { id: string; order_index: number; title: string; brief: string; requirements: string[]; deadline_hours: number; assignment_message: string; feedback_message: string; score: number; standard_answer: string; scoring_rubric: { dim: string; score: number; max: number }[]; boss_commentary: string };
 type Email = { id: string; from_name: string; from_email: string; subject: string; body: string; is_read: boolean; received_at: string; folder: string };
 type PendingUpload = { name: string; size: string; url: string; path: string; kind: "file" | "image" } | null;
+type AiSubmissionFeedback = {
+  score?: number | null;
+  summary?: string;
+  detailMarkdown?: string;
+  leaderMessage?: string;
+  rubric?: { dim: string; score: number; max?: number; comment?: string }[];
+  model?: string;
+  extractedChars?: number;
+  generatedAt?: string;
+};
 type TaskStatusEntry = {
   status: string;
   score?: number;
   submission_type?: string | null;
   submission_quality?: string | null;
+  ai_feedback?: AiSubmissionFeedback | null;
 };
 
 const TRACK_LABEL_MAP: Record<string, string> = {
@@ -162,8 +173,20 @@ const Workspace = () => {
   const feedbackStatus = feedbackTask ? taskStatuses[feedbackTask.id] : null;
   const feedbackReference = feedbackTask ? getTaskReferenceContent(simCode, feedbackTask.order_index) : null;
   const isReviewMode = feedbackStatus?.status === "done";
-  const feedbackAnswerMarkdown = feedbackReference?.standardAnswer ?? feedbackTask?.standard_answer ?? "";
-  const safeScoringRubric = Array.isArray(feedbackTask?.scoring_rubric) ? feedbackTask.scoring_rubric : [];
+  const feedbackAnswerMarkdown = feedbackStatus?.ai_feedback?.detailMarkdown
+    ?? feedbackReference?.standardAnswer
+    ?? feedbackTask?.standard_answer
+    ?? "";
+  const safeScoringRubric =
+    feedbackStatus?.ai_feedback?.rubric?.length
+      ? feedbackStatus.ai_feedback.rubric.map((item) => ({
+          dim: item.dim,
+          score: item.score,
+          max: item.max ?? 20,
+        }))
+      : Array.isArray(feedbackTask?.scoring_rubric)
+        ? feedbackTask.scoring_rubric
+        : [];
   const selfEvalReady =
     feedbackTask && feedbackStatus?.submission_quality !== "retry"
       ? Boolean(selfEvalMap[feedbackTask.id]?.submitted_at)
@@ -253,7 +276,7 @@ const Workspace = () => {
 
       const { data: tp } = await supabase
         .from("user_task_progress")
-        .select("task_id, status, score, self_eval, submission_type, submission_quality")
+        .select("task_id, status, score, self_eval, submission_type, submission_quality, ai_feedback")
         .eq("user_simulation_id", us.id);
       const map: Record<string, TaskStatusEntry> = {};
       const seMap: Record<string, SelfEvalValue | null> = {};
@@ -263,6 +286,7 @@ const Workspace = () => {
           score: p.score ?? undefined,
           submission_type: p.submission_type ?? null,
           submission_quality: p.submission_quality ?? null,
+          ai_feedback: p.ai_feedback ?? null,
         };
         seMap[p.task_id] = p.self_eval ?? null;
       });
@@ -565,6 +589,7 @@ const Workspace = () => {
           kind: kind === "image" ? "image" : "file",
           filename: fileName,
           fileUrl: fileUrl || undefined,
+          filePath: uploadResult?.path || undefined,
         });
         return;
       }
@@ -674,7 +699,7 @@ const Workspace = () => {
     // 2) 本地没有 active/pending/retry → 先去数据库重新拉一次真实状态，避免"DB 已有 active 但本地仍 locked"。
     const { data: dbProgress } = await supabase
       .from("user_task_progress")
-      .select("task_id, status, score, self_eval, submission_type, submission_quality")
+      .select("task_id, status, score, self_eval, submission_type, submission_quality, ai_feedback")
       .eq("user_simulation_id", usId);
 
     const map: Record<string, TaskStatusEntry> = {};
@@ -687,6 +712,7 @@ const Workspace = () => {
           score: p.score ?? undefined,
           submission_type: p.submission_type ?? null,
           submission_quality: p.submission_quality ?? null,
+          ai_feedback: p.ai_feedback ?? null,
         };
         seMap[p.task_id] = p.self_eval ?? null;
       });
@@ -1074,9 +1100,82 @@ const Workspace = () => {
     }, reply.delayMs);
   };
 
+  const requestAiSubmissionFeedback = async ({
+    task,
+    submission,
+    localEvaluation,
+  }: {
+    task: Task;
+    submission: { kind: "file" | "email" | "image"; filename?: string; subject?: string; fileUrl?: string; filePath?: string };
+    localEvaluation: ReturnType<typeof evaluateSubmission>;
+  }): Promise<AiSubmissionFeedback | null> => {
+    if (!usId || !supabasePublicConfig.ok || !supabasePublicConfig.url) return null;
+    if (localEvaluation.quality !== "pass") return null;
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (!token) return null;
+
+    try {
+      toast.info(`${runtime.leader.name}正在审阅你的交付件`, {
+        description: "会先读取文件内容，再生成本次任务评价。",
+      });
+
+      const resp = await fetch(`${supabasePublicConfig.url}/functions/v1/evaluate-submission`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          user_simulation_id: usId,
+          simulation_code: simCode,
+          simulation_title: simTitle,
+          leader_name: runtime.leader.name,
+          leader_role: runtime.leader.title,
+          leader_tone: runtime.leader.tonePrompt,
+          feedback_style: profilePreferences.feedback_style,
+          task: {
+            id: task.id,
+            order_index: task.order_index,
+            title: task.title,
+            brief: task.brief,
+            requirements: task.requirements,
+            standard_answer: task.standard_answer,
+            scoring_rubric: task.scoring_rubric,
+            boss_commentary: task.boss_commentary,
+            fallback_score: task.score,
+          },
+          submission: {
+            ...submission,
+            local_summary: localEvaluation.summary,
+            local_detail_markdown: localEvaluation.detailMarkdown,
+          },
+        }),
+      });
+
+      if (!resp.ok) {
+        const payload = await resp.json().catch(() => null);
+        console.warn("[ai-evaluate] failed:", payload ?? resp.status);
+        return null;
+      }
+
+      const payload = await resp.json();
+      return {
+        ...(payload.feedback ?? {}),
+        model: payload.model,
+        extractedChars: payload.extractedChars,
+        generatedAt: new Date().toISOString(),
+      };
+    } catch (err) {
+      console.warn("[ai-evaluate] fallback to local feedback:", err);
+      return null;
+    }
+  };
+
   // ---- Trigger task submission flow (file or email) ----
   const triggerSubmission = async (
-    submission: { kind: "file" | "email" | "image"; filename?: string; subject?: string; fileUrl?: string },
+    submission: { kind: "file" | "email" | "image"; filename?: string; subject?: string; fileUrl?: string; filePath?: string },
   ) => {
     const leaderConversation = convs.find((conversation) => getConversationKind(conversation, simCode) === "leader");
     const activeTaskNow = tasks.find((t) => {
@@ -1100,9 +1199,16 @@ const Workspace = () => {
       simulationCode: simCode,
       submission,
     });
+    const aiFeedback = await requestAiSubmissionFeedback({
+      task: activeTaskNow,
+      submission,
+      localEvaluation: evaluation,
+    });
+    const finalScore = aiFeedback?.score ?? evaluation.score;
+    const finalLeaderMessage = aiFeedback?.leaderMessage || evaluation.leaderMessage;
     const styledLeaderMessage = applyFeedbackStyleTemplate(
       profilePreferences.feedback_style,
-      evaluation.leaderMessage,
+      finalLeaderMessage,
     );
 
     // Upsert: check if row exists first
@@ -1115,11 +1221,15 @@ const Workspace = () => {
 
     const progressPayload: Record<string, unknown> = {
       status: evaluation.quality === "pass" ? "feedback_pending" : "needs_resubmission",
-      score: evaluation.score,
+      score: finalScore,
       submitted_filename: submission.filename ?? submission.subject ?? null,
       submitted_file_url: submission.fileUrl ?? null,
+      submitted_file_path: submission.filePath ?? null,
       submission_type: evaluation.submissionType,
       submission_quality: evaluation.quality,
+      ai_feedback: aiFeedback,
+      ai_feedback_model: aiFeedback?.model ?? null,
+      ai_feedback_created_at: aiFeedback ? new Date().toISOString() : null,
       submitted_at: new Date().toISOString(),
     };
 
@@ -1144,9 +1254,10 @@ const Workspace = () => {
 
     upsertTaskStatus(activeTaskNow.id, {
       status: evaluation.quality === "pass" ? "feedback_pending" : "needs_resubmission",
-      score: evaluation.score ?? undefined,
+      score: finalScore ?? undefined,
       submission_type: evaluation.submissionType,
       submission_quality: evaluation.quality,
+      ai_feedback: aiFeedback,
     });
 
     if (evaluation.quality === "pass") {
@@ -1226,7 +1337,7 @@ const Workspace = () => {
     let tempId: string | null = null;
 
     if (conversationKind !== "hr" && wasUpload?.kind === "file") {
-      await triggerSubmission({ kind: "file", filename: wasUpload.name, fileUrl: wasUpload.url });
+      await triggerSubmission({ kind: "file", filename: wasUpload.name, fileUrl: wasUpload.url, filePath: wasUpload.path });
       setSending(false);
       return;
     }
@@ -1489,6 +1600,7 @@ const Workspace = () => {
         subject: composeSubject.trim(),
         filename: composeFile.name,
         fileUrl: composeFile.url,
+        filePath: composeFile.path || undefined,
       });
     } else if (currentTask && !composeFile) {
       // Email sent without attachment — still trigger submission with subject as filename

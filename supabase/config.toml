@@ -19,3 +19,7 @@ verify_jwt = true
 # ai-summary: 项目结业能力画像，调 MiMo，需要登录态
 [functions.ai-summary]
 verify_jwt = true
+
+# evaluate-submission: 读取用户交付件并生成 AI 任务评价，调 MiMo，需要登录态
+[functions.evaluate-submission]
+verify_jwt = true
