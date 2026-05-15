@@ -138,7 +138,7 @@ const Workspace = () => {
   const [rightCollapsed, setRightCollapsed] = useState(false);
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const [streamStarted, setStreamStarted] = useState(false);
-  const [feedbackTab, setFeedbackTab] = useState<"answer" | "self">("answer");
+  const [feedbackTab, setFeedbackTab] = useState<"answer" | "mentor" | "self">("answer");
   const [completionOpen, setCompletionOpen] = useState(false);
   const [completionAverageScore, setCompletionAverageScore] = useState<number | null>(null);
   const [completionAt, setCompletionAt] = useState<string | null>(null);
@@ -173,10 +173,17 @@ const Workspace = () => {
   const feedbackStatus = feedbackTask ? taskStatuses[feedbackTask.id] : null;
   const feedbackReference = feedbackTask ? getTaskReferenceContent(simCode, feedbackTask.order_index) : null;
   const isReviewMode = feedbackStatus?.status === "done";
-  const feedbackAnswerMarkdown = feedbackStatus?.ai_feedback?.detailMarkdown
-    ?? feedbackReference?.standardAnswer
-    ?? feedbackTask?.standard_answer
-    ?? "";
+  const feedbackAnswerMarkdown = feedbackReference?.standardAnswer ?? feedbackTask?.standard_answer ?? "";
+  const aiTutorMarkdown = feedbackStatus?.ai_feedback?.detailMarkdown
+    ?? [
+      `### ${runtime.leader.name}的点评`,
+      ``,
+      feedbackTask?.boss_commentary ?? feedbackTask?.feedback_message ?? "这次提交已收到，请结合标准答案继续复盘关键差距。",
+      ``,
+      `### 下一步建议`,
+      `- 先对照标准答案检查结构、口径和关键判断是否完整。`,
+      `- 再回到「自我评估」里按评分维度完成复盘。`,
+    ].join("\n");
   const safeScoringRubric =
     feedbackStatus?.ai_feedback?.rubric?.length
       ? feedbackStatus.ai_feedback.rubric.map((item) => ({
@@ -513,7 +520,7 @@ const Workspace = () => {
     openCompose();
   };
 
-  const openFeedbackForTask = (task: Task, defaultTab: "answer" | "self" = "answer") => {
+  const openFeedbackForTask = (task: Task, defaultTab: "answer" | "mentor" | "self" = "answer") => {
     setFeedbackTab(defaultTab);
     setFeedbackTask(task);
     window.setTimeout(() => {
@@ -2783,17 +2790,23 @@ const Workspace = () => {
               <ATabs
                 value={feedbackTab}
                 onValueChange={(value) => {
-                  setFeedbackTab(value as "answer" | "self");
+                  setFeedbackTab(value as "answer" | "mentor" | "self");
                 }}
               >
                 <ATabsList className="bg-surface-1">
                   <ATabsTrigger value="answer" className="gap-1.5">
                     标准答案
                   </ATabsTrigger>
+                  <ATabsTrigger value="mentor" className="gap-1.5">
+                    AI导师点评
+                  </ATabsTrigger>
                   <ATabsTrigger value="self">自我评估</ATabsTrigger>
                 </ATabsList>
                 <ATabsContent value="answer" className="max-h-[60vh] pr-3 md:max-h-[55vh] overflow-y-auto">
                   <MarkdownContent content={feedbackAnswerMarkdown} />
+                </ATabsContent>
+                <ATabsContent value="mentor" className="max-h-[60vh] pr-3 md:max-h-[55vh] overflow-y-auto">
+                  <MarkdownContent content={aiTutorMarkdown} />
                 </ATabsContent>
                 <ATabsContent value="self">
                   {feedbackStatus?.submission_quality === "retry" ? (
