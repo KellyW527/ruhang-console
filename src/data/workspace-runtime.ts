@@ -78,12 +78,12 @@ const extOf = (value?: string) => {
 };
 
 const makeRuntimeTask = (
-  id: string,
+  _id: string,
   title: string,
   minimumRequirement: string,
   groupNudge: string,
-  materialTitle: string,
-  materialContent: string,
+  _materialTitle: string,
+  _materialContent: string,
 ): TaskRuntime => ({
   expectedSubmissionKind: "chat_attachment",
   allowedExtensions: ["xlsx", "csv", "docx", "pdf", "md", "pptx"],
@@ -91,15 +91,7 @@ const makeRuntimeTask = (
   retryTemplate: `这次还不能按「${title}」完成来收。请提交一份结构化附件，至少覆盖任务要求里的核心判断、关键数据和结论。`,
   passTemplate: `这版「${title}」已经能进入复盘。下一轮重点把数据来源、判断口径和风险边界再压实。`,
   groupNudge,
-  materials: [
-    {
-      id,
-      title: materialTitle,
-      description: "任务交付提示和资料包使用说明。",
-      filename: `${id}.md`,
-      content: materialContent,
-    },
-  ],
+  materials: [],
 });
 
 const runtimeMap = {
