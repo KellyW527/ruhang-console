@@ -2764,14 +2764,14 @@ const Workspace = () => {
       {/* Feedback modal */}
       <Dialog open={!!feedbackTask} onOpenChange={() => undefined}>
         <DialogContent
-          className="glass-strong max-h-[90vh] max-w-3xl overflow-y-auto border-white/10"
+          className="glass-strong flex h-[88dvh] max-h-[760px] max-w-3xl flex-col overflow-hidden border-white/10"
           onPointerDownOutside={(e) => e.preventDefault()}
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
           {feedbackTask && (
             <>
-              <DialogHeader>
+              <DialogHeader className="shrink-0">
                 <DialogTitle className="flex items-center gap-3 font-display text-xl">
                   <span
                     className={cn(
@@ -2792,8 +2792,9 @@ const Workspace = () => {
                 onValueChange={(value) => {
                   setFeedbackTab(value as "answer" | "mentor" | "self");
                 }}
+                className="flex min-h-0 flex-1 flex-col"
               >
-                <ATabsList className="bg-surface-1">
+                <ATabsList className="shrink-0 bg-surface-1">
                   <ATabsTrigger value="answer" className="gap-1.5">
                     标准答案
                   </ATabsTrigger>
@@ -2802,13 +2803,13 @@ const Workspace = () => {
                   </ATabsTrigger>
                   <ATabsTrigger value="self">自我评估</ATabsTrigger>
                 </ATabsList>
-                <ATabsContent value="answer" className="max-h-[60vh] pr-3 md:max-h-[55vh] overflow-y-auto">
+                <ATabsContent value="answer" className="min-h-0 flex-1 overflow-y-auto pr-3">
                   <MarkdownContent content={feedbackAnswerMarkdown} />
                 </ATabsContent>
-                <ATabsContent value="mentor" className="max-h-[60vh] pr-3 md:max-h-[55vh] overflow-y-auto">
+                <ATabsContent value="mentor" className="min-h-0 flex-1 overflow-y-auto pr-3">
                   <MarkdownContent content={aiTutorMarkdown} />
                 </ATabsContent>
-                <ATabsContent value="self">
+                <ATabsContent value="self" className="min-h-0 flex-1 overflow-y-auto pr-3">
                   {feedbackStatus?.submission_quality === "retry" ? (
                     <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 text-sm text-amber-100">
                       当前提交还没达到最低标准，请先按要求重新提交，再保存自评。
@@ -2837,7 +2838,7 @@ const Workspace = () => {
                 simCode &&
                 feedbackStatus?.submission_quality !== "retry" &&
                 (selfEvalReady || feedbackStatus?.status === "done") && (
-                  <div className="mt-4">
+                  <div className="mt-4 shrink-0">
                     <TaskFeedbackBar
                       key={`fb-${feedbackTask.id}`}
                       userSimulationId={usId}
@@ -2848,7 +2849,7 @@ const Workspace = () => {
                   </div>
                 )}
 
-              <div className="flex flex-col gap-3 border-t border-white/5 pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="shrink-0 flex flex-col gap-3 border-t border-white/5 pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-xs text-muted-foreground">
                   {feedbackStatus?.submission_quality === "retry"
                     ? "当前提交未达标准，请按反馈要求重新提交。"
