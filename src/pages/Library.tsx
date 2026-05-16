@@ -42,6 +42,7 @@ type LibraryItem = CatalogEntry & {
   userStatus: "not_started" | "in_progress" | "completed";
   offerAccepted: boolean;
   locked: boolean;
+  unlockState: "open" | "redeemable" | "upgrade";
 };
 
 type FilterKey = SimulationTrack | "all";
@@ -97,9 +98,15 @@ export default function Library() {
         offerAccepted: Boolean(userSim?.offer_accepted),
         // 已经在做或做完的项目不锁，否则用 hasAccess 判断
         locked: userStatus === "not_started" && !hasAccess(entry.code),
+        unlockState:
+          userStatus !== "not_started" || hasAccess(entry.code)
+            ? "open"
+            : subscription && subscription.quotaRemaining > 0
+              ? "redeemable"
+              : "upgrade",
       };
     });
-  }, [dbSims, userSims, hasAccess]);
+  }, [dbSims, userSims, hasAccess, subscription]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -146,7 +153,7 @@ export default function Library() {
       // 有套餐配额 → 调 redeem-quota 真正解锁
       if (subscription && subscription.quotaRemaining > 0) {
         const confirmed = window.confirm(
-          `用 1 个配额解锁「${item.title}」吗？\n\n当前剩余：${subscription.quotaRemaining} / ${subscription.quotaTotal}`,
+          `使用 1 个会员额度解锁「${item.title}」吗？\n\n当前剩余：${subscription.quotaRemaining} / ${subscription.quotaTotal}`,
         );
         if (!confirmed) return;
         setStarting(item.code);
@@ -332,7 +339,7 @@ function LibraryCard({
             {item.coverEmoji}
           </div>
           <div className="flex flex-col items-end gap-1.5">
-            <StatusBadge status={item.userStatus} locked={item.locked} />
+            <StatusBadge status={item.userStatus} unlockState={item.unlockState} />
           </div>
         </div>
 
@@ -381,7 +388,7 @@ function LibraryCard({
           {item.locked ? (
             <>
               <Lock className="h-3.5 w-3.5" />
-              升级解锁
+              {item.unlockState === "redeemable" ? "会员解锁" : "升级解锁"}
             </>
           ) : (
             <>
@@ -395,8 +402,22 @@ function LibraryCard({
   );
 }
 
-function StatusBadge({ status, locked }: { status: LibraryItem["userStatus"]; locked: boolean }) {
-  if (locked) {
+function StatusBadge({
+  status,
+  unlockState,
+}: {
+  status: LibraryItem["userStatus"];
+  unlockState: LibraryItem["unlockState"];
+}) {
+  if (unlockState === "redeemable") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-300">
+        <Lock className="h-3 w-3" />
+        会员解锁
+      </span>
+    );
+  }
+  if (unlockState === "upgrade") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
         <Lock className="h-3 w-3" />
