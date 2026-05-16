@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Send, Paperclip, Image as ImageIcon, Mail, MessageCircle, CheckCircle2, Lock, Circle, PenSquare, X, Loader2, Clock, Phone, ChevronDown, FileText, Download, BriefcaseBusiness, FolderOpen, Inbox, ListTodo, Sparkles, Target, Users, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Image as ImageIcon, Mail, MessageCircle, CheckCircle2, Lock, Circle, PenSquare, X, Loader2, Clock, Phone, ChevronDown, FileText, Download, BriefcaseBusiness, FolderOpen, Inbox, ListTodo, Sparkles, Target, Users, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase, supabasePublicConfig } from "@/integrations/supabase/client";
@@ -2804,6 +2804,20 @@ const Workspace = () => {
                   <ATabsTrigger value="self">自我评估</ATabsTrigger>
                 </ATabsList>
                 <ATabsContent value="answer" className="min-h-0 flex-1 overflow-y-auto pr-3">
+                  <div className="mb-4 flex justify-end">
+                    <Button
+                      asChild
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="rounded-full border border-white/10 bg-white/[0.03] text-xs"
+                    >
+                      <Link to={`/simulation/${id}/task/${feedbackTask.id}/answer`} target="_blank" rel="noreferrer">
+                        <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+                        查看完整答案
+                      </Link>
+                    </Button>
+                  </div>
                   <MarkdownContent content={feedbackAnswerMarkdown} />
                 </ATabsContent>
                 <ATabsContent value="mentor" className="min-h-0 flex-1 overflow-y-auto pr-3">

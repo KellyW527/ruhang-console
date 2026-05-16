@@ -11,6 +11,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import OfferLetter from "./pages/OfferLetter";
 import Workspace from "./pages/Workspace";
+import TaskAnswer from "./pages/TaskAnswer";
 import Report from "./pages/Report";
 import Settings from "./pages/Settings";
 import Pricing from "./pages/Pricing";
@@ -80,6 +81,7 @@ function AppRoutes() {
       <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
       <Route path="/simulation/:id/offer" element={<ProtectedRoute><OfferLetter /></ProtectedRoute>} />
       <Route path="/simulation/:id/certificate" element={<ProtectedRoute><Certificate /></ProtectedRoute>} />
+      <Route path="/simulation/:id/task/:taskId/answer" element={<ProtectedRoute><TaskAnswer /></ProtectedRoute>} />
       <Route path="/simulation/:id" element={<ProtectedRoute><Workspace /></ProtectedRoute>} />
       <Route path="/report" element={<ProtectedRoute><Report /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
