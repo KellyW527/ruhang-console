@@ -1087,16 +1087,6 @@ export const getAutomatedReply = ({
     };
   }
 
-  if (conversationKind === "hr") {
-    if (/保密|制度|合规/i.test(normalized)) {
-      return { delayMs: 2800, content: "保密、合规和资料使用边界都在入职包里，涉及客户信息的材料不要外传或二次分发。" };
-    }
-    if (/邮箱|共享盘|账号|权限/i.test(normalized)) {
-      return { delayMs: 2500, content: "邮箱和共享盘权限都已开通。如遇到权限异常，把报错截图发我，我帮你处理。" };
-    }
-    return { delayMs: 2600, content: runtime.hrFaq };
-  }
-
   if (/下一步|下一个任务|接下来/i.test(normalized) && activeTask) {
     return {
       delayMs: 3200,

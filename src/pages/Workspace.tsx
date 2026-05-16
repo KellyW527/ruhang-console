@@ -15,7 +15,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs as ATabs, TabsList as ATabsList, TabsTrigger as ATabsTrigger, TabsContent as ATabsContent } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { cn, formatDeadline } from "@/lib/utils";
@@ -39,7 +38,6 @@ import {
   getTaskReferenceContent,
   getTaskRuntime,
 } from "@/data/workspace-runtime";
-import { buildHrFaqCard } from "@/data/immersive-content";
 
 type Conv = { id: string; name: string; role_label: string; avatar_emoji: string; is_group: boolean; unread_count: number };
 type Msg = { id: string; conversation_id: string; sender: string; content: string; message_type: string; file_name?: string | null; file_size?: string | null; file_url?: string | null; task_id?: string | null; created_at: string };
@@ -283,9 +281,12 @@ const Workspace = () => {
       setCompletionAt((us as any)?.completed_at ?? null);
 
       const { data: c } = await supabase.from("conversations").select("*").eq("user_simulation_id", us.id).order("order_index");
-      if (c?.length) {
-        setConvs(c as Conv[]);
-        setActiveConvId(c[0].id);
+      const visibleConversations = ((c ?? []) as Conv[]).filter(
+        (conversation) => getConversationKind(conversation, simCodeForGate) !== "hr",
+      );
+      if (visibleConversations.length) {
+        setConvs(visibleConversations);
+        setActiveConvId(visibleConversations[0].id);
       }
 
       const { data: t } = await supabase.from("tasks").select("*").eq("simulation_id", id).order("order_index");
@@ -365,7 +366,9 @@ const Workspace = () => {
       setProgressLoaded(true);
 
       const { data: em } = await supabase.from("emails").select("*").eq("user_simulation_id", us.id).order("received_at", { ascending: false });
-      if (em) setEmails(em as Email[]);
+      if (em) {
+        setEmails((em as Email[]).filter((email) => !/hr|人力|入职须知/i.test(`${email.from_name} ${email.from_email} ${email.subject}`)));
+      }
       setWsLoading(false);
     };
     load();
@@ -434,7 +437,6 @@ const Workspace = () => {
       if (!usId || !convs.length) return;
 
       const groupConversation = convs.find((item) => getConversationKind(item, simCode) === "group");
-      const hrConversation = convs.find((item) => getConversationKind(item, simCode) === "hr");
       const inserts: Record<string, unknown>[] = [];
 
       if (groupConversation) {
@@ -469,25 +471,6 @@ const Workspace = () => {
             });
           }
         });
-      }
-
-      if (hrConversation) {
-        const { data: hrMessages } = await supabase
-          .from("messages")
-          .select("content")
-          .eq("conversation_id", hrConversation.id)
-          .eq("message_type", "text");
-
-        const faqCard = buildHrFaqCard();
-        const existingHrContents = new Set((hrMessages ?? []).map((item: any) => item.content).filter(Boolean));
-        if (!existingHrContents.has(faqCard)) {
-          inserts.push({
-            conversation_id: hrConversation.id,
-            sender: "hr",
-            message_type: "text",
-            content: faqCard,
-          });
-        }
       }
 
       if (!inserts.length) return;
@@ -1054,7 +1037,6 @@ const Workspace = () => {
     setShowPostSurvey(true);
 
     const leaderConversation = convs.find((item) => getConversationKind(item, simCode) === "leader");
-    const hrConversation = convs.find((item) => getConversationKind(item, simCode) === "hr");
 
     if (leaderConversation) {
       await pushConversationMessages(
@@ -1066,22 +1048,6 @@ const Workspace = () => {
           content: runtime.leader.completionNote,
         },
         { markUnread: leaderConversation.id !== activeConvId },
-      );
-    }
-
-    if (hrConversation) {
-      await pushConversationMessages(
-        hrConversation.id,
-        {
-          conversation_id: hrConversation.id,
-          sender: "hr",
-          message_type: "file",
-          content: "你的模拟实习结业通知已生成，可保存留档。",
-          file_name: `${runtime.completionLetterTitle}.md`,
-          file_size: "completion letter",
-          file_url: `data:text/markdown;charset=utf-8,${encodeURIComponent(`# ${runtime.completionLetterTitle}\n\n同学你好，\n\n恭喜你完成《${simTitle}》全部任务。系统已记录你的任务反馈、自评与结业结果，可作为后续能力展示留存。\n\n${runtime.hrName}`)}`,
-        },
-        { markUnread: hrConversation.id !== activeConvId },
       );
     }
   };
@@ -1108,7 +1074,7 @@ const Workspace = () => {
         conversation.id,
         {
           conversation_id: conversation.id,
-          sender: getConversationKind(conversation, simCode) === "hr" ? "hr" : "boss",
+          sender: "boss",
           message_type: "text",
           content: reply.content,
         },
@@ -1902,11 +1868,9 @@ const Workspace = () => {
                                         "badge-status",
                                         kind === "leader"
                                           ? "badge-active"
-                                          : kind === "group"
-                                            ? "border border-sky-500/20 bg-sky-500/10 text-sky-200"
-                                            : "border border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-200",
+                                          : "border border-sky-500/20 bg-sky-500/10 text-sky-200",
                                       )}>
-                                        {kind === "leader" ? "带教" : kind === "group" ? "项目组" : "HR"}
+                                        {kind === "leader" ? "带教" : "项目组"}
                                       </span>
                                       {activeConvId === c.id && <span className="text-[11px] text-primary">当前窗口</span>}
                                     </div>
@@ -1975,12 +1939,10 @@ const Workspace = () => {
                               className={cn(
                                 activeConversationKind === "leader"
                                   ? "bg-primary/15 text-primary"
-                                  : activeConversationKind === "group"
-                                    ? "border border-sky-500/20 bg-sky-500/10 text-sky-200"
-                                    : "border border-fuchsia-500/20 bg-fuchsia-500/10 text-fuchsia-200",
+                                  : "border border-sky-500/20 bg-sky-500/10 text-sky-200",
                               )}
                             >
-                              {activeConversationKind === "leader" ? "带教" : activeConversationKind === "group" ? "项目组" : "HR"}
+                              {activeConversationKind === "leader" ? "带教" : "项目组"}
                             </Badge>
                           </div>
                           <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
@@ -2074,9 +2036,7 @@ const Workspace = () => {
                             label={
                               activeConversationKind === "leader"
                                 ? `${activeConv.name} 正在思考…`
-                                : activeConversationKind === "group"
-                                  ? `${activeConv.name} 正在同步资料…`
-                                  : `${activeConv.name} 正在查找答案…`
+                                : `${activeConv.name} 正在同步资料…`
                             }
                           />
                         )}
@@ -2118,9 +2078,7 @@ const Workspace = () => {
                             <span>
                               {activeConversationKind === "leader"
                                 ? `和 ${runtime.leader.name} 直接对话`
-                                : activeConversationKind === "group"
-                                  ? "和项目群同步材料与进度"
-                                  : "向 HR 询问制度、流程与安排"}
+                                : "和项目群同步材料与进度"}
                             </span>
                             <span>Enter 发送 / Shift+Enter 换行</span>
                           </div>
@@ -2937,32 +2895,6 @@ function MessageBubble({
         <div className="mb-3 h-0.5 w-16 rounded-full bg-gradient-gold" />
         <div className="text-xs uppercase tracking-wider text-primary">📢 项目组通知</div>
         <div className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">{body}</div>
-      </div>
-    );
-  }
-
-  if (msg.content.startsWith("[FAQ]")) {
-    const faqItems = msg.content
-      .replace("[FAQ]", "")
-      .trim()
-      .split(/\n\s*\n/)
-      .map((block) => {
-        const match = block.match(/Q:\s*(.+)\nA:\s*([\s\S]+)/);
-        return match ? { q: match[1], a: match[2] } : null;
-      })
-      .filter(Boolean) as { q: string; a: string }[];
-
-    return (
-      <div className="max-w-[85%] rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/5 p-4">
-        <div className="text-xs uppercase tracking-wider text-fuchsia-300">HR FAQ</div>
-        <Accordion type="single" collapsible className="mt-3">
-          {faqItems.map((item, index) => (
-            <AccordionItem key={index} value={`faq-${index}`} className="border-white/5">
-              <AccordionTrigger className="text-left text-sm hover:text-fuchsia-200 hover:no-underline">{item.q}</AccordionTrigger>
-              <AccordionContent className="text-sm leading-relaxed text-foreground/85">{item.a}</AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
       </div>
     );
   }

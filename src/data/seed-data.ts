@@ -1,4 +1,3 @@
-import { buildHrFaqCard } from "@/data/immersive-content";
 import {
   getGroupWelcomeNotice,
   getSimulationRuntime,
@@ -35,7 +34,6 @@ export function buildOfferSeed({
   const timelineLines = firstTask
     ? [`- Day 1：接收《${firstTask.title}》并开始推进`, "- Day 2：提交初稿并等待反馈", "- Day 3：自评并解锁下一个任务"]
     : ["- Day 1：接收入职资料", "- Day 2：开始第一项任务", "- Day 3：进入正式项目节奏"];
-  const hrFaqCard = buildHrFaqCard();
 
   const conversations = [
     {
@@ -52,14 +50,6 @@ export function buildOfferSeed({
       avatar_emoji: "👥",
       is_group: true,
       order_index: 1,
-      unread_count: 0,
-    },
-    {
-      name: runtime.hrName,
-      role_label: runtime.hrRoleLabel,
-      avatar_emoji: "🏢",
-      is_group: false,
-      order_index: 2,
       unread_count: 0,
     },
   ];
@@ -126,31 +116,9 @@ export function buildOfferSeed({
         task_id: firstTask?.id ?? null,
       })),
     ],
-    hr: [
-      {
-        sender: "system",
-        message_type: "text",
-        content: `你的入职手续已完成，欢迎加入团队。${runtime.hrFaq}`,
-      },
-      {
-        sender: "system",
-        message_type: "text",
-        content: hrFaqCard,
-      },
-    ],
   };
 
   const initialEmails = [
-    {
-      folder: "inbox",
-      from_name: runtime.hrName,
-      from_email: runtime.hrEmail,
-      to_addresses: [userEmail],
-      subject: `【入职须知】欢迎加入 ${company}`,
-      body:
-        `亲爱的同事，\n\n欢迎加入项目团队！你的企业邮箱、共享盘与入职手册已开通。请留意保密要求，并在正式开始前完成设备与账号检查。\n\n${runtime.hrFaq}\n\n${runtime.hrName}`,
-      is_read: false,
-    },
     {
       folder: "inbox",
       from_name: runtime.leader.name,
@@ -166,7 +134,6 @@ export function buildOfferSeed({
     conversationNames: {
       boss: conversations[0].name,
       group: conversations[1].name,
-      hr: conversations[2].name,
     },
     conversations,
     introMessages,

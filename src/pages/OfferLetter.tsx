@@ -153,7 +153,6 @@ const OfferLetter = () => {
         .select();
       const bossConv = convs?.find((c) => c.name === seed.conversationNames.boss);
       const groupConv = convs?.find((c) => c.name === seed.conversationNames.group);
-      const hrConv = convs?.find((c) => c.name === seed.conversationNames.hr);
 
       // Mark first task active
       if (firstTask) {
@@ -178,14 +177,6 @@ const OfferLetter = () => {
           ...seed.introMessages.group.map((message) => ({
             ...message,
             conversation_id: groupConv.id,
-          })),
-        );
-      }
-      if (hrConv) {
-        messages.push(
-          ...seed.introMessages.hr.map((message) => ({
-            ...message,
-            conversation_id: hrConv.id,
           })),
         );
       }
@@ -274,10 +265,10 @@ const OfferLetter = () => {
                 <div className="mt-8 flex items-end justify-between sm:mt-12">
                   <div>
                     <div className="font-display text-sm font-medium italic text-slate-800 sm:text-base">{sim.company}</div>
-                    <div className="mt-1 text-[11px] text-slate-500 sm:text-xs">人力资源部</div>
+                    <div className="mt-1 text-[11px] text-slate-500 sm:text-xs">项目录用确认</div>
                   </div>
                   <div className="rounded-full border-2 border-rose-500/70 px-3 py-1.5 font-display text-[10px] text-rose-500/80 -rotate-12 sm:px-4 sm:py-2 sm:text-xs">
-                    {sim.company.slice(0, 2)} HR
+                    录用确认
                   </div>
                 </div>
 
