@@ -70,6 +70,12 @@ const TRACK_LABEL_MAP: Record<string, string> = {
   "ibd-ipo": "IB IPO",
   "pe-growth": "PE/VC",
   "er-new-energy": "ER",
+  "ibd-robotics-ipo": "IB IPO",
+  "ma-semiconductor": "M&A",
+  "pe-dental-chain": "PE",
+  "er-cxo": "ER",
+  "vc-ai-interview": "VC",
+  "fa-drone-series-a": "FA",
 };
 
 const getTrackLabel = (code?: string | null) => {

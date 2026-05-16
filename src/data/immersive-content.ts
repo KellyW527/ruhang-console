@@ -65,12 +65,18 @@ export const buildHrFaqCard = () =>
 const simulationAliasMap: Record<string, string> = {
   "ibd-ipo": "ibd-ipo",
   "ib-huarui": "ibd-ipo",
+  "ibd-robotics-ipo": "ibd-robotics-ipo",
   "pe-growth": "pe-growth",
   "pe-zhiyuan": "pe-growth",
+  "pe-dental-chain": "pe-dental-chain",
   "er-new-energy": "er-new-energy",
   "er-mingxin": "er-new-energy",
+  "er-cxo": "er-cxo",
   "ma-buyside": "ma-buyside",
   "ma-huaxing": "ma-buyside",
+  "ma-semiconductor": "ma-semiconductor",
+  "vc-ai-interview": "vc-ai-interview",
+  "fa-drone-series-a": "fa-drone-series-a",
 };
 
 export const normalizeSimulationCode = (code?: string | null) =>
@@ -81,6 +87,12 @@ export const groupWelcomeBySimulation: Record<string, string> = {
   "pe-growth": "【知远资本｜拾野生活项目组】\n你好，欢迎进组。",
   "er-new-energy": "【明澈研究所｜企业服务组｜新成员同步】\n欢迎，先了解一下组里的工作节奏。",
   "ma-buyside": "【华兴并购 M&A 组｜京北数码买方收购项目】\n欢迎进组。客户是鸿华百货控股，目标 100% 现金+换股收购京北数码。项目简报、财务包、可比公司清单已同步至共享盘 /京北数码M&A/，正式接任务前请把简报完整看过。M&A 材料一律走加密渠道。",
+  "ibd-robotics-ipo": "【国曜投行股权融资部｜星河机器人 IPO 项目组】\n欢迎加入项目组。项目简报、三年财务与业务数据包已同步至共享盘 /星河机器人IPO/。先完整阅读资料包，再开始 Task 1 行业速览。",
+  "ma-semiconductor": "【海岳并购｜蓝芯半导体买方收购项目组】\n欢迎进组。买方东远电子拟通过收购切入汽车芯片，项目简报和可比交易表已同步至共享盘 /蓝芯半导体M&A/。交易材料严格保密。",
+  "pe-dental-chain": "【启明资本医疗消费组｜悦齿医疗投资项目】\n欢迎进组。悦齿医疗投资简报和门店经营模型已同步至共享盘 /悦齿医疗PE/。先把行业、门店模型和融资用途看完整。",
+  "er-cxo": "【明信证券医药组｜CXO 行业深度项目】\n欢迎加入医药组。CXO 行业框架和可比公司数据已同步至共享盘 /CXO行业深度/。先搭框架，再做公司对比和估值修复逻辑。",
+  "vc-ai-interview": "【辰星创投｜AI 面试助手种子轮项目】\n欢迎加入初筛项目组。BP 摘要和市场地图已同步至共享盘 /AI面试助手/。先判断需求真伪和垂直工具壁垒。",
+  "fa-drone-series-a": "【和桥资本 FA｜云巡科技 A 轮融资项目】\n欢迎加入 FA 项目组。云巡科技融资简报和投资人推荐名单已同步至共享盘 /云巡科技A轮/。先把市场和投资人匹配逻辑跑通。",
 };
 
 export type StarterKitAsset = {
@@ -106,6 +118,30 @@ export const starterKitAssetsBySimulation: Record<string, StarterKitAsset[]> = {
   "ma-buyside": [
     { id: "ma-brief", title: "项目背景简报", description: "京北数码 M&A 项目全景简报：客户、标的、业务结构、红旗事项、4 个任务交付物路径", filename: "京北数码_M&A项目背景简报_v2.0.html", sizeLabel: "HTML · 6节", url: "/starter-kits/ma/jingbei-project-brief.html" },
     { id: "ma-financial-package", title: "京北数码三年财务数据包", description: "FY22-FY24 利润表、资产负债表、现金流、门店与会员、市场数据、EV 倍数完整数据", filename: "京北数码_三年财务数据包_v2.0.csv", sizeLabel: "CSV · 50+行", url: "/starter-kits/ma/jingbei-financial-package.csv" },
+  ],
+  "ibd-robotics-ipo": [
+    { id: "xinghe-brief", title: "星河机器人 IPO 项目简介", description: "公司概况、业务板块、募投计划、审核关注点和竞争格局", filename: "星河机器人_科创板IPO项目简介.html", sizeLabel: "HTML · 7节", url: "/starter-kits/ibd/xinghe-robotics-ipo-brief.html" },
+    { id: "xinghe-financial-package", title: "星河机器人三年财务与业务数据包", description: "收入结构、客户指标、产能、研发投入和募投项目数据", filename: "星河机器人_财务与业务数据包.csv", sizeLabel: "CSV · 40+行", url: "/starter-kits/ibd/xinghe-robotics-financial-package.csv" },
+  ],
+  "ma-semiconductor": [
+    { id: "lanxin-brief", title: "蓝芯半导体买方并购项目简介", description: "买方、标的、交易逻辑、协同点、风险和竞争对手对比", filename: "蓝芯半导体_买方并购项目简介.html", sizeLabel: "HTML · 6节", url: "/starter-kits/ma/lanxin-semiconductor-ma-brief.html" },
+    { id: "lanxin-comps", title: "半导体可比交易与估值数据", description: "汽车电子和半导体并购案例、倍数、技术领域和交易逻辑", filename: "蓝芯半导体_可比交易估值表.csv", sizeLabel: "CSV · 20+行", url: "/starter-kits/ma/lanxin-semiconductor-comps.csv" },
+  ],
+  "pe-dental-chain": [
+    { id: "yuechi-brief", title: "悦齿医疗 PE 投资项目简介", description: "口腔医疗行业、公司概况、门店网络、融资用途和风险提示", filename: "悦齿医疗_PE投资项目简介.html", sizeLabel: "HTML · 8节", url: "/starter-kits/pe/yuechi-dental-investment-brief.html" },
+    { id: "yuechi-store-model", title: "悦齿医疗门店经营模型", description: "门店收入、医生效率、客单价、获客成本、坪效和复购率", filename: "悦齿医疗_门店经营模型.csv", sizeLabel: "CSV · 35+行", url: "/starter-kits/pe/yuechi-dental-store-model.csv" },
+  ],
+  "er-cxo": [
+    { id: "cxo-framework", title: "CXO 行业研究框架", description: "行业分类、产业链、需求驱动、地缘风险和估值周期", filename: "CXO行业研究框架.html", sizeLabel: "HTML · 7节", url: "/starter-kits/er/cxo-industry-framework.html" },
+    { id: "cxo-comps", title: "CXO 可比公司数据", description: "收入、毛利率、海外收入、订单、产能利用率和估值倍数", filename: "CXO可比公司数据.csv", sizeLabel: "CSV · 20行", url: "/starter-kits/er/cxo-company-comps.csv" },
+  ],
+  "vc-ai-interview": [
+    { id: "ai-interview-brief", title: "AI 面试助手种子轮项目简介", description: "产品、市场、用户、商业模式、早期数据和融资需求", filename: "AI面试助手_种子轮项目简介.html", sizeLabel: "HTML · 6节", url: "/starter-kits/vcfa/ai-interview-seed-round-brief.html" },
+    { id: "ai-interview-map", title: "AI 求职训练市场地图", description: "市场规模、用户画像、竞品、融资案例和项目早期数据", filename: "AI面试助手_市场地图.csv", sizeLabel: "CSV · 38行", url: "/starter-kits/vcfa/ai-interview-market-map.csv" },
+  ],
+  "fa-drone-series-a": [
+    { id: "drone-brief", title: "云巡科技 A 轮融资项目简介", description: "低空经济政策、公司业务、客户案例、融资亮点和资金用途", filename: "云巡科技_A轮融资项目简介.html", sizeLabel: "HTML · 8节", url: "/starter-kits/vcfa/drone-series-a-fa-brief.html" },
+    { id: "drone-investors", title: "云巡科技投资人推荐名单", description: "财务 VC、产业资本、政府基金和战略投资方推荐清单", filename: "云巡科技_投资人推荐名单.csv", sizeLabel: "CSV · 19行", url: "/starter-kits/vcfa/drone-investor-list.csv" },
   ],
 };
 
