@@ -99,6 +99,9 @@ const getTaskStatusLabel = (status: string) => {
   }
 };
 
+const isInternalContentPlaceholder = (value?: string | null) =>
+  Boolean(value && /见\s+immersive-content\.ts|immersive-content\.ts/i.test(value));
+
 const Workspace = () => {
   const { id } = useParams<{ id: string }>();
   const { user, profile } = useAuth();
@@ -174,11 +177,16 @@ const Workspace = () => {
   const feedbackReference = feedbackTask ? getTaskReferenceContent(simCode, feedbackTask.order_index) : null;
   const isReviewMode = feedbackStatus?.status === "done";
   const feedbackAnswerMarkdown = feedbackReference?.standardAnswer ?? feedbackTask?.standard_answer ?? "";
-  const aiTutorMarkdown = feedbackStatus?.ai_feedback?.detailMarkdown
+  const savedAiTutorMarkdown = feedbackStatus?.ai_feedback?.detailMarkdown;
+  const storedBossCommentary = feedbackTask?.boss_commentary ?? feedbackTask?.feedback_message;
+  const aiTutorMarkdown = !isInternalContentPlaceholder(savedAiTutorMarkdown) && savedAiTutorMarkdown
+    ? savedAiTutorMarkdown
+    : feedbackReference?.analysis
+      ?? (!isInternalContentPlaceholder(storedBossCommentary) ? storedBossCommentary : null)
     ?? [
       `### ${runtime.leader.name}的点评`,
       ``,
-      feedbackTask?.boss_commentary ?? feedbackTask?.feedback_message ?? "这次提交已收到，请结合标准答案继续复盘关键差距。",
+      "这次提交已收到，请结合标准答案继续复盘关键差距。",
       ``,
       `### 下一步建议`,
       `- 先对照标准答案检查结构、口径和关键判断是否完整。`,
