@@ -10,7 +10,7 @@ export function AuthBrandPanel() {
       <div className="space-y-6 relative z-10">
         <div className="flex items-center gap-2">
           <img src={logoImg} alt="入行" className="h-10 w-10 rounded-lg object-contain" />
-          <span className="text-2xl font-display font-semibold text-foreground">入行 RuHang</span>
+          <span className="text-2xl font-display font-semibold text-foreground">入行</span>
         </div>
         <div className="space-y-3 mt-12">
           <h2 className="text-3xl font-display font-semibold text-foreground leading-tight">
@@ -51,7 +51,7 @@ export function AuthMobileBrand() {
   return (
     <div className="lg:hidden flex items-center gap-2 mb-8">
       <img src={logoImg} alt="入行" className="h-8 w-8 rounded-lg object-contain" />
-      <span className="text-lg font-display font-semibold text-foreground">入行 RuHang</span>
+      <span className="text-lg font-display font-semibold text-foreground">入行</span>
     </div>
   );
 }

@@ -55,7 +55,7 @@ const Report = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = "能力报告 · 入行 RuHang";
+    document.title = "能力报告 · 入行";
   }, []);
 
   useEffect(() => {

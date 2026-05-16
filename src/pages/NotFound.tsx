@@ -9,7 +9,7 @@ const NotFound = () => {
   const location = useLocation();
 
   useEffect(() => {
-    document.title = "页面未找到 · 入行 RuHang";
+    document.title = "页面未找到 · 入行";
     console.error("404 Error: User attempted to access non-existent route:", location.pathname);
   }, [location.pathname]);
 

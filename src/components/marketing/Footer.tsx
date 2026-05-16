@@ -13,7 +13,7 @@ export function Footer() {
           <div className="space-y-4 lg:col-span-1">
             <div className="flex items-center gap-2">
               <img src={logoImg} alt="入行" className="h-8 w-8 rounded-lg object-contain" />
-              <span className="text-lg font-display font-semibold text-foreground">入行 RuHang</span>
+              <span className="text-lg font-display font-semibold text-foreground">入行</span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               沉浸式金融职场训练平台，在真实场景中掌握核心能力。
@@ -77,7 +77,7 @@ export function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-border/30 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} RuHang. 模拟内容仅供学习交流。</p>
+          <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} 入行. 模拟内容仅供学习交流。</p>
         </div>
       </div>
     </footer>

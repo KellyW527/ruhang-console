@@ -38,7 +38,7 @@ const OfferLetter = () => {
   const preferredName = getPreferredDisplayName(profile ?? null, user?.email);
 
   useEffect(() => {
-    document.title = "Offer Letter · 入行 RuHang";
+    document.title = "Offer Letter · 入行";
   }, []);
 
   useEffect(() => {

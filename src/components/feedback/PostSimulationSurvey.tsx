@@ -148,7 +148,7 @@ export function PostSimulationSurvey({
           {/* NPS */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
             <div className="text-sm font-medium text-foreground">
-              你有多大可能把 RuHang 推荐给朋友？
+              你有多大可能把入行推荐给朋友？
             </div>
             <div className="mt-1 text-xs text-muted-foreground">0 = 一定不会 · 10 = 一定会</div>
             <div className="mt-3 grid grid-cols-11 gap-1.5">
@@ -224,7 +224,7 @@ export function PostSimulationSurvey({
             <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
               <span className="text-foreground">愿意公开</span>：发起方或合作企业可以看到你完成本项目的情况，有机会被联系面试、收到内推或人才推荐。
               <br />
-              <span className="text-foreground">保持保密</span>：仅你与 RuHang 可见，不会被任何第三方查询到。
+              <span className="text-foreground">保持保密</span>：仅你与入行可见，不会被任何第三方查询到。
             </p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <button

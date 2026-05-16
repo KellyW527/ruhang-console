@@ -32,7 +32,7 @@ const Login = () => {
   const { session } = useAuth();
 
   useEffect(() => {
-    document.title = "登录 · 入行 RuHang";
+    document.title = "登录 · 入行";
     if (session) nav(redirect, { replace: true });
   }, [session, nav, redirect]);
 
@@ -62,7 +62,7 @@ const Login = () => {
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
              <img src={logoImg} alt="入行" className="h-8 w-8 rounded-lg object-contain" />
-            <span className="text-lg font-display font-semibold text-foreground">入行 RuHang</span>
+            <span className="text-lg font-display font-semibold text-foreground">入行</span>
           </div>
 
           <div className="space-y-2">

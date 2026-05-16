@@ -4,7 +4,7 @@ import { Footer } from "@/components/marketing/Footer";
 
 const Terms = () => {
   useEffect(() => {
-    document.title = "服务条款 · 入行 RuHang";
+    document.title = "服务条款 · 入行";
   }, []);
 
   return (
@@ -22,7 +22,7 @@ const Terms = () => {
 
           <section className="space-y-3">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              欢迎使用入行 RuHang（以下简称"本平台"）。在你注册账号或以任何方式使用本平台前，请仔细阅读本条款。一旦你点击"创建账号"或继续使用本平台，即视为你已阅读、理解并同意接受本条款的全部内容。
+              欢迎使用入行（以下简称"本平台"）。在你注册账号或以任何方式使用本平台前，请仔细阅读本条款。一旦你点击"创建账号"或继续使用本平台，即视为你已阅读、理解并同意接受本条款的全部内容。
             </p>
           </section>
 

@@ -142,7 +142,7 @@ export function PreSimulationSurvey({
 
           {/* 来源 */}
           <div>
-            <div className="text-sm font-medium text-foreground">你怎么知道 RuHang 的？</div>
+            <div className="text-sm font-medium text-foreground">你怎么知道入行的？</div>
             <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
               {SOURCES.map((opt) => (
                 <button

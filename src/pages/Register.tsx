@@ -34,7 +34,7 @@ const Register = () => {
   const { session } = useAuth();
 
   useEffect(() => {
-    document.title = "注册 · 入行 RuHang";
+    document.title = "注册 · 入行";
     if (session) nav(redirect, { replace: true });
   }, [session, nav, redirect]);
 
@@ -103,7 +103,7 @@ const Register = () => {
           <div className="w-full max-w-md space-y-8">
             <div className="lg:hidden flex items-center gap-2 mb-8">
               <img src={logoImg} alt="入行" className="h-8 w-8 rounded-lg object-contain" />
-              <span className="text-lg font-display font-semibold text-foreground">入行 RuHang</span>
+              <span className="text-lg font-display font-semibold text-foreground">入行</span>
             </div>
 
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20">
@@ -156,7 +156,7 @@ const Register = () => {
         <div className="w-full max-w-md space-y-8">
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <img src={logoImg} alt="入行" className="h-8 w-8 rounded-lg object-contain" />
-            <span className="text-lg font-display font-semibold text-foreground">入行 RuHang</span>
+            <span className="text-lg font-display font-semibold text-foreground">入行</span>
           </div>
 
           <div className="space-y-2">

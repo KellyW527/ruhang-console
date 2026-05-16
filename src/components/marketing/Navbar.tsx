@@ -14,7 +14,7 @@ export function Navbar() {
       <div className="container mx-auto flex h-16 items-center justify-between px-6">
         <Link to="/" className="flex items-center gap-2">
           <img src={logoImg} alt="入行" className="h-8 w-8 rounded-lg object-contain" />
-          <span className="text-lg font-display font-semibold text-foreground">入行 RuHang</span>
+          <span className="text-lg font-display font-semibold text-foreground">入行</span>
         </Link>
 
         <div className="hidden md:flex items-center gap-8">

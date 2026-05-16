@@ -24,7 +24,7 @@ const ResetPassword = () => {
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
-    document.title = "重置密码 · 入行 RuHang";
+    document.title = "重置密码 · 入行";
     if (window.location.hash.includes("type=recovery")) {
       setRecoveryMode(true);
     }

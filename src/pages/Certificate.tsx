@@ -3,10 +3,10 @@
  *
  * 视觉规则：
  *  - 白底深字，A4 横版，可作为 PDF 打印 / 分享
- *  - 顶部统一品牌：RuHang + 项目方文字 logo（占位，后续替换 PNG/SVG）
+ *  - 顶部统一品牌：入行 + 项目方文字 logo（占位，后续替换 PNG/SVG）
  *  - 中间：证书标题 + 学员姓名 + 项目 + 完成日期
  *  - 下方：技能列表（"在本项目中你证明了你掌握了"）
- *  - 底部：项目方签名人、RuHang 签名人、证书唯一编号
+ *  - 底部：项目方签名人、入行 签名人、证书唯一编号
  *
  * 业务规则：
  *  - 进入此页需要项目处于 completed 状态
@@ -46,13 +46,13 @@ export default function Certificate() {
   const [downloading, setDownloading] = useState(false);
 
   const learnerName = useMemo(
-    () => getPreferredDisplayName(profile ?? null, user?.email) ?? "RuHang 学员",
+    () => getPreferredDisplayName(profile ?? null, user?.email) ?? "入行学员",
     [profile, user],
   );
   const catalog = data ? getCatalogEntryByCode(data.simulationCode) : null;
 
   useEffect(() => {
-    document.title = "结业证书 · 入行 RuHang";
+    document.title = "结业证书 · 入行";
   }, []);
 
   useEffect(() => {
@@ -118,7 +118,7 @@ export default function Certificate() {
     setDownloading(true);
     try {
       const html2pdf = (await import("html2pdf.js")).default;
-      const filename = `RuHang_${data.simulationCompany}_结业证书.pdf`;
+      const filename = `入行_${data.simulationCompany}_结业证书.pdf`;
       await html2pdf()
         .set({
           margin: 0,
@@ -228,7 +228,7 @@ export default function Certificate() {
               className="relative flex h-full flex-col"
               style={{ padding: "60px 80px" }}
             >
-              {/* 顶部 brand：RuHang + 项目方 logo */}
+              {/* 顶部 brand：入行 + 项目方 logo */}
               <div className="flex items-start justify-between">
                 <div>
                   <div
@@ -290,7 +290,7 @@ export default function Certificate() {
                   Job Simulation Certificate
                 </div>
                 <div style={{ fontSize: 13, color: "#666", marginTop: 6 }}>
-                  本证书由 RuHang 颁发，证明以下学员已完成全部模拟任务
+                  本证书由入行颁发，证明以下学员已完成全部模拟任务
                 </div>
               </div>
 
@@ -425,7 +425,7 @@ export default function Certificate() {
                         VERIFIED
                       </div>
                       <div style={{ fontSize: 9, color: "#666", marginTop: 2 }}>
-                        RuHang
+                        入行
                       </div>
                     </div>
                   </div>
@@ -434,7 +434,7 @@ export default function Certificate() {
                   </div>
                 </div>
 
-                {/* 右：RuHang 签名 + 日期 */}
+                {/* 右：入行 签名 + 日期 */}
                 <div className="text-right" style={{ minWidth: 200 }}>
                   <div
                     style={{
@@ -446,7 +446,7 @@ export default function Certificate() {
                       paddingBottom: 4,
                     }}
                   >
-                    RuHang Team
+                    入行团队
                   </div>
                   <div style={{ fontSize: 10, color: "#666", marginTop: 6 }}>
                     完成日期 · {completedDate}
@@ -460,7 +460,7 @@ export default function Certificate() {
           <div className="mt-6 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <ShieldCheck className="h-3.5 w-3.5 text-primary" />
-              证书编号 {certNumber} · 可在 RuHang 后台核验
+              证书编号 {certNumber} · 可在入行后台核验
             </div>
             <div>支持 LinkedIn / 简历 / 朋友圈分享</div>
           </div>

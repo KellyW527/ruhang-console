@@ -58,7 +58,7 @@ export default function Library() {
   const [starting, setStarting] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = "项目库 · 入行 RuHang";
+    document.title = "项目库 · 入行";
   }, []);
 
   useEffect(() => {
@@ -198,7 +198,7 @@ export default function Library() {
                 <img src={logoImg} alt="入行" className="h-11 w-11 rounded-2xl object-contain" />
                 <div>
                   <div className="font-display text-lg font-semibold">项目库</div>
-                  <div className="text-xs text-muted-foreground">RuHang 全部沉浸式金融模拟项目</div>
+                  <div className="text-xs text-muted-foreground">入行全部沉浸式金融模拟项目</div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -216,7 +216,7 @@ export default function Library() {
           <section className="mt-6 glass-deep relative overflow-hidden rounded-[36px] p-6 md:p-8">
             <div className="absolute inset-0 halo-gold opacity-30" />
             <div className="relative max-w-3xl">
-              <div className="eyebrow">RuHang Project Library</div>
+              <div className="eyebrow">入行项目库</div>
               <h1 className="mt-3 font-display text-3xl font-semibold leading-tight text-white md:text-4xl">
                 选一个真实岗位，开始你的下一段模拟。
               </h1>
@@ -280,7 +280,7 @@ export default function Library() {
                 </div>
                 <div className="font-display text-lg font-medium text-white">该条线暂无项目</div>
                 <div className="mt-1.5 max-w-sm text-sm leading-7 text-muted-foreground">
-                  RuHang 正在持续上线新项目，敬请期待。
+                  入行正在持续上线新项目，敬请期待。
                 </div>
               </div>
             ) : (

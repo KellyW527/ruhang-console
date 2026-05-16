@@ -110,7 +110,7 @@ export default function Settings() {
   const [notifications, setNotifications] = useState<ProfileNotifications>(DEFAULT_PROFILE_NOTIFICATIONS);
 
   useEffect(() => {
-    document.title = "设置 · 入行 RuHang";
+    document.title = "设置 · 入行";
   }, []);
 
   useEffect(() => {
@@ -248,7 +248,7 @@ export default function Settings() {
       ],
       { type: "application/json;charset=utf-8" },
     );
-    downloadBlob(blob, `ruhang-records-${Date.now()}.json`);
+    downloadBlob(blob, `入行记录-${Date.now()}.json`);
     toast.success("完成记录已导出");
   };
 
@@ -315,7 +315,7 @@ export default function Settings() {
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <title>RuHang 能力报告</title>
+  <title>入行能力报告</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif; background: #0a1628; color: #f8fafc; padding: 32px; }
     .card { border: 1px solid rgba(201,168,76,.18); border-radius: 18px; padding: 20px; margin-bottom: 20px; background: rgba(255,255,255,.03); }
@@ -329,7 +329,7 @@ export default function Settings() {
 </head>
 <body>
   <div class="card">
-    <div class="eyebrow">RuHang</div>
+    <div class="eyebrow">入行</div>
     <h1>${preferredName} 的能力报告</h1>
     <p>导出时间：${new Date().toLocaleString("zh-CN")}</p>
     <div class="metric">${average}</div>
@@ -355,7 +355,7 @@ export default function Settings() {
 </html>`;
 
     const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    downloadBlob(blob, `ruhang-report-${Date.now()}.html`);
+    downloadBlob(blob, `入行报告-${Date.now()}.html`);
     toast.success("能力报告已导出");
   };
 
@@ -434,7 +434,7 @@ export default function Settings() {
             <ArrowLeft className="h-3.5 w-3.5" /> 返回控制台
           </Link>
           <div className="mt-3">
-            <div className="eyebrow">RuHang</div>
+            <div className="eyebrow">入行</div>
             <h1 className="mt-2 font-display text-3xl font-semibold">设置中心</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
               管理你的资料、模拟偏好、通知和订阅权益。

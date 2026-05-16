@@ -290,7 +290,7 @@ function SidebarBody({
     <div className="flex h-full flex-col">
       <Link to="/" className="flex items-center gap-2.5 px-6 py-7">
         <img src={logoImg} alt="入行" className="h-9 w-9 rounded-lg object-contain" />
-        <span className="font-display text-lg font-semibold">入行 RuHang</span>
+        <span className="font-display text-lg font-semibold">入行</span>
       </Link>
       <nav className="flex-1 space-y-1 px-3">
         {NAV.map((item) => {
@@ -357,7 +357,7 @@ export default function Dashboard() {
   const [celebrationMedals, setCelebrationMedals] = useState<AchievementState[]>([]);
 
   useEffect(() => {
-    document.title = "控制台 · 入行 RuHang";
+    document.title = "控制台 · 入行";
   }, []);
 
   useEffect(() => {
@@ -485,7 +485,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-3">
                 <img src={logoImg} alt="入行" className="h-11 w-11 rounded-2xl object-contain" />
                 <div>
-                  <div className="font-display text-lg font-semibold">入行 RuHang</div>
+                  <div className="font-display text-lg font-semibold">入行</div>
                   <div className="text-xs text-muted-foreground">真实岗位节奏驱动的金融工作台</div>
                 </div>
               </div>
@@ -550,7 +550,7 @@ export default function Dashboard() {
               <div className="absolute inset-0 halo-gold opacity-40" />
               <div className="absolute inset-y-0 right-0 w-1/2 halo-blue opacity-50" />
               <div className="relative">
-                <div className="eyebrow">RuHang Control Room</div>
+                <div className="eyebrow">入行控制台</div>
                 <div className="mt-4 max-w-3xl">
                   <h1 className="font-display text-4xl font-semibold leading-tight text-white md:text-5xl">
                     {name}，下一段金融工作线已经排好。
@@ -712,7 +712,7 @@ export default function Dashboard() {
                   </h2>
                   <p className="mt-2 text-sm text-muted-foreground">
                     {inProgress.length === 0
-                      ? "RuHang 为你精选 3 个不同方向的项目，挑一个开始你的金融职业旅程。"
+                      ? "入行为你精选 3 个不同方向的项目，挑一个开始你的金融职业旅程。"
                       : "这里只展示你正在进行中的项目；已结项的项目会沉淀到下方的「已完成项目」区块。"}
                   </p>
                 </div>

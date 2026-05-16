@@ -79,7 +79,7 @@ export const DEMO_TASKS = [
 
 export const DEMO_EMAIL = {
   from: "周恺 <zhouk@xingtong-ib.com>",
-  to: "你 <intern@ruhang.demo>",
+  to: "你 <intern@xingtong-ib.com>",
   subject: "[立项] 云岚科技 SaaS 行业研究框架 · 今晚 21:00 截止",
   preview: "小李，附件是 starter kit，请按 IBD 标准模板撰写。重点关注 ARR/NDR/Magic Number 等指标…",
   time: "刚刚",

@@ -66,7 +66,7 @@ export function TaskFeedbackBar({
     return (
       <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-emerald-200">
         <Check className="h-4 w-4" />
-        反馈已收到，谢谢你帮我们改进 RuHang。
+        反馈已收到，谢谢你帮我们改进「入行」。
       </div>
     );
   }

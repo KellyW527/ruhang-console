@@ -73,7 +73,7 @@ const TRACK_LABEL_MAP: Record<string, string> = {
 };
 
 const getTrackLabel = (code?: string | null) => {
-  if (!code) return "RuHang";
+  if (!code) return "入行";
   return TRACK_LABEL_MAP[code] ?? code.toUpperCase();
 };
 
@@ -209,7 +209,7 @@ const Workspace = () => {
 
   // ---- Initial load ----
   useEffect(() => {
-    document.title = "工作台 · 入行 RuHang";
+    document.title = "工作台 · 入行";
   }, []);
 
   // Guard ref: prevents re-running the full workspace load when auth state refreshes
@@ -1560,7 +1560,7 @@ const Workspace = () => {
     }
     setComposeSending(true);
     const fromName = preferredDisplayName || user.email?.split("@")[0] || "我";
-    const fromEmail = user.email || "me@ruhang.app";
+    const fromEmail = user.email || "me@example.com";
     const ccArr = composeCc
       .split(/[,，\s]+/)
       .map((s) => s.trim())
@@ -1627,7 +1627,7 @@ const Workspace = () => {
     }
     setDraftSaving(true);
     const fromName = preferredDisplayName || user.email?.split("@")[0] || "我";
-    const fromEmail = user.email || "me@ruhang.app";
+    const fromEmail = user.email || "me@example.com";
     await supabase.from("emails").insert({
       user_simulation_id: usId,
       folder: "draft",
@@ -1720,7 +1720,7 @@ const Workspace = () => {
               </div>
               <div className="mt-2 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
                 <div className="min-w-0">
-                  <h1 className="truncate font-display text-2xl font-semibold text-foreground lg:text-[2rem]">{simTitle || "RuHang 工作台"}</h1>
+                  <h1 className="truncate font-display text-2xl font-semibold text-foreground lg:text-[2rem]">{simTitle || "入行工作台"}</h1>
                   <p className="mt-1 max-w-3xl text-sm leading-7 text-muted-foreground">
                     这里连接真实会话、邮件往来、任务反馈与自评推进。你在每一步里提交的内容，都会按正式模拟流程继续向下流转。
                   </p>

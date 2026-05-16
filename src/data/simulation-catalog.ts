@@ -46,7 +46,7 @@ export const SIMULATION_TRACKS: Array<{
   emoji: string;
   desc: string;
 }> = [
-  { key: "all", label: "全部", emoji: "✨", desc: "RuHang 上线的全部沉浸式项目" },
+  { key: "all", label: "全部", emoji: "✨", desc: "入行上线的全部沉浸式项目" },
   { key: "ibd", label: "IBD 投行", emoji: "💼", desc: "IPO、再融资、债券承销" },
   { key: "ma", label: "M&A 并购", emoji: "🤝", desc: "买方/卖方并购全流程" },
   { key: "pe", label: "PE 私募股权", emoji: "📊", desc: "尽调、估值、投决" },

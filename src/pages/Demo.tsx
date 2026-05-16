@@ -40,7 +40,7 @@ export default function Demo() {
   const timers = useRef<number[]>([]);
 
   useEffect(() => {
-    document.title = "产品 Demo · 入行 RuHang";
+    document.title = "产品 Demo · 入行";
     let cum = 0;
     DEMO_MESSAGES.forEach((m) => {
       cum += m.delay;

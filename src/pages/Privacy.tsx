@@ -4,7 +4,7 @@ import { Footer } from "@/components/marketing/Footer";
 
 const Privacy = () => {
   useEffect(() => {
-    document.title = "隐私政策 · 入行 RuHang";
+    document.title = "隐私政策 · 入行";
   }, []);
 
   return (
@@ -22,7 +22,7 @@ const Privacy = () => {
 
           <section className="space-y-3">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              入行（RuHang，以下简称"本平台"）尊重并保护所有用户的隐私。本政策说明我们在你使用本平台时收集、使用、存储与共享个人信息的方式，请你在使用前仔细阅读。
+              入行（入行，以下简称"本平台"）尊重并保护所有用户的隐私。本政策说明我们在你使用本平台时收集、使用、存储与共享个人信息的方式，请你在使用前仔细阅读。
             </p>
           </section>
 
@@ -77,8 +77,8 @@ const Privacy = () => {
             <h2 className="text-xl font-display font-semibold text-foreground">六、联系我们</h2>
             <p className="text-sm text-muted-foreground leading-relaxed">
               如对本政策有任何疑问或希望行使上述权利，请发送邮件至{" "}
-              <a href="mailto:hello@ruhang.app" className="text-primary hover:underline">
-                hello@ruhang.app
+              <a href="mailto:3165784931@qq.com" className="text-primary hover:underline">
+                3165784931@qq.com
               </a>
               。
             </p>
