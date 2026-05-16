@@ -95,7 +95,7 @@ export const SIMULATION_CATALOG: CatalogEntry[] = [
     signoffTitle: "华兴并购 M&A 组 VP",
   },
   {
-    code: "pe-deal",
+    code: "pe-growth",
     title: "时晔资本 · 跨境消费品 PE",
     company: "时晔资本",
     role: "PE 投资分析师",
@@ -115,7 +115,7 @@ export const SIMULATION_CATALOG: CatalogEntry[] = [
     signoffTitle: "时晔资本 投资合伙人",
   },
   {
-    code: "er-saas",
+    code: "er-new-energy",
     title: "卖方研究 · SaaS 行业框架",
     company: "卖方研究所",
     role: "行业研究助理",
