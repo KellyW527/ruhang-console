@@ -51,7 +51,6 @@ type SimulationRuntime = {
 import {
   groupWelcomeBySimulation,
   normalizeSimulationCode,
-  phoneScriptsBySimulation,
   starterKitAssetsBySimulation,
   taskReferenceContentBySimulation,
 } from "@/data/immersive-content";
@@ -988,11 +987,6 @@ function expandStandardAnswer(simulationCode: string, orderIndex: number, answer
   }
   return answer;
 }
-
-export const getPhoneScript = (simulationCode?: string | null): import("@/data/immersive-content").PhoneScript | undefined => {
-  const scripts = phoneScriptsBySimulation[normalizeSimulationCode(simulationCode)];
-  return scripts?.[0];
-};
 
 const submissionLabel: Record<string, string> = {
   email: "邮件提交",

@@ -13,7 +13,6 @@ import {
   Mail,
   MessagesSquare,
   FileText,
-  Phone,
   Quote,
   FileSpreadsheet,
   Presentation,
@@ -238,7 +237,7 @@ const Landing = () => {
               tag="卖方研究 ER"
               title="明信证券 · 新能源组"
               desc="加入新能源组覆盖锂电链条，从行业框架到深度报告、点评写作，体验研究员的一周。"
-              tasks={["行业框架", "公司深度", "电话会议纪要", "盈利模型", "深度报告", "业绩点评"]}
+              tasks={["行业框架", "公司深度", "调研纪要", "盈利模型", "深度报告", "业绩点评"]}
             />
             <TrackCard
               icon={Handshake}
@@ -397,11 +396,6 @@ const Landing = () => {
             <div className="absolute -left-4 top-12 hidden md:block">
               <div className="glass flex items-center gap-2 rounded-full border border-primary/20 px-3 py-1.5 text-xs shadow-elegant">
                 <Mail className="h-3.5 w-3.5 text-primary" /> 邮件已送达
-              </div>
-            </div>
-            <div className="absolute -right-4 bottom-12 hidden md:block">
-              <div className="glass flex items-center gap-2 rounded-full border border-primary/20 px-3 py-1.5 text-xs shadow-elegant">
-                <Phone className="h-3.5 w-3.5 text-primary" /> 1 个语音任务
               </div>
             </div>
           </motion.div>

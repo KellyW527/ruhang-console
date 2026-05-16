@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Send, Paperclip, Image as ImageIcon, Mail, MessageCircle, CheckCircle2, Lock, Circle, PenSquare, X, Loader2, Clock, Phone, ChevronDown, FileText, Download, BriefcaseBusiness, FolderOpen, Inbox, ListTodo, Sparkles, Target, Users, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, ExternalLink } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Image as ImageIcon, Mail, MessageCircle, CheckCircle2, Lock, Circle, PenSquare, X, Loader2, Clock, ChevronDown, FileText, Download, BriefcaseBusiness, FolderOpen, Inbox, ListTodo, Sparkles, Target, Users, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase, supabasePublicConfig } from "@/integrations/supabase/client";
@@ -25,7 +25,6 @@ import { SelfEval, type SelfEvalValue } from "@/components/workspace/SelfEval";
 import { MarkdownContent } from "@/components/content/MarkdownContent";
 import { TypingIndicator } from "@/components/workspace/TypingIndicator";
 import { DropZone } from "@/components/workspace/DropZone";
-import { IncomingCallDialog } from "@/components/workspace/IncomingCallDialog";
 import { TaskFeedbackBar } from "@/components/feedback/TaskFeedbackBar";
 import { PostSimulationSurvey } from "@/components/feedback/PostSimulationSurvey";
 
@@ -34,7 +33,6 @@ import {
   getAutomatedReply,
   getConversationKind,
   getGroupWelcomeNotice,
-  getPhoneScript,
   getSimulationRuntime,
   getStarterKitAssets,
   getTaskMaterials,
@@ -152,7 +150,6 @@ const Workspace = () => {
   const [completionAverageScore, setCompletionAverageScore] = useState<number | null>(null);
   const [completionAt, setCompletionAt] = useState<string | null>(null);
   const [typingConvId, setTypingConvId] = useState<string | null>(null);
-  const [callOpen, setCallOpen] = useState(false);
   const [doneCollapsed, setDoneCollapsed] = useState(true);
   const [showPostSurvey, setShowPostSurvey] = useState(false);
   const [draftSaving, setDraftSaving] = useState(false);
@@ -168,7 +165,6 @@ const Workspace = () => {
   const profilePreferences = normalizePreferences(profile?.preferences);
   const preferredDisplayName = getPreferredDisplayName(profile ?? null, user?.email);
   const starterKitAssets = getStarterKitAssets(simCode);
-  const phoneScript = getPhoneScript(simCode);
   const completedCount = progressLoaded
   ? Object.values(taskStatuses).filter((s) => s.status === "done").length
   : 0;
@@ -1659,28 +1655,6 @@ const Workspace = () => {
     setComposeOpen(false);
   };
 
-  const handleCallEnded = async (durationSeconds: number) => {
-    if (!activeConvId) return;
-    const transcript = phoneScript
-      ? [phoneScript.title, "", ...phoneScript.lines, "", phoneScript.followup].join("\n")
-      : "通话脚本待补充";
-    await pushConversationMessages(
-      activeConvId,
-      {
-        conversation_id: activeConvId,
-        sender: "system",
-        message_type: "audio",
-        content: phoneScript
-          ? `${phoneScript.title} · 通话结束 · 时长 ${String(Math.floor(durationSeconds / 60)).padStart(2, "0")}:${String(durationSeconds % 60).padStart(2, "0")}`
-          : `通话结束 · 时长 ${String(Math.floor(durationSeconds / 60)).padStart(2, "0")}:${String(durationSeconds % 60).padStart(2, "0")}`,
-        file_name: `${phoneScript?.title ?? "call-script"}_subtitle.txt`,
-        file_size: "00:30",
-        file_url: `data:text/plain;charset=utf-8,${encodeURIComponent(transcript)}`,
-      },
-      { markUnread: false },
-    );
-  };
-
   if (wsLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -2474,14 +2448,6 @@ const Workspace = () => {
                   >
                     <ListTodo className="h-4 w-4" />
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setRightCollapsed(false)}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-muted-foreground transition hover:border-white/20 hover:text-foreground"
-                    title="语音任务"
-                  >
-                    <Phone className="h-4 w-4" />
-                  </button>
                 </div>
               )}
 
@@ -2576,22 +2542,6 @@ const Workspace = () => {
                       </div>
                     </div>
                   )}
-
-                  <button
-                    type="button"
-                    onClick={() => setCallOpen(true)}
-                    className="flex w-full items-start gap-3 rounded-3xl border border-white/10 bg-white/[0.03] px-4 py-4 text-left transition hover:border-primary/20 hover:bg-primary/[0.06]"
-                  >
-                    <div className="rounded-2xl bg-primary/12 p-2 text-primary">
-                      <Phone className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-foreground">电话 / 语音任务演练</div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        进入模拟来电界面，按当前项目脚本预演语音沟通。
-                      </div>
-                    </div>
-                  </button>
 
                   <section className="space-y-3">
                     <div className="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -2965,14 +2915,6 @@ const Workspace = () => {
           }}
         />
       )}
-      <IncomingCallDialog
-        open={callOpen}
-        callerName={runtime.leader.name}
-        callerRole={runtime.leader.title}
-        script={phoneScript}
-        onOpenChange={setCallOpen}
-        onEnded={handleCallEnded}
-      />
     </div>
   );
 };
@@ -3090,44 +3032,6 @@ function MessageBubble({
           {msg.file_url ? (
             <a href={msg.file_url} target="_blank" rel="noreferrer" className="block hover:opacity-90">{inner}</a>
           ) : inner}
-        </div>
-      </div>
-    );
-  }
-
-  if (msg.message_type === "audio") {
-    return (
-      <div className={cn("flex w-full", isUser ? "justify-end" : "justify-start")}>
-        <div className={cn("max-w-[60%]")}>
-        <div className={cn("rounded-2xl px-4 py-3", isUser ? "bg-gradient-gold text-primary-foreground" : "bg-white/5")}>
-          <div className="flex items-center gap-3">
-            <button type="button" className="flex h-8 w-8 items-center justify-center rounded-full bg-background/40">
-              <Phone className="h-3.5 w-3.5" />
-            </button>
-            <div className="flex items-end gap-1">
-              {Array.from({ length: 16 }).map((_, index) => (
-                <span
-                  key={index}
-                  className="w-1 rounded-full bg-current/70"
-                  style={{ height: `${8 + ((index * 7) % 18)}px` }}
-                />
-              ))}
-            </div>
-            <span className="text-xs opacity-80">{msg.file_size ?? "00:30"}</span>
-          </div>
-          <div className="mt-2 text-xs opacity-80">{msg.content}</div>
-          {msg.file_url && (
-            <a
-              href={msg.file_url}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-2 inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
-            >
-              <Download className="h-3 w-3" />
-              查看字幕
-            </a>
-          )}
-        </div>
         </div>
       </div>
     );
