@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Send, Paperclip, Image as ImageIcon, Mail, MessageCircle, CheckCircle2, Lock, Circle, PenSquare, X, Loader2, Clock, ChevronDown, FileText, Download, BriefcaseBusiness, FolderOpen, Inbox, ListTodo, Sparkles, Target, Users, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, ExternalLink } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Image as ImageIcon, Mail, MessageCircle, CheckCircle2, Lock, Circle, PenSquare, X, Loader2, Clock, ChevronDown, FileText, Download, FolderOpen, Inbox, ListTodo, Sparkles, Target, Users, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase, supabasePublicConfig } from "@/integrations/supabase/client";
@@ -1743,15 +1743,6 @@ const Workspace = () => {
                   >
                     <PanelLeftOpen className="h-4 w-4" />
                   </button>
-                  <div className="my-1 h-px w-6 bg-white/10" />
-                  <button
-                    type="button"
-                    onClick={() => setLeftCollapsed(false)}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary"
-                    title="项目简报"
-                  >
-                    <BriefcaseBusiness className="h-4 w-4" />
-                  </button>
                   <button
                     type="button"
                     onClick={() => setLeftCollapsed(false)}
@@ -1781,42 +1772,16 @@ const Workspace = () => {
               {/* Expanded content */}
               {!leftCollapsed && (
                 <>
-                  <div className="border-b border-white/5 px-5 py-5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="eyebrow">Project Brief</div>
-                      <button
-                        type="button"
-                        onClick={() => setLeftCollapsed(true)}
-                        className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary transition hover:border-primary/60 hover:bg-primary/20 lg:inline-flex"
-                        title="收起面板"
-                      >
-                        <PanelLeftClose className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <div className="mt-3 rounded-[28px] border border-primary/20 bg-primary/8 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 text-sm text-foreground">
-                            <BriefcaseBusiness className="h-4 w-4 text-primary" />
-                            当前项目线
-                          </div>
-                          <div className="mt-2 line-clamp-2 font-display text-lg font-semibold">{simTitle}</div>
-                        </div>
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 text-xl">
-                          {runtime.leader.avatarEmoji}
-                        </div>
-                      </div>
-                      <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                        <div className="rounded-2xl border border-white/10 bg-background/40 px-3 py-2">
-                          <div className="text-muted-foreground">带教人</div>
-                          <div className="mt-1 font-medium text-foreground">{runtime.leader.name}</div>
-                        </div>
-                        <div className="rounded-2xl border border-white/10 bg-background/40 px-3 py-2">
-                          <div className="text-muted-foreground">赛道</div>
-                          <div className="mt-1 font-medium text-foreground">{trackLabel}</div>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="flex shrink-0 items-center justify-between border-b border-white/5 px-4 py-3">
+                    <div className="eyebrow">Workspace</div>
+                    <button
+                      type="button"
+                      onClick={() => setLeftCollapsed(true)}
+                      className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary transition hover:border-primary/60 hover:bg-primary/20 lg:inline-flex"
+                      title="收起面板"
+                    >
+                      <PanelLeftClose className="h-4 w-4" />
+                    </button>
                   </div>
 
                   <div className="flex min-h-0 flex-1 flex-col gap-4 px-4 py-4">
