@@ -205,6 +205,11 @@ const OfferLetter = () => {
     setTimeout(() => setShowPreSurvey(true), 600);
   };
 
+  const decideLater = () => {
+    toast.info("已回到项目库，你可以随时再回来接受 Offer。");
+    nav("/library", { replace: true });
+  };
+
   if (!sim) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -285,7 +290,7 @@ const OfferLetter = () => {
                     {accepting ? "正在为您安排工位..." : "接受 Offer，开始工作 →"}
                   </Button>
                   <button
-                    onClick={() => toast.info("我们会想念你的 👋") }
+                    onClick={decideLater}
                     className="mt-3 block w-full text-center text-xs text-slate-400 hover:text-slate-600"
                   >
                     稍后再决定
