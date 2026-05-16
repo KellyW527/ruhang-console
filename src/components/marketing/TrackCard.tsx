@@ -9,7 +9,7 @@ interface TrackCardProps {
   pro?: boolean;
 }
 
-export function TrackCard({ icon: Icon, tag, title, desc, tasks, pro }: TrackCardProps) {
+export function TrackCard({ icon: Icon, tag, title, desc, tasks }: TrackCardProps) {
   return (
     <div className="glass group relative flex flex-col overflow-hidden rounded-2xl p-6 transition hover:border-primary/30">
       <div className="flex items-start justify-between gap-3 mb-5">
@@ -20,7 +20,6 @@ export function TrackCard({ icon: Icon, tag, title, desc, tasks, pro }: TrackCar
           <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-primary">
             {tag}
           </span>
-          {pro && <span className="badge-pro rounded-full px-2 py-0.5 text-[10px]">PRO</span>}
         </div>
       </div>
 

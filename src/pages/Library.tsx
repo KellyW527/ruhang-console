@@ -332,8 +332,7 @@ function LibraryCard({
             {item.coverEmoji}
           </div>
           <div className="flex flex-col items-end gap-1.5">
-            <StatusBadge status={item.userStatus} />
-            {item.isPro && <span className="badge-pro">PRO</span>}
+            <StatusBadge status={item.userStatus} locked={item.locked} />
           </div>
         </div>
 
@@ -391,18 +390,20 @@ function LibraryCard({
             </>
           )}
         </button>
-        {!item.simulationId && (
-          <div className="mt-2 flex items-center justify-center gap-1 text-[10px] text-muted-foreground">
-            <Lock className="h-3 w-3" />
-            后端尚未就绪
-          </div>
-        )}
       </div>
     </motion.div>
   );
 }
 
-function StatusBadge({ status }: { status: LibraryItem["userStatus"] }) {
+function StatusBadge({ status, locked }: { status: LibraryItem["userStatus"]; locked: boolean }) {
+  if (locked) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
+        <Lock className="h-3 w-3" />
+        升级解锁
+      </span>
+    );
+  }
   if (status === "completed") {
     return (
       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-300">

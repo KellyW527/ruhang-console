@@ -487,7 +487,7 @@ export default function Settings() {
                     <div className="text-xs text-muted-foreground">{user?.email}</div>
                     <div className="mt-1.5 flex items-center gap-2">
                       <span className={cn("rounded-full px-2 py-0.5 text-[10px]", isPro ? "bg-gradient-gold text-primary-foreground" : "border border-primary/30 bg-primary/5 text-primary")}>
-                        {isPro ? "PRO 会员" : "免费版"}
+                        {isPro ? "高级会员" : "免费版"}
                       </span>
                       <span className="text-[10px] text-muted-foreground">头像上传后续开放</span>
                     </div>

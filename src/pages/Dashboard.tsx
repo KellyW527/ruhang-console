@@ -334,7 +334,7 @@ function SidebarBody({
             <div className="truncate text-sm font-medium">{name}</div>
             <div className={cn("flex items-center gap-1 text-[10px] uppercase tracking-wider", plan === "pro" ? "text-primary" : "text-muted-foreground")}>
               {plan === "pro" && <Sparkles className="h-3 w-3" />}
-              {plan === "pro" ? "PRO 会员" : "免费版"}
+              {plan === "pro" ? "高级会员" : "免费版"}
             </div>
           </div>
         </div>
@@ -516,7 +516,7 @@ export default function Dashboard() {
                 <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-right">
                   <div className="text-sm font-medium text-foreground">{name}</div>
                   <div className={cn("text-[10px] uppercase tracking-[0.2em]", plan === "pro" ? "text-primary" : "text-muted-foreground")}>
-                    {plan === "pro" ? "PRO MEMBER" : "FREE PLAN"}
+                    {plan === "pro" ? "高级会员" : "免费版"}
                   </div>
                 </div>
                 <Button variant="ghost" size="sm" className="rounded-full border border-white/10 bg-white/[0.03] px-4 hover:bg-white/5" onClick={onSignOut}>
@@ -659,7 +659,6 @@ export default function Dashboard() {
                       <span className="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-primary">
                         {spotlight.simulation.track}
                       </span>
-                      {spotlight.simulation.is_pro && <span className="badge-status badge-pro px-3 py-1 text-[10px]">PRO</span>}
                     </div>
                   </div>
                   <h2 className="mt-5 font-display text-3xl font-semibold leading-tight text-white">
@@ -861,7 +860,6 @@ function SimCard({ row, to, plan }: { row: SimRow; to: string; plan: string }) {
           </div>
           <div className="flex gap-1.5">
             <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] text-primary">{sim.track}</span>
-            {sim.is_pro && <span className="badge-pro">PRO</span>}
           </div>
         </div>
         <h3 className="mt-5 font-display text-xl font-semibold leading-snug text-white">{sim.title}</h3>
