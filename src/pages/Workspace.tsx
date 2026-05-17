@@ -2803,10 +2803,10 @@ const Workspace = () => {
         />
       )}
       {onboardingStep !== null && (
-        <div className="absolute inset-0 z-50 bg-background/45 backdrop-blur-[2px]">
+        <div className="absolute inset-0 z-50 bg-transparent">
           <div
             className={cn(
-              "absolute w-[min(22rem,calc(100%-2rem))] rounded-[28px] border border-primary/25 bg-surface-1/95 p-5 shadow-[0_28px_80px_-36px_rgba(201,168,76,0.8)]",
+              "absolute w-[min(22rem,calc(100%-2rem))] rounded-[28px] border border-sky-200/70 bg-sky-100 p-5 text-slate-950 shadow-[0_28px_80px_-36px_rgba(125,211,252,0.95)]",
               workspaceOnboardingSteps[onboardingStep].align === "left" && "left-4 top-24 lg:left-[5.25rem]",
               workspaceOnboardingSteps[onboardingStep].align === "right" && "bottom-24 right-4 lg:right-[5.25rem]",
               workspaceOnboardingSteps[onboardingStep].align === "center" && "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
@@ -2814,23 +2814,23 @@ const Workspace = () => {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="text-[10px] uppercase tracking-[0.22em] text-primary">
+                <div className="text-[10px] uppercase tracking-[0.22em] text-sky-700">
                   新手引导 {onboardingStep + 1} / {workspaceOnboardingSteps.length}
                 </div>
-                <h2 className="mt-2 font-display text-2xl font-semibold text-foreground">
+                <h2 className="mt-2 font-display text-2xl font-semibold text-slate-950">
                   {workspaceOnboardingSteps[onboardingStep].title}
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={finishOnboarding}
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-white/5 hover:text-foreground"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-sky-200/60 hover:text-slate-950"
                 aria-label="跳过新手引导"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="mt-3 text-sm leading-7 text-muted-foreground">
+            <p className="mt-3 text-sm leading-7 text-slate-700">
               {workspaceOnboardingSteps[onboardingStep].body}
             </p>
             <div className="mt-5 flex items-center justify-between gap-3">
@@ -2838,7 +2838,7 @@ const Workspace = () => {
                 type="button"
                 variant="ghost"
                 onClick={finishOnboarding}
-                className="rounded-full px-4 text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                className="rounded-full px-4 text-slate-600 hover:bg-sky-200/60 hover:text-slate-950"
               >
                 跳过
               </Button>
