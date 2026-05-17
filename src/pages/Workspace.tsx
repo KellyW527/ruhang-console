@@ -1962,39 +1962,6 @@ const Workspace = () => {
                   <div className="min-h-0 flex-1 bg-[radial-gradient(circle_at_top,hsl(var(--primary)/0.08),transparent_35%)]">
                     <div ref={scrollRef} className="h-full overflow-y-auto px-4 py-4 lg:px-6 lg:py-6">
                       <div className="mx-auto flex max-w-4xl flex-col gap-4">
-                        {activeTask && (
-                          <div className="grid gap-3 rounded-[28px] border border-primary/20 bg-primary/6 p-4 shadow-[0_24px_60px_-36px_rgba(201,168,76,0.45)] lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-                            <div>
-                              <div className="eyebrow">当前交付</div>
-                              <div className="mt-2 text-lg font-medium text-foreground">{activeTask.title}</div>
-                              <div className="mt-1 text-sm text-muted-foreground">
-                                正式交付请用附件或邮件提交。普通聊天消息不会推进任务，收到反馈后还需要完成自评。
-                              </div>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => fileInputRef.current?.click()}
-                                className="border border-white/10 bg-background/40 hover:bg-white/5"
-                              >
-                                <Paperclip className="mr-1.5 h-3.5 w-3.5" />
-                                上传附件
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={openComposeFromTask}
-                                className="bg-gradient-gold text-primary-foreground hover:opacity-95"
-                              >
-                                <Mail className="mr-1.5 h-3.5 w-3.5" />
-                                邮件提交
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-
                         {messages.map((m) => (
                           <MessageBubble
                             key={m.id}
@@ -2392,10 +2359,6 @@ const Workspace = () => {
                         <h3 className="mt-2 font-display text-xl font-semibold">任务推进</h3>
                       </div>
                       <div className="flex items-center gap-2">
-                        <div className="rounded-2xl border border-primary/20 bg-primary/10 px-3 py-2 text-right">
-                          <div className="text-[10px] uppercase tracking-[0.18em] text-primary">Progress</div>
-                          <div className="mt-1 font-mono text-lg text-primary">{overall}%</div>
-                        </div>
                         <button
                           type="button"
                           onClick={() => setRightCollapsed(true)}
