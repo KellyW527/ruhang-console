@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, Search, Sparkles, CheckCircle2, Clock3, Lock } from "lucide-react";
+import { ArrowRight, Search, Sparkles, CheckCircle2, Clock3, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +16,6 @@ import {
   type CatalogEntry,
   type SimulationTrack,
 } from "@/data/simulation-catalog";
-import logoImg from "@/assets/logo.png";
 
 type SimRow = {
   id: string;
@@ -198,21 +197,8 @@ export default function Library() {
 
       <main className="relative">
         <div className="container mx-auto px-4 py-6 md:px-6">
-          {/* Header */}
-          <header className="glass-strong rounded-[30px] border-white/10 px-4 py-4 md:px-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <img src={logoImg} alt="入行" className="h-11 w-11 rounded-2xl object-contain" />
-                <div>
-                  <div className="font-display text-lg font-semibold">项目库</div>
-                  <div className="text-xs text-muted-foreground">入行全部沉浸式金融模拟项目</div>
-                </div>
-              </div>
-            </div>
-          </header>
-
           {/* Hero */}
-          <section className="mt-6 glass-deep relative overflow-hidden rounded-[36px] p-6 md:p-8">
+          <section className="glass-deep relative overflow-hidden rounded-[36px] p-6 md:p-8">
             <div className="absolute inset-0 halo-gold opacity-30" />
             <div className="relative max-w-3xl">
               <div className="eyebrow">入行项目库</div>

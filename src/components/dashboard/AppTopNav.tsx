@@ -86,6 +86,8 @@ export function AppTopNav({
   const name = getPreferredDisplayName(profile ?? null, user?.email) ?? "新同学";
   const plan = subscription?.isActive ? "pro" : profile?.plan ?? "free";
   const rows = achievementRows ?? fetchedRows;
+  const title = loc.pathname === "/library" ? "项目库" : "入行";
+  const subtitle = loc.pathname === "/library" ? "入行全部沉浸式金融模拟项目" : "真实岗位节奏驱动的金融工作台";
 
   useEffect(() => {
     if (achievementRows || !user?.id) return;
@@ -172,8 +174,8 @@ export function AppTopNav({
           <Link to="/dashboard" className="flex items-center gap-3">
             <img src={logoImg} alt="入行" className="h-11 w-11 rounded-2xl object-contain" />
             <div>
-              <div className="font-display text-lg font-semibold">入行</div>
-              <div className="text-xs text-muted-foreground">真实岗位节奏驱动的金融工作台</div>
+              <div className="font-display text-lg font-semibold">{title}</div>
+              <div className="text-xs text-muted-foreground">{subtitle}</div>
             </div>
           </Link>
 
