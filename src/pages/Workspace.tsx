@@ -1739,6 +1739,7 @@ const Workspace = () => {
                         <div className="space-y-2 p-3">
                           {convs.map((c) => {
                             const kind = getConversationKind(c, simCode);
+                            const displayName = kind === "group" ? "项目组" : c.name;
                             return (
                               <button
                                 key={c.id}
@@ -1748,19 +1749,19 @@ const Workspace = () => {
                                   setMobilePanel("chat");
                                 }}
                                 className={cn(
-                                  "relative w-full overflow-hidden rounded-2xl border px-3 py-3 text-left transition",
+                                  "relative w-[calc(100%-0.75rem)] overflow-hidden rounded-2xl border px-3 py-2.5 text-left transition",
                                   activeConvId === c.id
                                     ? "border-primary/30 bg-primary/10 shadow-[0_0_0_1px_rgba(201,168,76,0.12)]"
                                     : "border-transparent bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.04]",
                                 )}
                               >
-                                <div className="flex items-start gap-3">
-                                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-background/70 text-lg shadow-inner">
+                                <div className="flex items-start gap-2.5">
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-background/70 text-base shadow-inner">
                                     {c.avatar_emoji}
                                   </div>
                                   <div className="min-w-0 flex-1 overflow-hidden">
-                                    <div className="flex items-center justify-between gap-3">
-                                      <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{c.name}</div>
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{displayName}</div>
                                       {c.unread_count > 0 ? (
                                         <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
                                           {c.unread_count}
@@ -1770,7 +1771,7 @@ const Workspace = () => {
                                       )}
                                     </div>
                                     <div className="mt-1 truncate text-xs text-muted-foreground">{c.role_label}</div>
-                                    <div className="mt-2 flex items-center gap-2">
+                                    <div className="mt-1.5 flex items-center gap-2">
                                       <span className={cn(
                                         "badge-status",
                                         kind === "leader"
