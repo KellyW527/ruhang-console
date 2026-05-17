@@ -114,8 +114,8 @@ const Workspace = () => {
   const [composeSentFlash, setComposeSentFlash] = useState(false);
   const [selfEvalMap, setSelfEvalMap] = useState<Record<string, SelfEvalValue | null>>({});
   const [mobilePanel, setMobilePanel] = useState<"convs" | "chat" | "tasks">("chat");
-  const [leftCollapsed, setLeftCollapsed] = useState(false);
-  const [rightCollapsed, setRightCollapsed] = useState(false);
+  const [leftCollapsed, setLeftCollapsed] = useState(true);
+  const [rightCollapsed, setRightCollapsed] = useState(true);
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
   const [streamStarted, setStreamStarted] = useState(false);
   const [feedbackTab, setFeedbackTab] = useState<"answer" | "mentor" | "self">("answer");
@@ -1611,7 +1611,7 @@ const Workspace = () => {
       <div className="pointer-events-none absolute bottom-[-8rem] right-[-4rem] h-72 w-72 rounded-full halo-blue blur-3xl" />
 
       <div className="relative flex h-full flex-col">
-        <header className="shrink-0 border-b border-white/5 bg-background/40 px-3 py-3 backdrop-blur-xl lg:px-4">
+        <header className="shrink-0 border-b border-white/5 bg-background/40 px-3 py-2 backdrop-blur-xl lg:px-4">
           <div className="flex items-start gap-3">
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -1633,7 +1633,7 @@ const Workspace = () => {
             </AlertDialog>
 
             <div className="min-w-0 flex-1">
-              <div className="mt-2 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+              <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
                 <div className="min-w-0">
                   <h1 className="truncate font-display text-2xl font-semibold text-foreground lg:text-[2rem]">{simTitle || "入行工作台"}</h1>
                 </div>
@@ -1728,10 +1728,13 @@ const Workspace = () => {
               )}
 
               {/* Expanded content */}
-              {!leftCollapsed && (
+              {(!leftCollapsed || mobilePanel === "convs") && (
                 <>
                   <div className="flex shrink-0 items-center justify-between border-b border-white/5 px-4 py-3">
-                    <div className="eyebrow">Workspace</div>
+                    <div>
+                      <div className="eyebrow">Workspace</div>
+                      <h3 className="mt-2 font-display text-xl font-semibold">沟通与资料</h3>
+                    </div>
                     <button
                       type="button"
                       onClick={() => setLeftCollapsed(true)}
@@ -1764,7 +1767,7 @@ const Workspace = () => {
                                   setMobilePanel("chat");
                                 }}
                                 className={cn(
-                                  "relative w-full rounded-2xl border px-3 py-3 text-left transition",
+                                  "relative w-full overflow-hidden rounded-2xl border px-3 py-3 text-left transition",
                                   activeConvId === c.id
                                     ? "border-primary/30 bg-primary/10 shadow-[0_0_0_1px_rgba(201,168,76,0.12)]"
                                     : "border-transparent bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.04]",
@@ -1774,9 +1777,9 @@ const Workspace = () => {
                                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-background/70 text-lg shadow-inner">
                                     {c.avatar_emoji}
                                   </div>
-                                  <div className="min-w-0 flex-1">
+                                  <div className="min-w-0 flex-1 overflow-hidden">
                                     <div className="flex items-center justify-between gap-3">
-                                      <div className="truncate text-sm font-medium text-foreground">{c.name}</div>
+                                      <div className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{c.name}</div>
                                       {c.unread_count > 0 ? (
                                         <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
                                           {c.unread_count}
@@ -1814,13 +1817,6 @@ const Workspace = () => {
                             项目资料包
                           </div>
                           <Badge className="bg-primary/15 text-primary">{starterKitAssets.length} 份</Badge>
-                        </div>
-                        <div className="shrink-0 px-3 pb-3">
-                          <div className="rounded-2xl bg-primary/10 px-3 py-2 text-xs leading-relaxed text-primary">
-                            {activeTask
-                              ? `已开启 Task ${activeTask.order_index + 1}：${activeTask.title}。开始交付前，建议先查看下方项目资料包。`
-                              : "进入项目后，请先查看资料包，确认项目背景、数据口径和交付模板。"}
-                          </div>
                         </div>
                         <ScrollArea className="min-h-0 flex-1">
                           <div className="space-y-2 p-3">
@@ -2298,7 +2294,7 @@ const Workspace = () => {
                 </div>
               )}
 
-              {!rightCollapsed && (
+              {(!rightCollapsed || mobilePanel === "tasks") && (
                 <>
                   <div className="border-b border-white/5 px-5 py-5">
                     <div className="flex items-center justify-between gap-2">
