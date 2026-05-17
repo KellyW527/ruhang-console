@@ -397,18 +397,7 @@ export default function Settings() {
   return (
     <div className="min-h-screen bg-gradient-navy">
       <div className="sticky top-0 z-20 border-b border-white/5 bg-background/85 backdrop-blur md:hidden">
-        <div className="flex items-center justify-between px-4 py-3">
-          <button
-            type="button"
-            onClick={() => nav("/dashboard")}
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" /> 返回
-          </button>
-          <span className="font-display text-base font-semibold">设置</span>
-          <div className="w-12" />
-        </div>
-        <div className="scrollbar-hidden flex gap-2 overflow-x-auto px-4 pb-3">
+        <div className="scrollbar-hidden flex gap-2 overflow-x-auto px-4 py-3">
           {SECTIONS.map((section) => (
             <button
               key={section.key}
@@ -430,10 +419,7 @@ export default function Settings() {
 
       <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-12">
         <div className="mb-8 hidden md:block">
-          <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary">
-            <ArrowLeft className="h-3.5 w-3.5" /> 返回控制台
-          </Link>
-          <div className="mt-3">
+          <div>
             <div className="eyebrow">入行</div>
             <h1 className="mt-2 font-display text-3xl font-semibold">设置中心</h1>
             <p className="mt-1.5 text-sm text-muted-foreground">

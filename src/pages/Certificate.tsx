@@ -148,17 +148,8 @@ export default function Certificate() {
   return (
     <div className="min-h-screen bg-gradient-hero">
       {/* 顶部操作栏 */}
-      <div className="sticky top-0 z-20 border-b border-white/5 bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => nav("/dashboard")}
-            className="text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            返回控制台
-          </Button>
+      <div className="border-b border-white/5 bg-background/40">
+        <div className="container mx-auto flex items-center justify-end px-4 py-4">
           <Button
             type="button"
             onClick={handleDownload}

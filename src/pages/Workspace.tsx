@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Send, Paperclip, Image as ImageIcon, Mail, MessageCircle, CheckCircle2, Lock, Circle, PenSquare, X, Loader2, Clock, ChevronDown, FileText, Download, FolderOpen, Inbox, ListTodo, Sparkles, Target, Users, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, ExternalLink } from "lucide-react";
+import { Send, Paperclip, Image as ImageIcon, Mail, MessageCircle, CheckCircle2, Lock, Circle, PenSquare, X, Loader2, Clock, ChevronDown, FileText, Download, FolderOpen, Inbox, ListTodo, Sparkles, Target, Users, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase, supabasePublicConfig } from "@/integrations/supabase/client";
@@ -1605,7 +1605,7 @@ const Workspace = () => {
   }
 
   return (
-    <div className="relative h-[100dvh] overflow-hidden bg-background">
+    <div className="relative h-[calc(100dvh-72px)] overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0 bg-gradient-hero" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 halo-gold opacity-80" />
       <div className="pointer-events-none absolute bottom-[-8rem] right-[-4rem] h-72 w-72 rounded-full halo-blue blur-3xl" />
@@ -1613,25 +1613,6 @@ const Workspace = () => {
       <div className="relative flex h-full flex-col">
         <header className="shrink-0 border-b border-white/5 bg-background/40 px-3 py-2 backdrop-blur-xl lg:px-4">
           <div className="flex items-start gap-3">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <button className="mt-0.5 inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-surface-1/80 px-3 py-2 text-xs text-muted-foreground transition hover:text-foreground">
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  <span className="font-display font-semibold text-foreground">入行</span>
-                </button>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="glass-strong border-white/10">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>退出当前项目？</AlertDialogTitle>
-                  <AlertDialogDescription>你的进度会被自动保存，下次回来可继续。</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>留在这里</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => nav("/dashboard")} className="bg-gradient-gold text-primary-foreground hover:opacity-95">返回控制台</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-
             <div className="min-w-0 flex-1">
               <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
                 <div className="min-w-0">
@@ -2726,9 +2707,6 @@ const Workspace = () => {
               <div className="mt-1 text-sm text-amber-50/80">完成任意一条模拟线的全部任务。</div>
             </div>
             <div className="flex items-center justify-end gap-2">
-              <Button type="button" variant="ghost" onClick={() => nav("/dashboard")}>
-                返回控制台
-              </Button>
               <Button
                 type="button"
                 onClick={() => nav(`/simulation/${id}/certificate`)}

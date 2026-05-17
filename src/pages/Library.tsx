@@ -208,14 +208,6 @@ export default function Library() {
                   <div className="text-xs text-muted-foreground">入行全部沉浸式金融模拟项目</div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button asChild variant="ghost" size="sm" className="rounded-full border border-white/10 bg-white/[0.03] hover:bg-white/5">
-                  <Link to="/dashboard">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    返回控制台
-                  </Link>
-                </Button>
-              </div>
             </div>
           </header>
 

@@ -184,15 +184,6 @@ const Report = () => {
   return (
     <div className="min-h-screen">
       <div className="container mx-auto px-6 py-10">
-        <div className="mb-8 flex items-center justify-between gap-4">
-          <Button asChild variant="ghost" size="sm" className="text-muted-foreground hover:bg-white/5 hover:text-foreground">
-            <Link to="/dashboard">
-              <ArrowLeft className="mr-1.5 h-4 w-4" />
-              返回控制台
-            </Link>
-          </Button>
-        </div>
-
         <div className="mb-10">
           <div className="text-[10px] uppercase tracking-widest text-primary">能力档案</div>
           <h1 className="mt-2 font-display text-3xl font-semibold md:text-4xl">

@@ -215,13 +215,6 @@ const OfferLetter = () => {
       <div className="absolute inset-0 halo-blue opacity-40 pointer-events-none" />
       <div className="absolute inset-0 backdrop-blur-2xl" />
 
-      <Link to="/dashboard" className="absolute left-6 top-6 z-10 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-        <span className="flex h-7 w-7 items-center justify-center rounded-md bg-gradient-gold font-display text-xs font-bold text-primary-foreground">
-          入
-        </span>
-        返回控制台
-      </Link>
-
       <div className="relative flex min-h-screen items-center justify-center px-4 py-12">
         <AnimatePresence>
           {!exit && (

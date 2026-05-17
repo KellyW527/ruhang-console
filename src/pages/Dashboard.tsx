@@ -480,72 +480,7 @@ export default function Dashboard() {
 
       <main className="relative">
         <div className="container mx-auto px-4 py-4 md:px-6 lg:py-6">
-          <header className="glass-strong rounded-[30px] border-white/10 px-4 py-4 md:px-6">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <img src={logoImg} alt="入行" className="h-11 w-11 rounded-2xl object-contain" />
-                <div>
-                  <div className="font-display text-lg font-semibold">入行</div>
-                  <div className="text-xs text-muted-foreground">真实岗位节奏驱动的金融工作台</div>
-                </div>
-              </div>
-
-              <nav className="hidden items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1 lg:flex">
-                <Link to="/dashboard" className="rounded-full bg-primary/20 px-5 py-2 text-sm font-medium text-primary">
-                  控制台
-                </Link>
-                <Link to="/library" className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition hover:bg-white/8 hover:text-foreground">
-                  项目库
-                </Link>
-                <Link to="/report" className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition hover:bg-white/8 hover:text-foreground">
-                  能力报告
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => setMedalOpen(true)}
-                  className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition hover:bg-white/8 hover:text-foreground"
-                >
-                  我的勋章
-                </button>
-                <Link to="/settings" className="rounded-full px-5 py-2 text-sm font-medium text-muted-foreground transition hover:bg-white/8 hover:text-foreground">
-                  设置
-                </Link>
-              </nav>
-
-              <div className="hidden items-center gap-3 lg:flex">
-                <div className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-right">
-                  <div className="text-sm font-medium text-foreground">{name}</div>
-                  <div className={cn("text-[10px] uppercase tracking-[0.2em]", plan === "pro" ? "text-primary" : "text-muted-foreground")}>
-                    {plan === "pro" ? "高级会员" : "免费版"}
-                  </div>
-                </div>
-                <Button variant="ghost" size="sm" className="rounded-full border border-white/10 bg-white/[0.03] px-4 hover:bg-white/5" onClick={onSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  退出
-                </Button>
-              </div>
-
-              <div className="lg:hidden">
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/5">
-                      <Menu className="h-5 w-5" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="w-64 border-sidebar-border bg-sidebar p-0">
-                    <SidebarBody
-                      name={name}
-                      plan={plan}
-                      onSignOut={onSignOut}
-                      onOpenMedals={() => setMedalOpen(true)}
-                    />
-                  </SheetContent>
-                </Sheet>
-              </div>
-            </div>
-          </header>
-
-          <section className="mt-6 grid gap-6 xl:grid-cols-[1.2fr_0.92fr]">
+          <section className="grid gap-6 xl:grid-cols-[1.2fr_0.92fr]">
             <div className="glass-deep relative overflow-hidden rounded-[36px] p-6 md:p-8">
               <div className="absolute inset-0 halo-gold opacity-40" />
               <div className="absolute inset-y-0 right-0 w-1/2 halo-blue opacity-50" />

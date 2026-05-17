@@ -23,6 +23,7 @@ import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 import Demo from "./pages/Demo";
 import { supabasePublicConfig } from "./integrations/supabase/client";
+import { AppTopNav } from "@/components/dashboard/AppTopNav";
 
 const queryClient = new QueryClient();
 
@@ -53,7 +54,7 @@ function ConfigErrorScreen() {
   );
 }
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
+function ProtectedRoute({ children, shell = true }: { children: React.ReactNode; shell?: boolean }) {
   const { user, loading } = useAuth();
   if (loading)
     return (
@@ -67,7 +68,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   if (!user) return <Navigate to="/login" replace />;
-  return <>{children}</>;
+  if (!shell) return <>{children}</>;
+  return (
+    <>
+      <AppTopNav />
+      {children}
+    </>
+  );
 }
 
 function AppRoutes() {
