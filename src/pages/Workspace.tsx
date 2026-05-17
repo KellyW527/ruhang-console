@@ -1785,8 +1785,8 @@ const Workspace = () => {
                   </div>
 
                   <div className="flex min-h-0 flex-1 flex-col gap-4 px-4 py-4">
-                    <section className="flex min-h-[190px] basis-[38%] flex-col overflow-hidden rounded-[26px] border border-white/8 bg-white/[0.015]">
-                      <div className="flex shrink-0 items-center justify-between border-b border-white/5 px-4 py-3">
+                    <section className="flex min-h-[190px] basis-[38%] flex-col overflow-hidden rounded-[26px] bg-white/[0.025]">
+                      <div className="flex shrink-0 items-center justify-between px-4 py-3">
                         <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                           <Users className="h-4 w-4 text-primary" />
                           项目会话
@@ -1808,8 +1808,8 @@ const Workspace = () => {
                                 className={cn(
                                   "relative w-full rounded-2xl border px-3 py-3 text-left transition",
                                   activeConvId === c.id
-                                    ? "border-primary/35 bg-primary/10 shadow-[0_0_0_1px_rgba(201,168,76,0.12)]"
-                                    : "border-white/6 bg-white/[0.02] hover:border-white/12 hover:bg-white/[0.04]",
+                                    ? "border-primary/30 bg-primary/10 shadow-[0_0_0_1px_rgba(201,168,76,0.12)]"
+                                    : "border-transparent bg-white/[0.02] hover:border-white/10 hover:bg-white/[0.04]",
                                 )}
                               >
                                 <div className="flex items-start gap-3">
@@ -1849,16 +1849,16 @@ const Workspace = () => {
                     </section>
 
                     {starterKitAssets.length > 0 && (
-                      <section className="flex min-h-[240px] flex-1 flex-col overflow-hidden rounded-[26px] border border-primary/15 bg-primary/[0.025]">
-                        <div className="flex shrink-0 items-center justify-between border-b border-white/5 px-4 py-3">
+                      <section className="flex min-h-[240px] flex-1 flex-col overflow-hidden rounded-[26px] bg-primary/[0.035]">
+                        <div className="flex shrink-0 items-center justify-between px-4 py-3">
                           <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                             <FolderOpen className="h-4 w-4 text-primary" />
                             项目资料包
                           </div>
                           <Badge className="bg-primary/15 text-primary">{starterKitAssets.length} 份</Badge>
                         </div>
-                        <div className="shrink-0 border-b border-white/5 px-3 py-3">
-                          <div className="rounded-2xl border border-primary/25 bg-primary/10 px-3 py-2 text-xs leading-relaxed text-primary">
+                        <div className="shrink-0 px-3 pb-3">
+                          <div className="rounded-2xl bg-primary/10 px-3 py-2 text-xs leading-relaxed text-primary">
                             {activeTask
                               ? `已开启 Task ${activeTask.order_index + 1}：${activeTask.title}。开始交付前，建议先查看下方项目资料包。`
                               : "进入项目后，请先查看资料包，确认项目背景、数据口径和交付模板。"}
@@ -1871,7 +1871,7 @@ const Workspace = () => {
                                 key={asset.id}
                                 href={asset.url}
                                 download={asset.filename}
-                                className="flex items-start gap-3 rounded-2xl border border-white/8 bg-white/[0.02] px-3 py-3 transition hover:border-primary/25 hover:bg-primary/[0.06]"
+                                className="flex items-start gap-3 rounded-2xl bg-white/[0.03] px-3 py-3 transition hover:bg-primary/[0.06]"
                               >
                                 <div className="mt-0.5 rounded-xl bg-primary/10 p-2 text-primary">
                                   <FileText className="h-3.5 w-3.5" />
