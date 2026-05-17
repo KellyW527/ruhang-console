@@ -62,30 +62,6 @@ type TaskStatusEntry = {
   ai_feedback?: AiSubmissionFeedback | null;
 };
 
-const TRACK_LABEL_MAP: Record<string, string> = {
-  "ibd-ipo": "IB IPO",
-  "pe-growth": "PE/VC",
-  "er-new-energy": "ER",
-  "ibd-robotics-ipo": "IB IPO",
-  "ma-semiconductor": "M&A",
-  "pe-dental-chain": "PE",
-  "er-cxo": "ER",
-  "vc-ai-interview": "VC",
-  "fa-drone-series-a": "FA",
-};
-
-const getTrackLabel = (code?: string | null) => {
-  if (!code) return "入行";
-  return TRACK_LABEL_MAP[code] ?? code.toUpperCase();
-};
-
-const getSimulationStageLabel = (status: string | null, activeTask?: Task) => {
-  if (status === "completed") return "已结项";
-  if (activeTask) return `Task ${activeTask.order_index + 1} 进行中`;
-  if (status === "active" || status === "in_progress") return "项目进行中";
-  return "准备中";
-};
-
 const getTaskStatusLabel = (status: string) => {
   switch (status) {
     case "done":
@@ -114,7 +90,6 @@ const Workspace = () => {
   const [simulationStatus, setSimulationStatus] = useState<string | null>(null);
   const [simTitle, setSimTitle] = useState("");
   const [simCode, setSimCode] = useState<string | null>(null);
-  const [simCompany, setSimCompany] = useState("");
   const [convs, setConvs] = useState<Conv[]>([]);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -211,8 +186,6 @@ const Workspace = () => {
     typingConvId === activeConvId;
   const unreadConversationCount = convs.filter((conversation) => conversation.unread_count > 0).length;
   const unreadEmailCount = emails.filter((email) => email.folder !== "sent" && email.folder !== "draft" && !email.is_read).length;
-  const stageLabel = getSimulationStageLabel(simulationStatus, activeTask);
-  const trackLabel = getTrackLabel(simCode);
   // 旧的 inline HTML 结业证书已替换为统一的 /simulation/:id/certificate 页面（Forage 风格 + PDF 下载）。
 
   // ---- Initial load ----
@@ -277,7 +250,6 @@ const Workspace = () => {
       setSimulationStatus((us as any)?.status ?? null);
       setSimTitle((us.simulation as any)?.title ?? "");
       setSimCode((us.simulation as any)?.code ?? null);
-      setSimCompany((us.simulation as any)?.company ?? "");
       setCompletionAt((us as any)?.completed_at ?? null);
 
       const { data: c } = await supabase.from("conversations").select("*").eq("user_simulation_id", us.id).order("order_index");
@@ -1661,23 +1633,9 @@ const Workspace = () => {
             </AlertDialog>
 
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge className="border border-primary/25 bg-primary/15 text-primary">{trackLabel}</Badge>
-                <Badge variant="secondary" className="border border-white/10 bg-white/5 text-foreground/80">
-                  {stageLabel}
-                </Badge>
-                {simCompany && (
-                  <Badge variant="secondary" className="border border-white/10 bg-white/[0.03] text-muted-foreground">
-                    {simCompany}
-                  </Badge>
-                )}
-              </div>
               <div className="mt-2 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
                 <div className="min-w-0">
                   <h1 className="truncate font-display text-2xl font-semibold text-foreground lg:text-[2rem]">{simTitle || "入行工作台"}</h1>
-                  <p className="mt-1 max-w-3xl text-sm leading-7 text-muted-foreground">
-                    这里连接真实会话、邮件往来、任务反馈与自评推进。你在每一步里提交的内容，都会按正式模拟流程继续向下流转。
-                  </p>
                 </div>
                 <div className="grid grid-cols-2 gap-2 lg:min-w-[360px] lg:grid-cols-4">
                   <div className="rounded-[22px] border border-white/10 bg-white/[0.04] px-3 py-2.5">
@@ -1943,16 +1901,6 @@ const Workspace = () => {
                         </TabsTrigger>
                       </TabsList>
                     </Tabs>
-                    <div className="flex flex-wrap gap-2 text-[11px] text-muted-foreground">
-                      <span className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1">
-                        项目阶段：{stageLabel}
-                      </span>
-                      {activeTask && (
-                        <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-primary">
-                          当前交付：{activeTask.title}
-                        </span>
-                      )}
-                    </div>
                   </div>
                 </div>
               </div>
