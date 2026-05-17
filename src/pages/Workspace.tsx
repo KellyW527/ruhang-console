@@ -62,6 +62,28 @@ type TaskStatusEntry = {
   ai_feedback?: AiSubmissionFeedback | null;
 };
 
+const WORKSPACE_ONBOARDING_KEY = "ruhang_workspace_onboarding_v1";
+const workspaceOnboardingSteps = [
+  {
+    title: "中间工作区",
+    body: "这里是你的主要操作区。你可以和带教或项目组沟通，也可以在底部上传附件、发送邮件来推进任务。",
+    panel: "chat",
+    align: "center",
+  },
+  {
+    title: "左侧：沟通与资料",
+    body: "这里放项目会话和项目资料包。需要查背景资料、下载数据文件，或者切换会话时，从左侧进入。",
+    panel: "left",
+    align: "left",
+  },
+  {
+    title: "右侧：任务推进",
+    body: "这里是任务看板。查看当前任务、截止时间、提交入口和后续解锁状态，都在右侧完成。",
+    panel: "right",
+    align: "right",
+  },
+] as const;
+
 const getTaskStatusLabel = (status: string) => {
   switch (status) {
     case "done":
@@ -127,6 +149,7 @@ const Workspace = () => {
   const [showPostSurvey, setShowPostSurvey] = useState(false);
   const [draftSaving, setDraftSaving] = useState(false);
   const [confirmAdvanceTaskId, setConfirmAdvanceTaskId] = useState<string | null>(null);
+  const [onboardingStep, setOnboardingStep] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const composeFileInputRef = useRef<HTMLInputElement>(null);
@@ -192,6 +215,33 @@ const Workspace = () => {
   useEffect(() => {
     document.title = "工作台 · 入行";
   }, []);
+
+  useEffect(() => {
+    if (wsLoading || !user?.id) return;
+    const key = `${WORKSPACE_ONBOARDING_KEY}:${user.id}`;
+    if (window.localStorage.getItem(key) === "seen") return;
+    setOnboardingStep((current) => current ?? 0);
+  }, [user?.id, wsLoading]);
+
+  useEffect(() => {
+    if (onboardingStep === null) return;
+    const step = workspaceOnboardingSteps[onboardingStep];
+    if (step.panel === "left") {
+      setLeftCollapsed(false);
+      setRightCollapsed(true);
+      setMobilePanel("convs");
+      return;
+    }
+    if (step.panel === "right") {
+      setLeftCollapsed(true);
+      setRightCollapsed(false);
+      setMobilePanel("tasks");
+      return;
+    }
+    setLeftCollapsed(true);
+    setRightCollapsed(true);
+    setMobilePanel("chat");
+  }, [onboardingStep]);
 
   // Guard ref: prevents re-running the full workspace load when auth state refreshes
   // (e.g. Supabase TOKEN_REFRESHED fires on window focus). The load should only
@@ -1593,6 +1643,25 @@ const Workspace = () => {
     setComposeOpen(false);
   };
 
+  const finishOnboarding = () => {
+    if (user?.id) {
+      window.localStorage.setItem(`${WORKSPACE_ONBOARDING_KEY}:${user.id}`, "seen");
+    }
+    setOnboardingStep(null);
+    setLeftCollapsed(true);
+    setRightCollapsed(true);
+    setMobilePanel("chat");
+  };
+
+  const advanceOnboarding = () => {
+    if (onboardingStep === null) return;
+    if (onboardingStep >= workspaceOnboardingSteps.length - 1) {
+      finishOnboarding();
+      return;
+    }
+    setOnboardingStep(onboardingStep + 1);
+  };
+
   if (wsLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -2732,6 +2801,57 @@ const Workspace = () => {
             setCompletionOpen(true);
           }}
         />
+      )}
+      {onboardingStep !== null && (
+        <div className="absolute inset-0 z-50 bg-background/45 backdrop-blur-[2px]">
+          <div
+            className={cn(
+              "absolute w-[min(22rem,calc(100%-2rem))] rounded-[28px] border border-primary/25 bg-surface-1/95 p-5 shadow-[0_28px_80px_-36px_rgba(201,168,76,0.8)]",
+              workspaceOnboardingSteps[onboardingStep].align === "left" && "left-4 top-24 lg:left-[5.25rem]",
+              workspaceOnboardingSteps[onboardingStep].align === "right" && "bottom-24 right-4 lg:right-[5.25rem]",
+              workspaceOnboardingSteps[onboardingStep].align === "center" && "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+            )}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.22em] text-primary">
+                  新手引导 {onboardingStep + 1} / {workspaceOnboardingSteps.length}
+                </div>
+                <h2 className="mt-2 font-display text-2xl font-semibold text-foreground">
+                  {workspaceOnboardingSteps[onboardingStep].title}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={finishOnboarding}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition hover:bg-white/5 hover:text-foreground"
+                aria-label="跳过新手引导"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mt-3 text-sm leading-7 text-muted-foreground">
+              {workspaceOnboardingSteps[onboardingStep].body}
+            </p>
+            <div className="mt-5 flex items-center justify-between gap-3">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={finishOnboarding}
+                className="rounded-full px-4 text-muted-foreground hover:bg-white/5 hover:text-foreground"
+              >
+                跳过
+              </Button>
+              <Button
+                type="button"
+                onClick={advanceOnboarding}
+                className="rounded-full bg-gradient-gold px-5 text-primary-foreground hover:opacity-95"
+              >
+                {onboardingStep === workspaceOnboardingSteps.length - 1 ? "开始使用" : "下一步"}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
