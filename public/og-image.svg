@@ -1,0 +1,21 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#0F1115"/>
+  <rect x="80" y="72" width="1040" height="486" rx="34" fill="#151922" stroke="#C8A45D" stroke-opacity=".42"/>
+  <circle cx="1000" cy="118" r="210" fill="#C8A45D" opacity=".13"/>
+  <circle cx="190" cy="518" r="180" fill="#C8A45D" opacity=".08"/>
+  <rect x="126" y="116" width="86" height="86" rx="24" fill="#C8A45D"/>
+  <text x="169" y="173" text-anchor="middle" font-family="Arial, sans-serif" font-size="42" font-weight="700" fill="#101216">R</text>
+  <text x="240" y="150" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="30" font-weight="700" fill="#F8F1DE">入行</text>
+  <text x="240" y="186" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="20" fill="#B9B3A6">金融岗位真实任务模拟平台</text>
+  <text x="126" y="302" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="62" font-weight="800" fill="#F8F1DE">在真实场景里</text>
+  <text x="126" y="378" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="62" font-weight="800" fill="#D8B86B">训练金融职业能力</text>
+  <text x="126" y="440" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="25" fill="#CFC7B7">投行 · PE/VC · 并购 · 卖方研究</text>
+  <g transform="translate(740 255)">
+    <rect width="270" height="46" rx="14" fill="#202633" stroke="#C8A45D" stroke-opacity=".28"/>
+    <text x="24" y="30" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="18" fill="#F8F1DE">AI 上级派发任务</text>
+    <rect y="66" width="320" height="46" rx="14" fill="#202633" stroke="#C8A45D" stroke-opacity=".28"/>
+    <text x="24" y="96" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="18" fill="#F8F1DE">真实资料包与交付物</text>
+    <rect y="132" width="250" height="46" rx="14" fill="#202633" stroke="#C8A45D" stroke-opacity=".28"/>
+    <text x="24" y="162" font-family="Arial, 'Noto Sans SC', sans-serif" font-size="18" fill="#F8F1DE">能力报告与证书</text>
+  </g>
+</svg>
