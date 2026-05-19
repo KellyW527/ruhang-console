@@ -24,6 +24,7 @@ import NotFound from "./pages/NotFound";
 import Demo from "./pages/Demo";
 import { supabasePublicConfig } from "./integrations/supabase/client";
 import { AppTopNav } from "@/components/dashboard/AppTopNav";
+import { SeoMetaManager } from "@/components/Seo";
 
 const queryClient = new QueryClient();
 
@@ -113,6 +114,7 @@ export default function App() {
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <SeoMetaManager />
             <AppRoutes />
           </BrowserRouter>
         </TooltipProvider>
